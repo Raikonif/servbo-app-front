@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { StoreHeader } from "@/features/marketplace/store-header";
+import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,7 +20,7 @@ export default function RootLayout({
     <html className="scroll-smooth" data-scroll-behavior="smooth" lang="en">
       <body className="bg-slate-50 font-sans text-slate-950 antialiased">
         <StoreHeader />
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

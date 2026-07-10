@@ -1,4 +1,4 @@
-@import "@heroui/styles";
+ @import "@heroui/styles";
 
 @theme inline {
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
