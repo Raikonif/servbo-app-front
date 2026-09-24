@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { fetchProducts, fetchSellers } from "@/lib/api";
 import { ProductTable } from "@/components/product-table";
+import { fetchProducts, fetchSellers } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Products",

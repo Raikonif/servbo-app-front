@@ -7,7 +7,12 @@ export const queryKeys = {
   product: (id: string) => ["product", id] as const,
 };
 
-const API_BASE = process.env.BACKEND_URL ?? "http://localhost:8000";
+const API_BASE =
+  (typeof window === "undefined"
+    ? // Server: localhost:8000 (dev) | backend:8000 (containers)
+      process.env.BACKEND_URL
+    : // Browser: always the published localhost port
+      process.env.NEXT_PUBLIC_BACKEND_URL) ?? "http://localhost:8000";
 
 type PaginatedResponse<T> = {
   results?: T[];
@@ -45,7 +50,8 @@ type ApiSeller = {
 
 function readList<T>(payload: T[] | PaginatedResponse<T>): T[] {
   if (Array.isArray(payload)) return payload;
-  if ("results" in payload && Array.isArray(payload.results)) return payload.results;
+  if ("results" in payload && Array.isArray(payload.results))
+    return payload.results;
   if ("data" in payload && Array.isArray(payload.data)) return payload.data;
   return [];
 }
@@ -100,7 +106,9 @@ function normalizeProduct(p: ApiProduct): Product {
 }
 
 function normalizeSeller(s: ApiSeller): Seller {
-  const fullName = ([s.first_name, s.last_name].filter(Boolean).join(" ") || s.username) ?? "Unknown Seller";
+  const fullName =
+    ([s.first_name, s.last_name].filter(Boolean).join(" ") || s.username) ??
+    "Unknown Seller";
   return {
     id: s.id,
     name: fullName,
@@ -121,11 +129,15 @@ async function apiFetch<T>(path: string): Promise<T> {
 }
 
 export async function fetchProducts(): Promise<Product[]> {
-  const data = await apiFetch<ApiProduct[] | PaginatedResponse<ApiProduct>>("/api/products/");
+  const data = await apiFetch<ApiProduct[] | PaginatedResponse<ApiProduct>>(
+    "/api/products/",
+  );
   return readList(data).map(normalizeProduct);
 }
 
 export async function fetchSellers(): Promise<Seller[]> {
-  const data = await apiFetch<ApiSeller[] | PaginatedResponse<ApiSeller>>("/api/sellers/");
+  const data = await apiFetch<ApiSeller[] | PaginatedResponse<ApiSeller>>(
+    "/api/sellers/",
+  );
   return readList(data).map(normalizeSeller);
 }

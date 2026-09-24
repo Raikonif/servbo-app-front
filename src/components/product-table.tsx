@@ -1,12 +1,16 @@
 "use client";
 
-import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
-import { useProducts } from "@/hooks/use-products";
-import { useSellers } from "@/hooks/use-sellers";
+import {
+  dehydrate,
+  HydrationBoundary,
+  QueryClient,
+} from "@tanstack/react-query";
+import type { Product, Seller } from "@/domain/store";
 import { EntityTable } from "@/features/marketplace/entity-table";
 import { currencyFormatter } from "@/features/marketplace/format";
+import { useProducts } from "@/hooks/use-products";
+import { useSellers } from "@/hooks/use-sellers";
 import { fetchProducts, fetchSellers } from "@/lib/api";
-import type { Product, Seller } from "@/domain/store";
 
 type Props = {
   initialProducts: Product[];

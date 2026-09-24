@@ -1,7 +1,10 @@
 import { getMarketplaceData } from "./backend-data";
 import { Marketplace } from "./marketplace";
 import type { Product } from "./products";
-import { products as fallbackProducts, categories as fallbackCategories } from "./products";
+import {
+  categories as fallbackCategories,
+  products as fallbackProducts,
+} from "./products";
 
 const API_BASE = process.env.BACKEND_URL ?? "http://localhost:8000";
 
@@ -26,7 +29,9 @@ const IMAGE_CLASSES = [
   "from-lime-200 via-lime-400 to-slate-900",
 ];
 
-function categoryName(category: { id: number; name: string } | number | string): string {
+function categoryName(
+  category: { id: number; name: string } | number | string,
+): string {
   if (typeof category === "object" && category !== null && "name" in category) {
     return category.name;
   }
@@ -36,7 +41,7 @@ function categoryName(category: { id: number; name: string } | number | string):
 function mapToMarketplaceProduct(p: ApiProduct, index: number): Product {
   const categories = p.categories_detail?.length
     ? p.categories_detail
-    : p.categories?.map(categoryName) ?? [];
+    : (p.categories?.map(categoryName) ?? []);
 
   const priceNum = typeof p.price === "string" ? Number(p.price) : p.price;
   const priceStr = new Intl.NumberFormat("en-US", {
@@ -82,11 +87,13 @@ async function fetchMarketplaceProducts(): Promise<Product[]> {
 }
 
 export default async function Home() {
-  const { backendError, categories, sellerProfiles } = await getMarketplaceData();
+  const { backendError, categories, sellerProfiles } =
+    await getMarketplaceData();
   const products = await fetchMarketplaceProducts();
-  const finalCategories = products.length > fallbackProducts.length
-    ? ["All", ...new Set(products.map((p) => p.category))]
-    : categories;
+  const finalCategories =
+    products.length > fallbackProducts.length
+      ? ["All", ...new Set(products.map((p) => p.category))]
+      : categories;
 
   return (
     <Marketplace

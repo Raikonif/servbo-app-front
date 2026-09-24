@@ -1,3 +1,10 @@
+# pnpm 11 supersedes ignoredBuiltDependencies with an explicit allowBuilds map.
+# Answering it here keeps `pnpm install` non-interactive and stops pnpm from
+# rewriting this file on every run. Values mirror the existing intent below.
+allowBuilds:
+  sharp: false
+  '@tailwindcss/oxide': false
+
 ignoredBuiltDependencies:
   - '@tailwindcss/oxide'
   - sharp
