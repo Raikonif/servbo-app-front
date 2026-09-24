@@ -19,8 +19,11 @@ export default function RootLayout({
   return (
     <html className="scroll-smooth" data-scroll-behavior="smooth" lang="en">
       <body className="bg-slate-50 font-sans text-slate-950 antialiased">
-        <StoreHeader />
-        <Providers>{children}</Providers>
+        <Providers>
+          {/* Inside Providers: the header reads the session. */}
+          <StoreHeader />
+          {children}
+        </Providers>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import { PackageSearch, Store, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { UserMenu } from "@/features/auth/user-menu";
 
 const navItems = [
   { href: "/", label: "Overview" },
@@ -38,7 +39,11 @@ export function StoreHeader() {
           {navItems.map((item) => (
             <Link
               className={`rounded-md border px-3 py-2 text-sm font-medium transition ${
-                pathname === item.href
+                (
+                  item.href === "/"
+                    ? pathname === "/"
+                    : pathname.startsWith(item.href)
+                )
                   ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                   : "border-slate-200 text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
               }`}
@@ -49,15 +54,18 @@ export function StoreHeader() {
             </Link>
           ))}
         </nav>
-        <div className="hidden items-center gap-3 text-sm text-slate-500 xl:flex">
-          <span className="inline-flex items-center gap-1.5">
-            <PackageSearch size={16} />
-            Catalog first
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <UsersRound size={16} />
-            CRM ready
-          </span>
+        <div className="flex items-center gap-4">
+          <div className="hidden items-center gap-3 text-sm text-slate-500 2xl:flex">
+            <span className="inline-flex items-center gap-1.5">
+              <PackageSearch size={16} />
+              Catalog first
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <UsersRound size={16} />
+              CRM ready
+            </span>
+          </div>
+          <UserMenu />
         </div>
       </div>
     </header>
