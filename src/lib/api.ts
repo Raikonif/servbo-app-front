@@ -9,10 +9,10 @@ export const queryKeys = {
 
 const API_BASE =
   (typeof window === "undefined"
-    ? // Server: localhost:8000 (dev) | backend:8000 (containers)
+    ? // Server: localhost:8008 (dev) | backend:8000 (containers)
       process.env.BACKEND_URL
     : // Browser: always the published localhost port
-      process.env.NEXT_PUBLIC_BACKEND_URL) ?? "http://localhost:8000";
+      process.env.NEXT_PUBLIC_BACKEND_URL) ?? "http://localhost:8008";
 
 type PaginatedResponse<T> = {
   results?: T[];

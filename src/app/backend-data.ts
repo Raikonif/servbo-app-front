@@ -8,12 +8,12 @@ import {
 
 const API_BASE_URL =
   (typeof window === "undefined"
-    ? // Server: localhost:8000 (dev) | backend:8000 (containers)
+    ? // Server: localhost:8008 (dev) | backend:8000 (containers)
       (process.env.BACKEND_URL ??
       process.env.SERVBO_API_BASE_URL ??
       process.env.NEXT_PUBLIC_API_BASE_URL)
     : // Browser: always the published localhost port
-      process.env.NEXT_PUBLIC_BACKEND_URL) ?? "http://localhost:8000";
+      process.env.NEXT_PUBLIC_BACKEND_URL) ?? "http://localhost:8008";
 
 const API_TOKEN = process.env.SERVBO_API_TOKEN;
 
