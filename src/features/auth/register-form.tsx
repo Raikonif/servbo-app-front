@@ -102,6 +102,7 @@ export function RegisterForm() {
           autoComplete="username"
           id="username"
           label="Username"
+          maxLength={50}
           onChange={(e) => update("username")(e.target.value)}
           required
           value={form.username}

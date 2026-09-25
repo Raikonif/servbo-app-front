@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     default: "Servbo Store",
     template: "%s | Servbo Store",
   },
-  description: "Storefront operations for products, clients, and sellers.",
+  description: "Browse products and sellers on Servbo.",
 };
 
 export default function RootLayout({

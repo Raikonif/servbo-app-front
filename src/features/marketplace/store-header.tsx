@@ -1,23 +1,37 @@
 "use client";
 
-import { PackageSearch, Store, UsersRound } from "lucide-react";
+import { Store } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserMenu } from "@/features/auth/user-menu";
+import { useSession } from "@/hooks/use-session";
+import { CREATOR_URL } from "@/lib/billing";
 
-const navItems = [
-  { href: "/", label: "Overview" },
-  { href: "/products", label: "Products" },
-  { href: "/clients", label: "Clients" },
-  { href: "/sellers", label: "Sellers" },
-  { href: "/billing", label: "Billing" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/become-a-vendor", label: "Become a vendor" },
-  { href: "/profile", label: "Profile" },
-];
+type NavItem = { href: string; label: string; external?: boolean };
 
 export function StoreHeader() {
   const pathname = usePathname();
+  const user = useSession().data?.user;
+
+  const navItems: NavItem[] = [
+    { href: "/", label: "Catalog" },
+    { href: "/sellers", label: "Sellers" },
+    ...(user
+      ? [
+          { href: "/profile", label: "Profile" },
+          { href: "/billing", label: "Billing" },
+          user.is_seller
+            ? { href: CREATOR_URL, label: "Creator app", external: true }
+            : { href: "/become-a-vendor", label: "Become a seller" },
+        ]
+      : []),
+  ];
+
+  const isActive = (item: NavItem) =>
+    !item.external &&
+    (item.href === "/"
+      ? pathname === "/" || pathname.startsWith("/products")
+      : pathname.startsWith(item.href));
 
   return (
     <header className="border-b border-slate-200 bg-white">
@@ -26,47 +40,29 @@ export function StoreHeader() {
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600 text-white">
             <Store size={20} />
           </span>
-          <span>
-            <span className="block text-lg font-semibold leading-5">
-              Servbo Store
-            </span>
-            <span className="text-sm text-slate-500">
-              Products, clients, and sellers
-            </span>
+          <span className="block text-lg font-semibold leading-5">
+            Servbo Store
           </span>
         </Link>
         <nav aria-label="Primary navigation" className="flex flex-wrap gap-2">
-          {navItems.map((item) => (
-            <Link
-              className={`rounded-md border px-3 py-2 text-sm font-medium transition ${
-                (
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(item.href)
-                )
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                  : "border-slate-200 text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
-              }`}
-              href={item.href}
-              key={item.href}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const className = `rounded-md border px-3 py-2 text-sm font-medium transition ${
+              isActive(item)
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-slate-200 text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
+            }`;
+            return item.external ? (
+              <a className={className} href={item.href} key={item.href}>
+                {item.label}
+              </a>
+            ) : (
+              <Link className={className} href={item.href} key={item.href}>
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
-        <div className="flex items-center gap-4">
-          <div className="hidden items-center gap-3 text-sm text-slate-500 2xl:flex">
-            <span className="inline-flex items-center gap-1.5">
-              <PackageSearch size={16} />
-              Catalog first
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <UsersRound size={16} />
-              CRM ready
-            </span>
-          </div>
-          <UserMenu />
-        </div>
+        <UserMenu />
       </div>
     </header>
   );

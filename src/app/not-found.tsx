@@ -10,10 +10,10 @@ export default function NotFound() {
       title="Page not found"
     >
       <Link className={statusLinkStyles.primary} href="/">
-        Go to the marketplace
+        Browse the catalog
       </Link>
-      <Link className={statusLinkStyles.secondary} href="/products">
-        Browse products
+      <Link className={statusLinkStyles.secondary} href="/sellers">
+        See sellers
       </Link>
     </StatusPage>
   );

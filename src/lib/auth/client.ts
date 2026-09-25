@@ -1,4 +1,4 @@
-import { AuthError, codeFromErrors } from "./errors";
+import { AuthError, codeFromErrors, detailFromErrors } from "./errors";
 import { rememberNext } from "./redirect";
 
 // BFF: the backend keeps the session in httpOnly cookies shared with the
@@ -98,12 +98,21 @@ export async function request<T>(
     .json()
     .catch(() => null)) as Envelope<T> | null;
   if (!response.ok) {
-    const code = codeFromErrors(payload?.errors);
-    const detail =
+    // Envelope endpoints put codes in `errors`; plain DRF errors are the body.
+    const errors =
+      payload && typeof payload === "object" && "errors" in payload
+        ? payload.errors
+        : payload;
+    let code = codeFromErrors(errors);
+    let detail =
       code === "WEAK_PASSWORD" && typeof payload?.message === "string"
         ? payload.message
         : undefined;
-    throw new AuthError(code, detail);
+    if (code === "UNKNOWN" && response.status === 400) {
+      code = "VALIDATION_ERROR";
+      detail = detailFromErrors(errors);
+    }
+    throw new AuthError(code, detail, response.status);
   }
   if (init.raw) return (payload as T | null) ?? null;
   return payload?.data ?? null;

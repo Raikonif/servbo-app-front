@@ -13,6 +13,10 @@ const nextConfig: NextConfig = {
   // the Dockerfile copies them explicitly, per the upstream with-docker
   // example.
   output: "standalone",
+  // The catalog lives at the storefront home.
+  async redirects() {
+    return [{ source: "/products", destination: "/", permanent: true }];
+  },
 };
 
 export default nextConfig;
