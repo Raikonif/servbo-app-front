@@ -1,22 +1,38 @@
-import {
-  ArrowRight,
-  CreditCard,
-  Download,
-  ReceiptText,
-  ShieldCheck,
-  UsersRound,
-} from "lucide-react";
-import Link from "next/link";
-import type { BillingAccount, PricingPlan } from "@/data/billing";
+"use client";
 
-type BillingPageProps = {
-  account: BillingAccount;
-  plans: PricingPlan[];
+import { ArrowRight, CalendarClock, ReceiptText, Store } from "lucide-react";
+import Link from "next/link";
+import { useBillingRecords, useSellerSubscription } from "@/hooks/use-billing";
+import { formatDate, formatMoney } from "@/lib/billing";
+import { EntityTable } from "./entity-table";
+import { StatCard } from "./stat-card";
+
+const STATUS_STYLES: Record<string, string> = {
+  active: "bg-emerald-50 text-emerald-700",
+  paid: "bg-emerald-50 text-emerald-700",
+  pending: "bg-amber-50 text-amber-700",
+  incomplete: "bg-amber-50 text-amber-700",
+  past_due: "bg-red-50 text-red-700",
 };
 
-export function BillingPage({ account, plans }: BillingPageProps) {
-  const currentPlan =
-    plans.find((plan) => plan.id === account.currentPlanId) ?? plans[0];
+function StatusBadge({ status }: { status: string }) {
+  return (
+    <span
+      className={`rounded-md px-2 py-1 text-xs font-semibold uppercase ${
+        STATUS_STYLES[status] ?? "bg-slate-100 text-slate-600"
+      }`}
+    >
+      {status.replace("_", " ")}
+    </span>
+  );
+}
+
+export function BillingPage() {
+  const subscriptionQuery = useSellerSubscription();
+  const recordsQuery = useBillingRecords();
+  const state = subscriptionQuery.data;
+  const subscription = state?.subscription ?? null;
+  const records = recordsQuery.data ?? [];
 
   return (
     <main className="bg-slate-50">
@@ -27,227 +43,122 @@ export function BillingPage({ account, plans }: BillingPageProps) {
               Billing
             </p>
             <h1 className="mt-2 text-4xl font-semibold leading-tight text-slate-950">
-              Subscription and invoices
+              Subscription and payments
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Review the mocked workspace subscription, payment method, invoice
-              history, and current plan usage for {account.company}.
+              Your seller subscription and the history of your QR payments.
             </p>
           </div>
           <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
+            {subscriptionQuery.isPending ? (
+              <div className="h-20 animate-pulse rounded-lg bg-emerald-100" />
+            ) : subscription ? (
+              <>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-emerald-800">
+                      Current plan
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold text-slate-950">
+                      {subscription.name}
+                    </p>
+                  </div>
+                  <StatusBadge status={subscription.status} />
+                </div>
+                <p className="mt-3 text-sm text-emerald-900">
+                  {formatMoney(
+                    subscription.price_amount,
+                    subscription.currency,
+                  )}
+                  /{subscription.interval} · until{" "}
+                  {formatDate(subscription.current_period_end)}
+                </p>
+              </>
+            ) : (
+              <>
                 <p className="text-sm font-medium text-emerald-800">
-                  Current plan
+                  No subscription yet
                 </p>
-                <p className="mt-1 text-3xl font-semibold text-slate-950">
-                  {currentPlan.name}
-                </p>
-              </div>
-              <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold uppercase text-emerald-700">
-                {account.subscription.status}
-              </span>
-            </div>
-            <p className="mt-3 text-sm text-emerald-900">
-              Renews {account.subscription.renewalDate}
-            </p>
+                <Link
+                  className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:text-emerald-600"
+                  href="/become-a-vendor"
+                >
+                  Become a seller
+                  <ArrowRight size={16} />
+                </Link>
+              </>
+            )}
           </section>
         </section>
 
         <section className="grid gap-4 md:grid-cols-3">
-          {account.metrics.map((metric) => (
-            <article
-              className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
-              key={metric.label}
-            >
-              <p className="text-sm font-medium text-slate-500">
-                {metric.label}
-              </p>
-              <p className="mt-2 text-3xl font-semibold text-slate-950">
-                {metric.value}
-              </p>
-              <p className="mt-2 text-sm text-slate-500">{metric.helper}</p>
-            </article>
-          ))}
+          <StatCard
+            helper={state?.is_seller ? "Seller account" : "Buyer account"}
+            icon={Store}
+            label="Account"
+            value={state?.is_seller ? "Seller" : "Buyer"}
+          />
+          <StatCard
+            helper="Current period start"
+            icon={CalendarClock}
+            label="Period start"
+            value={formatDate(subscription?.current_period_start)}
+          />
+          <StatCard
+            helper={
+              state?.pending_payment
+                ? `Pending payment ${state.pending_payment.reference}`
+                : "Renew from Become a seller"
+            }
+            icon={ReceiptText}
+            label="Period end"
+            value={formatDate(subscription?.current_period_end)}
+          />
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-          <div className="space-y-6">
-            <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between gap-3 border-b border-slate-200 p-5">
-                <div className="flex items-center gap-2">
-                  <ReceiptText className="text-emerald-700" size={20} />
-                  <h2 className="text-lg font-semibold text-slate-950">
-                    Invoice history
-                  </h2>
-                </div>
-                <button
-                  className="inline-flex min-h-9 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-medium text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
-                  type="button"
-                >
-                  <Download size={15} />
-                  Export
-                </button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-                    <tr>
-                      <th className="px-5 py-3 font-semibold">Invoice</th>
-                      <th className="px-5 py-3 font-semibold">Date</th>
-                      <th className="px-5 py-3 font-semibold">Method</th>
-                      <th className="px-5 py-3 font-semibold">Amount</th>
-                      <th className="px-5 py-3 font-semibold">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {account.invoices.map((invoice) => (
-                      <tr key={invoice.id}>
-                        <td className="px-5 py-4 font-medium text-slate-950">
-                          {invoice.number}
-                        </td>
-                        <td className="px-5 py-4 text-slate-600">
-                          {invoice.date}
-                        </td>
-                        <td className="px-5 py-4 text-slate-600">
-                          {invoice.method}
-                        </td>
-                        <td className="px-5 py-4 font-medium text-slate-950">
-                          {invoice.amount}
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold uppercase text-emerald-700">
-                            {invoice.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2">
-                <UsersRound className="text-emerald-700" size={20} />
-                <h2 className="text-lg font-semibold text-slate-950">
-                  Plan usage
-                </h2>
-              </div>
-              <div className="mt-5 space-y-5">
-                {account.usage.map((item) => (
-                  <UsageBar
-                    key={item.label}
-                    label={item.label}
-                    limit={item.limit}
-                    unit={item.unit}
-                    used={item.used}
-                  />
-                ))}
-              </div>
-            </section>
-          </div>
-
-          <aside className="space-y-4">
-            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2">
-                <CreditCard className="text-emerald-700" size={20} />
-                <h2 className="text-lg font-semibold text-slate-950">
-                  Payment method
-                </h2>
-              </div>
-              <div className="mt-5 rounded-lg border border-slate-200 bg-slate-950 p-5 text-white">
-                <p className="text-sm text-slate-300">
-                  {account.paymentMethod.brand}
-                </p>
-                <p className="mt-6 text-2xl font-semibold tracking-normal">
-                  •••• •••• •••• {account.paymentMethod.last4}
-                </p>
-                <div className="mt-5 flex justify-between gap-3 text-sm text-slate-300">
-                  <span>{account.paymentMethod.holder}</span>
-                  <span>{account.paymentMethod.expires}</span>
-                </div>
-              </div>
-              <button
-                className="mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
-                type="button"
-              >
-                Update payment method
-              </button>
-            </section>
-
-            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-950">
-                Billing profile
-              </h2>
-              <dl className="mt-4 space-y-3 text-sm">
-                <BillingFact label="Company" value={account.company} />
-                <BillingFact label="Owner" value={account.owner} />
-                <BillingFact label="Email" value={account.email} />
-                <BillingFact label="Tax ID" value={account.taxId} />
-              </dl>
-            </section>
-
-            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-sm font-medium text-emerald-700">
-                <ShieldCheck size={17} />
-                Billing controls
-              </div>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                Change plans, review pricing, and prepare the workspace for
-                higher listing volume.
-              </p>
-              <Link
-                className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 text-sm font-medium text-white hover:bg-emerald-500"
-                href="/pricing"
-              >
-                View pricing
-                <ArrowRight size={16} />
-              </Link>
-            </section>
-          </aside>
-        </section>
+        {recordsQuery.isPending ? (
+          <div className="h-64 animate-pulse rounded-lg bg-slate-200/70" />
+        ) : recordsQuery.isError ? (
+          <section className="rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
+            We could not load your payment history.
+          </section>
+        ) : records.length === 0 ? (
+          <section className="rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
+            No payments yet.
+          </section>
+        ) : (
+          <EntityTable
+            columns={["Date", "Reference", "Method", "Amount", "Status"]}
+            getRowKey={(record) => record.id}
+            items={records}
+            renderRow={(record) => (
+              <>
+                <td className="px-5 py-4 text-slate-600">
+                  {formatDate(record.paid_at ?? record.created_at)}
+                </td>
+                <td className="px-5 py-4 font-mono font-medium text-slate-950">
+                  {record.bank_transfer_reference || "—"}
+                </td>
+                <td className="px-5 py-4 text-slate-600">
+                  {record.payment_method.replaceAll("_", " ")}
+                </td>
+                <td className="px-5 py-4 font-medium text-slate-950">
+                  {formatMoney(
+                    record.status === "paid"
+                      ? record.amount_paid
+                      : record.amount_due,
+                    record.currency,
+                  )}
+                </td>
+                <td className="px-5 py-4">
+                  <StatusBadge status={record.status} />
+                </td>
+              </>
+            )}
+            title="Payment history"
+          />
+        )}
       </section>
     </main>
-  );
-}
-
-function BillingFact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3">
-      <dt className="text-slate-500">{label}</dt>
-      <dd className="text-right font-medium text-slate-950">{value}</dd>
-    </div>
-  );
-}
-
-function UsageBar({
-  label,
-  limit,
-  unit,
-  used,
-}: {
-  label: string;
-  limit: number;
-  unit: string;
-  used: number;
-}) {
-  const percentage = Math.min(Math.round((used / limit) * 100), 100);
-
-  return (
-    <div>
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <p className="font-medium text-slate-950">{label}</p>
-        <p className="text-slate-500">
-          {used} / {limit} {unit}
-        </p>
-      </div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
-        <div
-          className="h-full rounded-full bg-emerald-600"
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
-    </div>
   );
 }

@@ -77,9 +77,11 @@ async function send(path: string, method: string, body?: unknown) {
   }
 }
 
-async function request<T>(
+// `raw` returns the whole JSON body, for DRF endpoints (e.g. paginated lists)
+// that don't use the {success, data, errors} envelope.
+export async function request<T>(
   path: string,
-  init: { method?: string; body?: unknown } = {},
+  init: { method?: string; body?: unknown; raw?: boolean } = {},
 ): Promise<T | null> {
   const method = init.method ?? "GET";
   let response = await send(path, method, init.body);
@@ -103,6 +105,7 @@ async function request<T>(
         : undefined;
     throw new AuthError(code, detail);
   }
+  if (init.raw) return (payload as T | null) ?? null;
   return payload?.data ?? null;
 }
 

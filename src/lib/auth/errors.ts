@@ -21,6 +21,7 @@ const MESSAGES: Record<string, string> = {
     "We could not send the email. Try again in a few minutes.",
   google_canceled: "Google sign-in was canceled.",
   google_failed: "We could not sign you in with Google. Please try again.",
+  NO_PLAN: "Seller plans are coming soon.",
   NETWORK_ERROR:
     "We could not reach the server. Check your connection and try again.",
   THROTTLED: "Too many attempts. Wait a minute and try again.",

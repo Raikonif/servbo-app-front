@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { vendorApplication } from "@/data/vendor";
+import { RequireSession } from "@/features/auth/require-session";
 import { BecomeVendorPage } from "@/features/marketplace/become-vendor-page";
 
 export const metadata: Metadata = {
@@ -7,5 +7,9 @@ export const metadata: Metadata = {
 };
 
 export default function BecomeVendorRoute() {
-  return <BecomeVendorPage application={vendorApplication} />;
+  return (
+    <RequireSession>
+      <BecomeVendorPage />
+    </RequireSession>
+  );
 }

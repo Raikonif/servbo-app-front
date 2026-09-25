@@ -1,12 +1,24 @@
-import { ArrowRight, Check, Gauge, ShieldCheck, Sparkles } from "lucide-react";
+"use client";
+
+import { ArrowRight, Check, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
-import type { PricingPlan } from "@/data/billing";
+import { useSellerPlan } from "@/hooks/use-billing";
+import { useSession } from "@/hooks/use-session";
+import { loginHref } from "@/lib/auth/redirect";
+import { formatMoney } from "@/lib/billing";
 
-type PricingPageProps = {
-  plans: PricingPlan[];
-};
+const INCLUDED = [
+  "Secure seller profile",
+  "Unlimited product listings in the creator app",
+  "Buyer message routing",
+  "Pay monthly with a QR transfer",
+];
 
-export function PricingPage({ plans }: PricingPageProps) {
+export function PricingPage() {
+  const { data: plan, isPending, isError, refetch } = useSellerPlan();
+  const signedIn = Boolean(useSession().data?.authenticated);
+  const ctaHref = signedIn ? "/become-a-vendor" : loginHref("/become-a-vendor");
+
   return (
     <main className="bg-slate-50">
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -17,136 +29,83 @@ export function PricingPage({ plans }: PricingPageProps) {
               Pricing
             </p>
             <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight text-slate-950 sm:text-5xl">
-              Plans for sellers growing inside Servbo.
+              Sell on Servbo with one simple monthly plan.
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-              Mocked pricing for catalog capacity, marketplace visibility, and
-              operational support. Choose the plan that matches your current
-              seller workflow.
+              Pay by scanning a QR code. Once an admin confirms your payment,
+              your account is upgraded to seller.
             </p>
           </div>
           <aside className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 text-sm font-medium text-emerald-700">
               <ShieldCheck size={17} />
-              All plans include
+              The seller plan includes
             </div>
             <ul className="mt-4 space-y-3 text-sm text-slate-600">
-              <li>Secure seller profiles</li>
-              <li>Buyer message routing</li>
-              <li>Servbo marketplace listing tools</li>
+              {INCLUDED.map((item) => (
+                <li className="flex gap-2" key={item}>
+                  <Check
+                    className="mt-0.5 shrink-0 text-emerald-600"
+                    size={16}
+                  />
+                  {item}
+                </li>
+              ))}
             </ul>
           </aside>
         </section>
 
-        <section className="mt-8 grid gap-4 lg:grid-cols-3">
-          {plans.map((plan) => (
-            <article
-              className={`rounded-lg border bg-white p-5 shadow-sm ${
-                plan.highlighted
-                  ? "border-emerald-500 ring-2 ring-emerald-200"
-                  : "border-slate-200"
-              }`}
-              key={plan.id}
-            >
-              <div className="flex min-h-40 flex-col justify-between gap-4">
-                <div>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-medium text-emerald-700">
-                        {plan.audience}
-                      </p>
-                      <h2 className="mt-1 text-2xl font-semibold text-slate-950">
-                        {plan.name}
-                      </h2>
-                    </div>
-                    {plan.highlighted ? (
-                      <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold uppercase text-emerald-700">
-                        Popular
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
-                    {plan.description}
-                  </p>
-                </div>
-                <p className="text-4xl font-semibold text-slate-950">
-                  Bs. {plan.price}
-                  <span className="text-sm font-medium text-slate-500">
-                    /{plan.interval}
-                  </span>
-                </p>
-              </div>
-
-              <Link
-                className={`mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-4 text-sm font-medium ${
-                  plan.highlighted
-                    ? "bg-emerald-600 text-white hover:bg-emerald-500"
-                    : "border border-slate-200 text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
-                }`}
-                href="/billing"
+        <section className="mt-8 max-w-xl">
+          {isPending ? (
+            <div className="h-64 animate-pulse rounded-lg bg-slate-200/70" />
+          ) : isError ? (
+            <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-sm text-slate-600">
+                We could not load the seller plan.
+              </p>
+              <button
+                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
+                onClick={() => void refetch()}
+                type="button"
               >
-                Choose {plan.name}
+                Try again
+              </button>
+            </article>
+          ) : !plan ? (
+            <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="text-2xl font-semibold text-slate-950">
+                Seller plans are coming soon
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                We are finishing the seller subscription. Check back shortly.
+              </p>
+            </article>
+          ) : (
+            <article className="rounded-lg border border-emerald-500 bg-white p-5 shadow-sm ring-2 ring-emerald-200">
+              <p className="text-sm font-medium text-emerald-700">Sellers</p>
+              <h2 className="mt-1 text-2xl font-semibold text-slate-950">
+                {plan.name}
+              </h2>
+              {plan.description ? (
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {plan.description}
+                </p>
+              ) : null}
+              <p className="mt-5 text-4xl font-semibold text-slate-950">
+                {formatMoney(plan.price_amount, plan.currency)}
+                <span className="text-sm font-medium text-slate-500">
+                  /{plan.interval}
+                </span>
+              </p>
+              <Link
+                className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 text-sm font-medium text-white hover:bg-emerald-500"
+                href={ctaHref}
+              >
+                Become a seller
                 <ArrowRight size={16} />
               </Link>
-
-              <section className="mt-5 border-t border-slate-200 pt-5">
-                <h3 className="text-sm font-semibold text-slate-950">
-                  Features
-                </h3>
-                <ul className="mt-3 space-y-3 text-sm text-slate-600">
-                  {plan.features.map((feature) => (
-                    <li className="flex gap-2" key={feature}>
-                      <Check
-                        className="mt-0.5 shrink-0 text-emerald-600"
-                        size={16}
-                      />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-
-              <section className="mt-5 grid gap-2">
-                {plan.limits.map((limit) => (
-                  <div
-                    className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3 text-sm"
-                    key={limit.label}
-                  >
-                    <span className="text-slate-500">{limit.label}</span>
-                    <span className="font-medium text-slate-950">
-                      {limit.value}
-                    </span>
-                  </div>
-                ))}
-              </section>
             </article>
-          ))}
-        </section>
-
-        <section className="mt-8 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="grid gap-4 lg:grid-cols-[240px_1fr_auto] lg:items-center">
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-                <Gauge size={20} />
-              </span>
-              <div>
-                <h2 className="font-semibold text-slate-950">
-                  Need more capacity?
-                </h2>
-                <p className="text-sm text-slate-500">Custom limits</p>
-              </div>
-            </div>
-            <p className="text-sm leading-6 text-slate-600">
-              Larger seller networks can request custom product caps, dedicated
-              review queues, and expanded team access.
-            </p>
-            <button
-              className="inline-flex min-h-10 items-center justify-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
-              type="button"
-            >
-              Contact sales
-            </button>
-          </div>
+          )}
         </section>
       </section>
     </main>
