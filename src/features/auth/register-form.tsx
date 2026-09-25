@@ -5,12 +5,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { sendEmailVerification, signUp } from "@/lib/auth/client";
-import { AuthError } from "@/lib/auth/errors";
+import { AuthError, PASSWORD_REGEX } from "@/lib/auth/errors";
 import { loginHref, safeNext } from "@/lib/auth/redirect";
 import { AuthShell } from "./auth-shell";
 import { buttonStyles, Field, FormAlert } from "./form-controls";
-
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 export function RegisterForm() {
   const router = useRouter();

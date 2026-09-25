@@ -6,11 +6,13 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { verifyEmail } from "@/lib/auth/client";
 import { AuthError, authMessage } from "@/lib/auth/errors";
+import { loginHref } from "@/lib/auth/redirect";
 import { AuthShell } from "./auth-shell";
 import { buttonStyles } from "./form-controls";
 
 export function VerifyEmail() {
-  const token = useSearchParams().get("token");
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
   const [status, setStatus] = useState<"verifying" | "verified" | "failed">(
     token ? "verifying" : "failed",
   );
@@ -57,7 +59,10 @@ export function VerifyEmail() {
       title="Email verified"
     >
       <BadgeCheck className="text-emerald-600" size={40} />
-      <Link className={buttonStyles.primary} href="/login">
+      <Link
+        className={buttonStyles.primary}
+        href={loginHref(searchParams.get("next") ?? "/")}
+      >
         Sign in
       </Link>
     </AuthShell>

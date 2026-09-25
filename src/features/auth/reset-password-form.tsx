@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { resetPassword } from "@/lib/auth/client";
-import { AuthError, authMessage } from "@/lib/auth/errors";
+import { AuthError, authMessage, PASSWORD_REGEX } from "@/lib/auth/errors";
 import { AuthShell } from "./auth-shell";
 import { buttonStyles, Field, FormAlert } from "./form-controls";
 
@@ -37,6 +37,10 @@ export function ResetPasswordForm() {
     event.preventDefault();
     if (password !== confirmation) {
       setError(new AuthError("PASSWORD_MISMATCH"));
+      return;
+    }
+    if (!PASSWORD_REGEX.test(password)) {
+      setError(new AuthError("INVALID_PASSWORD_FORMAT"));
       return;
     }
     setError(null);
@@ -80,6 +84,10 @@ export function ResetPasswordForm() {
           type="password"
           value={confirmation}
         />
+        <p className="text-xs text-slate-500">
+          At least 8 characters, with an uppercase letter, a lowercase letter
+          and a number.
+        </p>
         <button
           className={buttonStyles.primary}
           disabled={isPending}

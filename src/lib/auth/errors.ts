@@ -11,6 +11,9 @@ const MESSAGES: Record<string, string> = {
   INVALID_PASSWORD_FORMAT:
     "Use at least 8 characters with an uppercase letter, a lowercase letter and a number.",
   PASSWORD_MISMATCH: "Passwords do not match.",
+  WEAK_PASSWORD: "This password is too weak. Choose a stronger one.",
+  VALIDATION_ERROR: "Some fields are invalid. Check them and try again.",
+  SESSION_EXPIRED: "Your session has expired. Sign in again.",
   INVALID_TOKEN: "This link is invalid or has expired. Request a new one.",
   NOT_FOUND: "We could not find an account with that email.",
   ALREADY_VERIFIED: "Your email is already verified. You can sign in.",
@@ -24,13 +27,18 @@ const MESSAGES: Record<string, string> = {
   UNKNOWN: "Something went wrong. Please try again.",
 };
 
+// Same rule as the backend's register serializer.
+export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
 export const authMessage = (code: string) => MESSAGES[code] ?? MESSAGES.UNKNOWN;
 
 export class AuthError extends Error {
   readonly code: string;
 
-  constructor(code: string) {
-    super(authMessage(code));
+  // `detail` is a backend-provided message shown instead of the generic one
+  // (e.g. Django's password validators for WEAK_PASSWORD).
+  constructor(code: string, detail?: string) {
+    super(detail || authMessage(code));
     this.name = "AuthError";
     this.code = code in MESSAGES ? code : "UNKNOWN";
   }

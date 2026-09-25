@@ -3,13 +3,25 @@
 const AUTH_PATHS = ["/login", "/register", "/auth/callback"];
 const STORAGE_KEY = "servbo.store.auth.next";
 
-export const safeNext = (path: string | null | undefined, fallback = "/") =>
-  typeof path === "string" &&
-  path.startsWith("/") &&
-  !path.startsWith("//") &&
-  !AUTH_PATHS.some((p) => path.startsWith(p))
-    ? path
-    : fallback;
+// Resolved against a fixed dummy origin so it also works during SSR: anything
+// that escapes it ("/\\evil.com", "https:…", "javascript:…") is rejected.
+const BASE = "http://localhost";
+// Backslashes, whitespace and control characters get normalized by browsers.
+const UNSAFE_CHARS = /[\\\s\p{Cc}]/u;
+
+export function safeNext(path: string | null | undefined, fallback = "/") {
+  if (typeof path !== "string" || !path.startsWith("/")) return fallback;
+  if (path.startsWith("//") || UNSAFE_CHARS.test(path)) return fallback;
+  let url: URL;
+  try {
+    url = new URL(path, BASE);
+  } catch {
+    return fallback;
+  }
+  if (url.origin !== BASE) return fallback;
+  if (AUTH_PATHS.some((p) => url.pathname.startsWith(p))) return fallback;
+  return url.pathname + url.search + url.hash;
+}
 
 export const loginHref = (next: string) =>
   `/login?next=${encodeURIComponent(safeNext(next))}`;

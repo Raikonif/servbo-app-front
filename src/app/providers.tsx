@@ -1,7 +1,13 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { sessionQueryKey } from "@/hooks/use-session";
+import {
+  ANONYMOUS_SESSION,
+  type Session,
+  setSessionExpiredHandler,
+} from "@/lib/auth/client";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -17,6 +23,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
           },
         },
       }),
+  );
+
+  useEffect(
+    () =>
+      setSessionExpiredHandler(() =>
+        queryClient.setQueryData<Session>(sessionQueryKey, ANONYMOUS_SESSION),
+      ),
+    [queryClient],
   );
 
   return (

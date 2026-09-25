@@ -1,18 +1,22 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { LogOut, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { displayName, useSession, useSetSession } from "@/hooks/use-session";
 import { signOut } from "@/lib/auth/client";
-import { loginHref } from "@/lib/auth/redirect";
+import { AuthError } from "@/lib/auth/errors";
+import { loginHref, safeNext } from "@/lib/auth/redirect";
 
 export function UserMenu() {
   const { data: session, isPending } = useSession();
   const setSession = useSetSession();
+  const queryClient = useQueryClient();
   const pathname = usePathname();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (isPending) {
     return <span className="h-10 w-28 animate-pulse rounded-md bg-slate-100" />;
@@ -29,7 +33,7 @@ export function UserMenu() {
         </Link>
         <Link
           className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500"
-          href="/register"
+          href={`/register?next=${encodeURIComponent(safeNext(pathname))}`}
         >
           Create account
         </Link>
@@ -38,13 +42,21 @@ export function UserMenu() {
   }
 
   const handleSignOut = async () => {
+    setError(null);
     setIsSigningOut(true);
     try {
       await signOut();
-    } catch {
-      // The local session is dropped regardless; the cookies expire on their own.
+    } catch (err) {
+      // The cookies are still valid: stay signed in and say so.
+      setError(
+        (err instanceof AuthError ? err : new AuthError("UNKNOWN")).message,
+      );
+      setIsSigningOut(false);
+      return;
     }
-    // Personal pages react to this and send the user home (RequireSession).
+    // Drop everything cached for this user, then publish the signed-out
+    // session; personal pages send the user home (RequireSession).
+    queryClient.clear();
     setSession(null);
     setIsSigningOut(false);
   };
@@ -69,6 +81,11 @@ export function UserMenu() {
         <LogOut size={16} />
         Sign out
       </button>
+      {error ? (
+        <p className="max-w-56 text-xs text-red-700" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

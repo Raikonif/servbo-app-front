@@ -121,7 +121,7 @@ export function LoginForm() {
         <div className="flex justify-end">
           <Link
             className="text-sm font-medium text-emerald-700"
-            href="/forgot-password"
+            href={`/forgot-password?next=${encodeURIComponent(next)}`}
           >
             Forgot your password?
           </Link>

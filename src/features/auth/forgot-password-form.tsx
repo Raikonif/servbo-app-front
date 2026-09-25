@@ -2,16 +2,19 @@
 
 import { LoaderCircle } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { sendResetPassword } from "@/lib/auth/client";
 import { AuthError } from "@/lib/auth/errors";
+import { loginHref, safeNext } from "@/lib/auth/redirect";
 import { AuthShell } from "./auth-shell";
 import { buttonStyles, Field, FormAlert } from "./form-controls";
 
 export function ForgotPasswordForm() {
+  const next = safeNext(useSearchParams().get("next"));
   const [email, setEmail] = useState("");
   const [error, setError] = useState<AuthError | null>(null);
-  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
   const [isPending, setIsPending] = useState(false);
 
   const handleSubmit = async (event: FormEvent) => {
@@ -20,7 +23,7 @@ export function ForgotPasswordForm() {
     setIsPending(true);
     try {
       await sendResetPassword(email);
-      setSentTo(email);
+      setSent(true);
     } catch (err) {
       setError(err instanceof AuthError ? err : new AuthError("UNKNOWN"));
     }
@@ -30,34 +33,20 @@ export function ForgotPasswordForm() {
   return (
     <AuthShell
       footer={
-        <Link className="font-medium text-emerald-700" href="/login">
+        <Link className="font-medium text-emerald-700" href={loginHref(next)}>
           Back to sign in
         </Link>
       }
       subtitle="We’ll email you a link to choose a new password."
       title="Reset your password"
     >
-      {sentTo ? (
+      {sent ? (
         <FormAlert tone="success">
-          Check {sentTo}: the link arrives in a few minutes.
+          If an account exists for that email, we sent a link to reset your
+          password. It arrives in a few minutes.
         </FormAlert>
       ) : null}
-      {error ? (
-        <FormAlert
-          action={
-            error.code === "EMAIL_NOT_VERIFIED" ? (
-              <Link
-                className="font-medium underline"
-                href={`/check-email?email=${encodeURIComponent(email)}`}
-              >
-                Verify your email first
-              </Link>
-            ) : null
-          }
-        >
-          {error.message}
-        </FormAlert>
-      ) : null}
+      {error ? <FormAlert>{error.message}</FormAlert> : null}
       <form className="space-y-4" onSubmit={(e) => void handleSubmit(e)}>
         <Field
           autoComplete="email"

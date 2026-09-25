@@ -30,7 +30,26 @@ export type Session = {
 
 export const ANONYMOUS_SESSION: Session = { authenticated: false, user: null };
 
-type Envelope<T> = { data?: T | null; errors?: unknown };
+type Envelope<T> = { data?: T | null; errors?: unknown; message?: unknown };
+
+// Registered by the app's providers to mark the cached session signed out
+// when the refresh cookie is gone too.
+let onSessionExpired: () => void = () => {};
+export const setSessionExpiredHandler = (handler: () => void) => {
+  onSessionExpired = handler;
+};
+
+// Single-flight: concurrent 401s share one refresh call.
+let refreshing: Promise<boolean> | null = null;
+const refreshSession = () => {
+  refreshing ??= send("/api/auth/session/refresh/", "POST")
+    .then((response) => response.ok)
+    .catch(() => false)
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
+};
 
 const readCookie = (name: string) =>
   document.cookie
@@ -38,35 +57,52 @@ const readCookie = (name: string) =>
     .find((row) => row.startsWith(`${name}=`))
     ?.split("=")[1] ?? null;
 
+async function send(path: string, method: string, body?: unknown) {
+  const csrf = readCookie("csrftoken");
+  try {
+    return await fetch(new URL(path, BACKEND_URL), {
+      method,
+      credentials: "include",
+      headers: {
+        Accept: "application/json",
+        ...(body ? { "Content-Type": "application/json" } : {}),
+        ...(method !== "GET" && csrf
+          ? { "X-CSRFToken": decodeURIComponent(csrf) }
+          : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new AuthError("NETWORK_ERROR");
+  }
+}
+
 async function request<T>(
   path: string,
   init: { method?: string; body?: unknown } = {},
 ): Promise<T | null> {
   const method = init.method ?? "GET";
-  const csrf = readCookie("csrftoken");
-  let response: Response;
-  try {
-    response = await fetch(new URL(path, BACKEND_URL), {
-      method,
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-        ...(init.body ? { "Content-Type": "application/json" } : {}),
-        ...(method !== "GET" && csrf
-          ? { "X-CSRFToken": decodeURIComponent(csrf) }
-          : {}),
-      },
-      body: init.body ? JSON.stringify(init.body) : undefined,
-    });
-  } catch {
-    throw new AuthError("NETWORK_ERROR");
+  let response = await send(path, method, init.body);
+
+  // Expired access cookie: refresh once and retry. Auth endpoints answer 401
+  // for their own reasons, so they never trigger it.
+  if (response.status === 401 && !path.startsWith("/api/auth/")) {
+    if (await refreshSession()) response = await send(path, method, init.body);
+    else onSessionExpired();
   }
 
   if (response.status === 429) throw new AuthError("THROTTLED");
   const payload = (await response
     .json()
     .catch(() => null)) as Envelope<T> | null;
-  if (!response.ok) throw new AuthError(codeFromErrors(payload?.errors));
+  if (!response.ok) {
+    const code = codeFromErrors(payload?.errors);
+    const detail =
+      code === "WEAK_PASSWORD" && typeof payload?.message === "string"
+        ? payload.message
+        : undefined;
+    throw new AuthError(code, detail);
+  }
   return payload?.data ?? null;
 }
 

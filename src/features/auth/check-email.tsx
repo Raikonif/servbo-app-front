@@ -33,7 +33,10 @@ export function CheckEmail() {
     setIsPending(true);
     try {
       await sendEmailVerification(email);
-      setNotice({ tone: "success", text: `We sent a new link to ${email}.` });
+      setNotice({
+        tone: "success",
+        text: "If an account exists for that email, we sent a link to verify it.",
+      });
     } catch (err) {
       const error = err instanceof AuthError ? err : new AuthError("UNKNOWN");
       setNotice({
