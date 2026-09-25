@@ -5,7 +5,7 @@ import { rememberNext } from "./redirect";
 // creator app. The browser only sends them (credentials: "include") and echoes
 // Django's CSRF cookie on unsafe requests. No token ever reaches JavaScript.
 export const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
+  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8008";
 
 export type SessionUser = {
   id: string;

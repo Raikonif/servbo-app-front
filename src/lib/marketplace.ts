@@ -3,7 +3,7 @@ import type { Product } from "@/app/products";
 
 // Server-side access to the public catalog, mapped to the marketplace card
 // shape. Shared by the home page and the product detail route.
-const API_BASE = process.env.BACKEND_URL ?? "http://localhost:8000";
+const API_BASE = process.env.BACKEND_URL ?? "http://localhost:8008";
 
 type ApiProduct = {
   id: string;
