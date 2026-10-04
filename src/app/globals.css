@@ -178,6 +178,52 @@ html:has(dialog[open]) {
   }
 }
 
+/* Catalogue filters bottom sheet (< lg, openspec catalog-search-and-filters
+ * D7): pinned to the bottom edge, slides up, closes with a fade. */
+.filters-sheet {
+  inset: auto 0 0;
+  width: 100%;
+  max-width: none;
+  max-height: 85dvh;
+  margin: 0;
+  padding: 0 0 env(safe-area-inset-bottom);
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 28px 28px 0 0;
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: var(--shadow-lg);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transition:
+    translate 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    overlay 320ms allow-discrete,
+    display 320ms allow-discrete;
+  translate: 0 100%;
+}
+.filters-sheet[open] {
+  translate: 0 0;
+}
+.filters-sheet::backdrop {
+  background: var(--scrim);
+  transition:
+    opacity 240ms ease-out,
+    overlay 240ms allow-discrete,
+    display 240ms allow-discrete;
+  opacity: 0;
+}
+.filters-sheet[open]::backdrop {
+  opacity: 1;
+}
+@starting-style {
+  .filters-sheet[open] {
+    translate: 0 100%;
+  }
+  .filters-sheet[open]::backdrop {
+    opacity: 0;
+  }
+}
+
 /* Card ⇄ panel ⇄ modal morph (React <ViewTransition share="morph">):
  * a springy geometry move with a soft blur mid-flight. */
 ::view-transition-group(.morph) {
@@ -209,7 +255,9 @@ html:has(dialog[open]) {
   .product-panel,
   .product-modal,
   .product-modal::backdrop,
-  .product-modal-panel {
+  .product-modal-panel,
+  .filters-sheet,
+  .filters-sheet::backdrop {
     transition: none;
   }
   ::view-transition-group(*),

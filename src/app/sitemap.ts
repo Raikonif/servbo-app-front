@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getProducts, productHref } from "@/lib/catalog";
+import { parseCatalogQuery } from "@/lib/catalog-query";
 import { absoluteUrl } from "@/lib/site";
 
 // Public pages plus every live product (design D15). Product fetches are
@@ -15,7 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
   try {
     for (let page = 1; page <= MAX_PAGES; page++) {
-      const data = await getProducts({ page });
+      const data = await getProducts(parseCatalogQuery({ page: String(page) }));
       for (const product of data.results) {
         entries.push({
           url: absoluteUrl(productHref(product.id)),

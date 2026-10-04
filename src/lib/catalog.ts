@@ -1,4 +1,5 @@
 import { request, type SessionUser } from "@/lib/auth/client";
+import { type CatalogQuery, toApiParams } from "@/lib/catalog-query";
 
 // Server components fetch public catalog data straight from the API:
 // BACKEND_URL is the in-network address (e.g. backend:8000 in containers).
@@ -98,31 +99,17 @@ async function serverGet<T>(path: string, tags: string[]): Promise<T | null> {
   return (await response.json()) as T;
 }
 
-export async function getProducts({
-  page = 1,
-  category,
-}: {
-  page?: number;
-  category?: number;
-} = {}): Promise<Page<Product>> {
-  const params = new URLSearchParams();
-  if (page > 1) params.set("page", String(page));
-  // The API ignores this filter today; results are also filtered below.
-  if (category) params.set("categories", String(category));
-  const query = params.size ? `?${params}` : "";
-  const data = toPage(
-    await serverGet<Page<Product> | Product[]>(`/api/products/${query}`, [
-      cacheTags.products,
-    ]),
+// Search, filters, sort and page come from the address (catalog-query.ts);
+// the API does the filtering. Each combination is its own cached fetch, all
+// under the `products` tag, so a product change refreshes every one.
+export async function getProducts(query: CatalogQuery): Promise<Page<Product>> {
+  const params = toApiParams(query);
+  return toPage(
+    await serverGet<Page<Product> | Product[]>(
+      `/api/products/${params.size ? `?${params}` : ""}`,
+      [cacheTags.products],
+    ),
   );
-  if (!category) return data;
-  const results = data.results.filter((product) =>
-    product.categories?.some((c) => c.id === category),
-  );
-  // Unpaginated response: the filtered list is the whole catalog.
-  return data.next || data.previous
-    ? { ...data, results }
-    : { ...data, count: results.length, results };
 }
 
 export const getProduct = (id: string) =>

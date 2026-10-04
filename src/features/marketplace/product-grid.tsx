@@ -1,6 +1,7 @@
 import { ArrowUpRight, ImageIcon, Package } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   formatDate,
   formatPrice,
@@ -19,8 +20,12 @@ export function ProductGrid({
   products,
   selectedId,
   selectHref,
+  emptyState,
 }: {
   products: Product[];
+  // Shown instead of the default message when there are no products, e.g.
+  // a filtered catalogue with no matches.
+  emptyState?: ReactNode;
   selectedId?: string;
   // Where clicking a card goes. The catalog selects into its side panel
   // (`/?product=<id>`); without it (e.g. seller pages) a card opens the
@@ -28,6 +33,7 @@ export function ProductGrid({
   selectHref?: (id: string) => string;
 }) {
   if (!products.length) {
+    if (emptyState) return emptyState;
     return (
       <div className="rounded-3xl border border-dashed border-line-strong p-12 text-center text-sm text-muted">
         <Package className="mx-auto mb-3 text-subtle" size={24} />

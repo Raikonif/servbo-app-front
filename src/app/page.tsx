@@ -1,41 +1,33 @@
-import { ChevronLeft, ChevronRight, WifiOff } from "lucide-react";
+import { ChevronLeft, ChevronRight, SearchX, WifiOff } from "lucide-react";
 import Link from "next/link";
 import { StatusPage, statusLinkStyles } from "@/features/errors/status-page";
+import { ActiveFilters } from "@/features/marketplace/active-filters";
+import { CatalogFilters } from "@/features/marketplace/catalog-filters";
+import { CatalogSearch } from "@/features/marketplace/catalog-search";
 import { ProductGrid } from "@/features/marketplace/product-grid";
 import { ProductPanel } from "@/features/marketplace/product-panel";
 import { getCategories, getProduct, getProducts } from "@/lib/catalog";
+import {
+  catalogHref,
+  isFiltered,
+  parseCatalogQuery,
+  refineHref,
+} from "@/lib/catalog-query";
 
 type HomeProps = {
-  searchParams: Promise<{ page?: string; category?: string; product?: string }>;
-};
-
-const toPositiveInt = (value?: string) => {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
-};
-
-// A UUID or nothing: never forward arbitrary input to the API.
-const toProductId = (value?: string) =>
-  value && /^[0-9a-f-]{36}$/i.test(value) ? value : undefined;
-
-const catalogHref = (category?: number, page?: number, product?: string) => {
-  const params = new URLSearchParams();
-  if (category) params.set("category", String(category));
-  if (page && page > 1) params.set("page", String(page));
-  if (product) params.set("product", product);
-  return params.size ? `/?${params}` : "/";
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function Home({ searchParams }: HomeProps) {
-  const query = await searchParams;
-  const page = toPositiveInt(query.page) ?? 1;
-  const category = toPositiveInt(query.category);
-  const productId = toProductId(query.product);
+  // Search, filters, sort, page and selection all come from the address
+  // (openspec catalog-search-and-filters D6); bad values are dropped.
+  const query = parseCatalogQuery(await searchParams);
+  const { page } = query;
 
   const [products, categories, selected] = await Promise.allSettled([
-    getProducts({ page, category }),
+    getProducts(query),
     getCategories(),
-    productId ? getProduct(productId) : Promise.resolve(null),
+    query.product ? getProduct(query.product) : Promise.resolve(null),
   ]);
 
   if (products.status === "rejected") {
@@ -45,10 +37,7 @@ export default async function Home({ searchParams }: HomeProps) {
         icon={<WifiOff size={22} />}
         title="We can’t reach the catalog"
       >
-        <a
-          className={statusLinkStyles.primary}
-          href={catalogHref(category, page)}
-        >
+        <a className={statusLinkStyles.primary} href={catalogHref(query)}>
           Try again
         </a>
       </StatusPage>
@@ -67,6 +56,14 @@ export default async function Home({ searchParams }: HomeProps) {
         ? "bg-fg text-bg"
         : "border border-line text-muted hover:border-line-strong hover:text-fg"
     }`;
+
+  // Category chips toggle: several can be on at once (any of them matches).
+  const toggleCategory = (id: number) =>
+    refineHref(query, {
+      categories: query.categories.includes(id)
+        ? query.categories.filter((c) => c !== id)
+        : [...query.categories, id].sort((a, b) => a - b),
+    });
 
   return (
     <main
@@ -88,10 +85,11 @@ export default async function Home({ searchParams }: HomeProps) {
             <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
               Catalog
             </h1>
-            <p className="mt-2 text-muted">
-              {data.count} {data.count === 1 ? "product" : "products"} from
-              independent sellers
-            </p>
+            <p className="mt-2 text-muted">Products from independent sellers</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <CatalogSearch query={query} />
           </div>
 
           {categoryList.length ? (
@@ -100,32 +98,52 @@ export default async function Home({ searchParams }: HomeProps) {
               className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]"
             >
               <Link
-                aria-current={!category ? "page" : undefined}
-                className={chip(!category)}
-                href="/"
+                aria-current={!query.categories.length ? "page" : undefined}
+                className={chip(!query.categories.length)}
+                href={refineHref(query, { categories: [] })}
+                scroll={false}
               >
                 All
               </Link>
-              {categoryList.map((item) => (
-                <Link
-                  aria-current={item.id === category ? "page" : undefined}
-                  className={chip(item.id === category)}
-                  href={catalogHref(item.id)}
-                  key={item.id}
-                >
-                  {item.name}
-                </Link>
-              ))}
+              {categoryList.map((item) => {
+                const on = query.categories.includes(item.id);
+                return (
+                  <Link
+                    aria-pressed={on}
+                    className={chip(on)}
+                    href={toggleCategory(item.id)}
+                    key={item.id}
+                    role="button"
+                    scroll={false}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
             </nav>
           ) : null}
+
+          <div className="flex flex-col gap-4">
+            <CatalogFilters query={query} />
+            <ActiveFilters
+              categories={categoryList}
+              count={data.count}
+              query={query}
+            />
+          </div>
         </header>
 
         <div className="mt-8">
           <ProductGrid
+            emptyState={
+              isFiltered(query) ? <NoMatches q={query.q} /> : undefined
+            }
             products={data.results}
             selectHref={(id) =>
               // Clicking the selected card again closes the panel.
-              catalogHref(category, page, id === product?.id ? undefined : id)
+              catalogHref(query, {
+                product: id === product?.id ? undefined : id,
+              })
             }
             selectedId={product?.id}
           />
@@ -138,7 +156,10 @@ export default async function Home({ searchParams }: HomeProps) {
               {data.previous ? (
                 <Link
                   className={statusLinkStyles.secondary}
-                  href={catalogHref(category, page - 1)}
+                  href={catalogHref(query, {
+                    page: page - 1,
+                    product: undefined,
+                  })}
                 >
                   <ChevronLeft size={16} />
                   Previous
@@ -150,7 +171,10 @@ export default async function Home({ searchParams }: HomeProps) {
               {data.next ? (
                 <Link
                   className={statusLinkStyles.secondary}
-                  href={catalogHref(category, page + 1)}
+                  href={catalogHref(query, {
+                    page: page + 1,
+                    product: undefined,
+                  })}
                 >
                   Next
                   <ChevronRight size={16} />
@@ -165,11 +189,28 @@ export default async function Home({ searchParams }: HomeProps) {
 
       {product ? (
         <ProductPanel
-          closeHref={catalogHref(category, page)}
+          closeHref={catalogHref(query, { product: undefined })}
           key={product.id}
           product={product}
         />
       ) : null}
     </main>
+  );
+}
+
+function NoMatches({ q }: { q?: string }) {
+  return (
+    <div className="rounded-3xl border border-dashed border-line-strong p-12 text-center">
+      <SearchX className="mx-auto mb-3 text-subtle" size={24} />
+      <p className="font-medium text-fg">
+        {q ? `No products match “${q}”` : "No products match these filters"}
+      </p>
+      <p className="mt-1 text-sm text-muted">
+        Try another word, fewer categories or a wider price range.
+      </p>
+      <Link className={`${statusLinkStyles.secondary} mt-5`} href="/">
+        Clear filters
+      </Link>
+    </div>
   );
 }
