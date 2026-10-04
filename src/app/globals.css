@@ -1,6 +1,220 @@
 @import "@heroui/styles";
 
+/* ------------------------------------------------------------------------
+ * Design tokens — "chromatic minimalism" (openspec D18): near-monochrome
+ * surfaces, hairline borders, one intense accent (green). Components use
+ * the semantic names below (bg-surface, text-muted, bg-accent…), never
+ * palette colours, so light and dark are a variable swap.
+ * <html data-theme="light|dark"> is set before paint by the inline script
+ * in layout.tsx (D19); with no attribute, the OS preference applies.
+ * --------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+  --fg: #09090b;
+  --muted: #52525b; /* 7.7:1 on surface */
+  --subtle: #a1a1aa; /* decorative only */
+  --line: #e4e4e7;
+  --line-strong: #d4d4d8;
+  --accent: #22c55e; /* fill; carries --accent-fg text (6.9:1) */
+  --accent-hover: #16a34a;
+  --accent-fg: #052e16;
+  --accent-text: #15803d; /* accent-coloured text, 5.0:1 on surface */
+  --accent-soft: #dcfce7;
+  --danger: #b91c1c;
+  --danger-soft: #fef2f2;
+  --warning: #b45309;
+  --warning-soft: #fffbeb;
+  --scrim: rgb(9 9 11 / 0.5);
+  --shadow: 0 1px 2px rgb(9 9 11 / 0.04), 0 8px 24px -12px rgb(9 9 11 / 0.12);
+  --shadow-lg: 0 24px 64px -16px rgb(9 9 11 / 0.28);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #09090b;
+  --surface: #111113;
+  --surface-2: #1b1b1f;
+  --fg: #fafafa;
+  --muted: #a1a1aa; /* 7.6:1 on surface */
+  --subtle: #52525b;
+  --line: #27272a;
+  --line-strong: #3f3f46;
+  --accent: #4ade80;
+  --accent-hover: #86efac;
+  --accent-fg: #052e16;
+  --accent-text: #4ade80; /* 11:1 on surface */
+  --accent-soft: rgb(74 222 128 / 0.12);
+  --danger: #f87171;
+  --danger-soft: rgb(248 113 113 / 0.12);
+  --warning: #fbbf24;
+  --warning-soft: rgb(251 191 36 / 0.12);
+  --scrim: rgb(0 0 0 / 0.65);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 24px 64px -16px rgb(0 0 0 / 0.8);
+}
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme inline {
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-text: var(--accent-text);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --shadow-soft: var(--shadow);
+  --shadow-float: var(--shadow-lg);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------------
+ * Side panel, full-window modal and morphs (openspec D7, D16–D17).
+ * Layout, scroll behaviour and every animation live here; script only opens
+ * the <dialog> and navigates.
+ * --------------------------------------------------------------------- */
+
+/* Bottom sheet (< lg) slides up; the lg column needs no entrance — it
+ * arrives through the card → panel morph. */
+@media (max-width: 1023.98px) {
+  .product-panel {
+    transition: translate 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    translate: 0 0;
+  }
+  @starting-style {
+    .product-panel {
+      translate: 0 100%;
+    }
+  }
+}
+
+/* Full-window dialog: covers the whole viewport. */
+.product-modal {
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  overflow: hidden;
+}
+.product-modal[open] {
+  display: block;
+}
+.product-modal::backdrop {
+  background: var(--scrim);
+  backdrop-filter: blur(6px);
+}
+.product-modal-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: 100dvh;
+  background: var(--bg);
+}
+
+/* The page behind an open modal does not scroll. */
+html:has(dialog[open]) {
+  overflow: hidden;
+}
+
+/* Fallback where View Transitions do not run: fade + rise in via
+ * @starting-style, fade out via allow-discrete. */
+.product-modal,
+.product-modal::backdrop {
+  transition:
+    opacity 240ms ease-out,
+    overlay 240ms ease-out allow-discrete,
+    display 240ms ease-out allow-discrete;
+  opacity: 0;
+}
+.product-modal[open],
+.product-modal[open]::backdrop {
+  opacity: 1;
+}
+.product-modal-panel {
+  transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@starting-style {
+  .product-modal[open],
+  .product-modal[open]::backdrop {
+    opacity: 0;
+  }
+  .product-modal[open] .product-modal-panel {
+    transform: translateY(16px) scale(0.985);
+  }
+}
+
+/* Card ⇄ panel ⇄ modal morph (React <ViewTransition share="morph">):
+ * a springy geometry move with a soft blur mid-flight. */
+::view-transition-group(.morph) {
+  animation-duration: 460ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+::view-transition-image-pair(.morph) {
+  animation-name: product-morph-blur;
+  isolation: isolate;
+}
+::view-transition-old(.morph),
+::view-transition-new(.morph) {
+  height: 100%;
+  object-fit: cover;
+  overflow: clip;
+}
+@keyframes product-morph-blur {
+  35% {
+    filter: blur(3px) saturate(1.1);
+  }
+}
+/* Everything else on the page cross-fades quickly behind the morph. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-panel,
+  .product-modal,
+  .product-modal::backdrop,
+  .product-modal-panel {
+    transition: none;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none;
+  }
 }

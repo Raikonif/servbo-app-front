@@ -25,10 +25,10 @@ import {
 } from "@/lib/billing";
 
 const primaryButton =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-emerald-600 px-5 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-accent px-5 text-sm font-medium text-accent-fg hover:bg-accent-hover disabled:opacity-60";
 const secondaryButton =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-slate-200 px-5 text-sm font-medium text-slate-700 hover:border-emerald-300 hover:text-emerald-700 disabled:opacity-60";
-const card = "rounded-lg border border-slate-200 bg-white p-6 shadow-sm";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-line px-5 text-sm font-medium text-fg hover:border-accent hover:text-accent-text disabled:opacity-60";
+const card = "rounded-lg border border-line bg-surface p-6 shadow-sm";
 
 export function BecomeVendorPage() {
   const queryClient = useQueryClient();
@@ -52,11 +52,11 @@ export function BecomeVendorPage() {
 
   let content: ReactNode;
   if (subscription.isPending) {
-    content = <div className="h-64 animate-pulse rounded-lg bg-slate-200/70" />;
+    content = <div className="h-64 animate-pulse rounded-lg bg-surface-2" />;
   } else if (subscription.isError) {
     content = (
       <section className={card}>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted">
           We could not load your seller status.
         </p>
         <button
@@ -79,15 +79,13 @@ export function BecomeVendorPage() {
   } else if (active) {
     content = (
       <section className={card}>
-        <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+        <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent-soft text-accent-text">
           <BadgeCheck size={24} />
         </span>
-        <h2 className="mt-4 text-2xl font-semibold text-slate-950">
-          You're a seller
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
+        <h2 className="mt-4 text-2xl font-semibold text-fg">You're a seller</h2>
+        <p className="mt-2 text-sm leading-6 text-muted">
           Your {active.name} subscription is active until{" "}
-          <span className="font-medium text-slate-950">
+          <span className="font-medium text-fg">
             {formatDate(active.current_period_end)}
           </span>
           .
@@ -108,7 +106,7 @@ export function BecomeVendorPage() {
           </button>
         </div>
         {pay.error ? (
-          <p className="mt-3 text-sm text-red-600">{pay.error.message}</p>
+          <p className="mt-3 text-sm text-danger">{pay.error.message}</p>
         ) : null}
       </section>
     );
@@ -116,20 +114,20 @@ export function BecomeVendorPage() {
     content = (
       <section className={card}>
         {plan.isPending ? (
-          <div className="h-24 animate-pulse rounded-lg bg-slate-200/70" />
+          <div className="h-24 animate-pulse rounded-lg bg-surface-2" />
         ) : plan.data ? (
           <>
-            <p className="text-sm font-medium text-emerald-700">
+            <p className="text-sm font-medium text-accent-text">
               {plan.data.name}
             </p>
-            <p className="mt-2 text-4xl font-semibold text-slate-950">
+            <p className="mt-2 text-4xl font-semibold text-fg">
               {formatMoney(plan.data.price_amount, plan.data.currency)}
-              <span className="text-sm font-medium text-slate-500">
+              <span className="text-sm font-medium text-muted">
                 /{plan.data.interval}
               </span>
             </p>
             {plan.data.description ? (
-              <p className="mt-3 text-sm leading-6 text-slate-600">
+              <p className="mt-3 text-sm leading-6 text-muted">
                 {plan.data.description}
               </p>
             ) : null}
@@ -143,15 +141,15 @@ export function BecomeVendorPage() {
               {pay.isPending ? "Preparing QR…" : "Pay with QR"}
             </button>
             {pay.error ? (
-              <p className="mt-3 text-sm text-red-600">{pay.error.message}</p>
+              <p className="mt-3 text-sm text-danger">{pay.error.message}</p>
             ) : null}
           </>
         ) : (
           <>
-            <h2 className="text-2xl font-semibold text-slate-950">
+            <h2 className="text-2xl font-semibold text-fg">
               Seller plans are coming soon
             </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
+            <p className="mt-2 text-sm leading-6 text-muted">
               {plan.isError
                 ? "We could not load the seller plan. Try again later."
                 : "We are finishing the seller subscription. Check back shortly."}
@@ -163,29 +161,29 @@ export function BecomeVendorPage() {
   }
 
   return (
-    <main className="bg-slate-50">
+    <main>
       <section className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_440px] lg:px-8">
         <div>
-          <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-normal text-emerald-700">
+          <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-normal text-accent-text">
             <Store size={16} />
             Become a seller
           </p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight text-slate-950 sm:text-5xl">
+          <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight text-fg sm:text-5xl">
             Open your store on Servbo.
           </h1>
-          <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600">
+          <p className="mt-5 max-w-2xl text-base leading-7 text-muted">
             Pay the monthly seller subscription with a QR transfer. An admin
             verifies the payment and activates your seller account, then you
             manage your products from the creator app.
           </p>
-          <ol className="mt-8 space-y-3 text-sm text-slate-600">
+          <ol className="mt-8 space-y-3 text-sm text-muted">
             {[
               "Generate your QR payment",
               "Pay it from your bank app, writing the reference in the note",
               "Wait for an admin to confirm the payment",
             ].map((step, index) => (
               <li className="flex items-center gap-3" key={step}>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-xs font-semibold text-white">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-fg text-xs font-semibold text-bg">
                   {index + 1}
                 </span>
                 {step}
@@ -193,7 +191,7 @@ export function BecomeVendorPage() {
             ))}
           </ol>
           <Link
-            className="mt-8 inline-flex text-sm font-medium text-emerald-700 hover:text-emerald-600"
+            className="mt-8 inline-flex text-sm font-medium text-accent-text hover:text-accent-text"
             href="/billing"
           >
             View billing history
@@ -227,11 +225,11 @@ function PendingPaymentCard({
 
   return (
     <section className={card}>
-      <p className="inline-flex items-center gap-2 rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold uppercase text-amber-700">
+      <p className="inline-flex items-center gap-2 rounded-md bg-warning-soft px-2 py-1 text-xs font-semibold uppercase text-warning">
         <Clock3 size={14} />
         Waiting for confirmation
       </p>
-      <p className="mt-3 text-sm leading-6 text-slate-600">
+      <p className="mt-3 text-sm leading-6 text-muted">
         An admin will activate your seller account after verifying the payment.
       </p>
       {payment.qr_image_url ? (
@@ -239,27 +237,27 @@ function PendingPaymentCard({
         // biome-ignore lint/performance/noImgElement: see above
         <img
           alt="QR code to pay the seller subscription"
-          className="mx-auto mt-5 aspect-square w-full max-w-72 rounded-lg border border-slate-200 object-contain"
+          className="mx-auto mt-5 aspect-square w-full max-w-72 rounded-lg border border-line object-contain"
           src={payment.qr_image_url}
         />
       ) : null}
       <dl className="mt-5 space-y-3 text-sm">
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3">
-          <dt className="text-slate-500">Amount</dt>
-          <dd className="text-lg font-semibold text-slate-950">
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
+          <dt className="text-muted">Amount</dt>
+          <dd className="text-lg font-semibold text-fg">
             {formatMoney(payment.amount_due, payment.currency)}
           </dd>
         </div>
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-          <dt className="text-emerald-800">
+        <div className="rounded-lg border border-accent/40 bg-accent-soft p-3">
+          <dt className="text-accent-text">
             Reference — write it in the payment note
           </dt>
           <dd className="mt-2 flex items-center justify-between gap-3">
-            <span className="font-mono text-2xl font-semibold tracking-wider text-slate-950">
+            <span className="font-mono text-2xl font-semibold tracking-wider text-fg">
               {payment.reference}
             </span>
             <button
-              className="inline-flex min-h-9 items-center gap-2 rounded-md border border-emerald-300 bg-white px-3 text-sm font-medium text-emerald-700 hover:bg-emerald-100"
+              className="inline-flex min-h-9 items-center gap-2 rounded-md border border-accent/60 bg-surface px-3 text-sm font-medium text-accent-text hover:bg-accent-soft"
               onClick={() => void copy()}
               type="button"
             >
@@ -270,7 +268,7 @@ function PendingPaymentCard({
         </div>
       </dl>
       {payment.payment_instructions ? (
-        <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-600">
+        <p className="mt-4 whitespace-pre-line text-sm leading-6 text-muted">
           {payment.payment_instructions}
         </p>
       ) : null}

@@ -50,7 +50,7 @@ export function CheckEmail() {
   return (
     <AuthShell
       footer={
-        <Link className="font-medium text-emerald-700" href={loginHref(next)}>
+        <Link className="font-medium text-accent-text" href={loginHref(next)}>
           Back to sign in
         </Link>
       }
@@ -60,7 +60,7 @@ export function CheckEmail() {
           {email ? (
             <>
               {" "}
-              to <strong className="text-slate-700">{email}</strong>
+              to <strong className="text-fg">{email}</strong>
             </>
           ) : null}
           . Open it to activate your account (check your spam folder too).
@@ -68,7 +68,7 @@ export function CheckEmail() {
       }
       title="Check your email"
     >
-      <MailCheck className="text-emerald-600" size={40} />
+      <MailCheck className="text-accent-text" size={40} />
       {notice ? <FormAlert tone={notice.tone}>{notice.text}</FormAlert> : null}
       <form className="space-y-3" onSubmit={(e) => void handleResend(e)}>
         <Field

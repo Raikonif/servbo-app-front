@@ -67,7 +67,7 @@ export function LoginForm() {
         <>
           New to Servbo?{" "}
           <Link
-            className="font-medium text-emerald-700"
+            className="font-medium text-accent-text"
             href={`/register?next=${encodeURIComponent(next)}`}
           >
             Create an account
@@ -120,7 +120,7 @@ export function LoginForm() {
         />
         <div className="flex justify-end">
           <Link
-            className="text-sm font-medium text-emerald-700"
+            className="text-sm font-medium text-accent-text"
             href={`/forgot-password?next=${encodeURIComponent(next)}`}
           >
             Forgot your password?
@@ -138,10 +138,10 @@ export function LoginForm() {
         </button>
       </form>
 
-      <div className="flex items-center gap-3 text-xs text-slate-400">
-        <span className="h-px flex-1 bg-slate-200" />
+      <div className="flex items-center gap-3 text-xs text-subtle">
+        <span className="h-px flex-1 bg-line" />
         OR
-        <span className="h-px flex-1 bg-slate-200" />
+        <span className="h-px flex-1 bg-line" />
       </div>
 
       <button

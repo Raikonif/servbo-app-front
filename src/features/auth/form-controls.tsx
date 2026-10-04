@@ -11,8 +11,8 @@ export function FormAlert({
 }) {
   const colors =
     tone === "error"
-      ? "border-red-200 bg-red-50 text-red-800"
-      : "border-emerald-200 bg-emerald-50 text-emerald-800";
+      ? "border-danger/30 bg-danger-soft text-danger"
+      : "border-accent/40 bg-accent-soft text-accent-text";
   return (
     <div
       className={`rounded-md border px-3 py-2 text-sm ${colors}`}
@@ -31,9 +31,9 @@ export function Field({
 }: { label: string; id: string } & ComponentProps<"input">) {
   return (
     <label className="block space-y-1.5" htmlFor={id}>
-      <span className="text-sm font-medium text-slate-700">{label}</span>
+      <span className="text-sm font-medium text-fg">{label}</span>
       <input
-        className="min-h-11 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+        className="min-h-11 w-full rounded-md border border-line px-3 text-sm text-fg outline-none transition placeholder:text-subtle focus:border-accent focus:ring-2 focus:ring-accent-soft"
         id={id}
         {...props}
       />
@@ -45,6 +45,6 @@ const buttonBase =
   "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60";
 
 export const buttonStyles = {
-  primary: `${buttonBase} bg-emerald-600 text-white hover:bg-emerald-500`,
-  secondary: `${buttonBase} border border-slate-200 text-slate-700 hover:border-emerald-300 hover:text-emerald-700`,
+  primary: `${buttonBase} bg-accent text-accent-fg hover:bg-accent-hover`,
+  secondary: `${buttonBase} border border-line text-fg hover:border-accent hover:text-accent-text`,
 };

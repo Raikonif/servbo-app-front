@@ -1,20 +1,57 @@
-import { ArrowLeft, Store } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { SellerLink } from "@/features/marketplace/seller-link";
-import { formatPrice, getProduct } from "@/lib/catalog";
+import { ProductDetail } from "@/features/marketplace/product-detail";
+import { getProduct, productHref } from "@/lib/catalog";
 
 type ProductPageProps = {
   params: Promise<{ id: string }>;
 };
 
+// ISR (design D13): nothing is prerendered at build; each product page is
+// rendered on first request, then served from cache until the API
+// revalidates its tags (or 300 s pass).
+export async function generateStaticParams() {
+  return [];
+}
+
+const summarize = (text: string, max = 160) => {
+  const flat = text.replace(/\s+/g, " ").trim();
+  return flat.length > max ? `${flat.slice(0, max - 1).trimEnd()}…` : flat;
+};
+
+// Shares the cached getProduct fetch with the page: no extra API call.
 export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
   const { id } = await params;
   const product = await getProduct(id).catch(() => null);
-  return { title: product ? product.name : "Product" };
+  if (!product) return { title: "Product" };
+
+  const description =
+    summarize(product.description) || `${product.name} by ${product.brand}`;
+  const images = product.main_image
+    ? [{ url: product.main_image, alt: product.name }]
+    : undefined;
+  return {
+    title: product.name,
+    description,
+    alternates: { canonical: productHref(product.id) },
+    openGraph: {
+      type: "website",
+      title: product.name,
+      description,
+      url: productHref(product.id),
+      images,
+    },
+    twitter: {
+      card: images ? "summary_large_image" : "summary",
+      title: product.name,
+      description,
+      images: images?.map((image) => image.url),
+    },
+  };
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
@@ -23,74 +60,17 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (!product) notFound();
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
       <Link
-        className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700"
+        className="inline-flex items-center gap-2 text-sm font-medium text-accent-text"
         href="/"
       >
         <ArrowLeft size={16} />
         Back to catalog
       </Link>
-
-      <article className="space-y-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-slate-500">
-              {product.brand}
-            </p>
-            <h1 className="mt-1 text-3xl font-semibold leading-tight text-slate-950">
-              {product.name}
-            </h1>
-          </div>
-          <p className="text-3xl font-semibold text-emerald-700">
-            {formatPrice(product.price, product.currency)}
-          </p>
-        </header>
-
-        {product.categories_detail?.length ? (
-          <div className="flex flex-wrap gap-1.5">
-            {product.categories_detail.map((category) => (
-              <Link
-                className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 hover:text-emerald-700"
-                href={`/?category=${category.id}`}
-                key={category.id}
-              >
-                {category.name}
-              </Link>
-            ))}
-          </div>
-        ) : null}
-
-        {product.description ? (
-          <p className="whitespace-pre-line text-base leading-7 text-slate-600">
-            {product.description}
-          </p>
-        ) : null}
-
-        <dl className="grid gap-3 text-sm sm:grid-cols-2">
-          <div className="rounded-lg bg-slate-50 p-3">
-            <dt className="text-slate-500">Stock</dt>
-            <dd className="mt-1 font-semibold">
-              {product.stock > 0
-                ? `${product.stock} available`
-                : "Out of stock"}
-            </dd>
-          </div>
-          <div className="rounded-lg bg-slate-50 p-3">
-            <dt className="text-slate-500">Seller</dt>
-            <dd className="mt-1 font-semibold">
-              <SellerLink
-                className="inline-flex items-center gap-1.5 text-emerald-700 hover:underline"
-                sellerId={product.seller}
-                showHint
-              >
-                <Store size={15} />
-                {product.seller_name || "View seller"}
-              </SellerLink>
-            </dd>
-          </div>
-        </dl>
-      </article>
+      <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm sm:p-6">
+        <ProductDetail product={product} />
+      </div>
     </main>
   );
 }

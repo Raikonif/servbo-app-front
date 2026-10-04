@@ -39,7 +39,7 @@ export function AuthCallback() {
 
   return (
     <AuthShell title="Signing you in…">
-      <LoaderCircle className="animate-spin text-emerald-600" size={32} />
+      <LoaderCircle className="animate-spin text-accent-text" size={32} />
     </AuthShell>
   );
 }

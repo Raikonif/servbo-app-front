@@ -29,8 +29,8 @@ export function SellerProfilePage({ sellerId }: { sellerId: string }) {
         aria-busy="true"
         className="mx-auto max-w-7xl space-y-4 px-4 py-8 sm:px-6 lg:px-8"
       >
-        <div className="h-28 animate-pulse rounded-lg bg-slate-200/70" />
-        <div className="h-64 animate-pulse rounded-lg bg-slate-200/50" />
+        <div className="h-28 animate-pulse rounded-lg bg-surface-2" />
+        <div className="h-64 animate-pulse rounded-lg bg-surface-2" />
       </main>
     );
   }
@@ -58,20 +58,20 @@ export function SellerProfilePage({ sellerId }: { sellerId: string }) {
   return (
     <main className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
       <Link
-        className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700"
+        className="inline-flex items-center gap-2 text-sm font-medium text-accent-text"
         href="/sellers"
       >
         <ArrowLeft size={16} />
         All sellers
       </Link>
 
-      <section className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+      <section className="flex items-center gap-4 rounded-lg border border-line bg-surface p-6 shadow-sm">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-text">
           <Store size={24} />
         </span>
         <div>
           <h1 className="text-2xl font-semibold">{profile.display_name}</h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             {profile.username ? `@${profile.username} · ` : ""}
             {profile.product_count}{" "}
             {profile.product_count === 1 ? "product" : "products"}
@@ -89,9 +89,9 @@ export function SellerProfilePage({ sellerId }: { sellerId: string }) {
       <section className="space-y-3">
         <h2 className="text-xl font-semibold">Products</h2>
         {products.isPending ? (
-          <div className="h-40 animate-pulse rounded-lg bg-slate-200/50" />
+          <div className="h-40 animate-pulse rounded-lg bg-surface-2" />
         ) : products.isError ? (
-          <p className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="rounded-lg border border-warning/30 bg-warning-soft p-4 text-sm text-warning">
             We could not load this seller’s products.{" "}
             <button
               className="font-medium underline"
@@ -119,7 +119,7 @@ export function SellerProfilePage({ sellerId }: { sellerId: string }) {
               <ChevronLeft size={16} />
               Previous
             </button>
-            <span className="text-slate-500">Page {page}</span>
+            <span className="text-muted">Page {page}</span>
             <button
               className={`${statusLinkStyles.secondary} disabled:opacity-50`}
               disabled={!data.next}

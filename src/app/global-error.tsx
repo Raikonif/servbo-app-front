@@ -7,16 +7,16 @@ import "./globals.css";
 export default function GlobalError({ retry }: { retry: () => void }) {
   return (
     <html lang="en">
-      <body className="bg-slate-50 font-sans text-slate-950 antialiased">
+      <body className="bg-surface-2 font-sans text-fg antialiased">
         <title>Something went wrong | Servbo Store</title>
         <main className="mx-auto flex max-w-lg flex-col items-center px-4 py-20 text-center">
           <h1 className="text-2xl font-semibold">Something went wrong</h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-muted">
             The store could not load. Please try again.
           </p>
           <div className="mt-6 flex gap-2">
             <button
-              className="min-h-10 rounded-md bg-emerald-600 px-4 text-sm font-medium text-white"
+              className="min-h-10 rounded-md bg-accent px-4 text-sm font-medium text-accent-fg"
               onClick={() => retry()}
               type="button"
             >
@@ -24,7 +24,7 @@ export default function GlobalError({ retry }: { retry: () => void }) {
             </button>
             {/* A full reload, not <Link>: the app shell itself failed. */}
             <a
-              className="inline-flex min-h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-medium"
+              className="inline-flex min-h-10 items-center rounded-md border border-line px-4 text-sm font-medium"
               href="/"
             >
               Reload the store

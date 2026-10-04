@@ -19,23 +19,26 @@ export function UserMenu() {
   const [error, setError] = useState<string | null>(null);
 
   if (isPending) {
-    return <span className="h-10 w-28 animate-pulse rounded-md bg-slate-100" />;
+    return (
+      <span className="h-8 w-24 animate-pulse rounded-full bg-surface-2" />
+    );
   }
 
   if (!session?.authenticated || !session.user) {
     return (
       <div className="flex items-center gap-2">
         <Link
-          className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:text-emerald-700"
+          className="hidden rounded-full px-3 py-1.5 text-sm font-medium text-muted transition hover:text-fg sm:inline-flex"
           href={loginHref(pathname)}
         >
           Sign in
         </Link>
         <Link
-          className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+          className="rounded-full bg-accent px-3.5 py-1.5 text-sm font-semibold text-accent-fg transition hover:bg-accent-hover"
           href={`/register?next=${encodeURIComponent(safeNext(pathname))}`}
         >
-          Create account
+          <span className="sm:hidden">Sign up</span>
+          <span className="hidden sm:inline">Create account</span>
         </Link>
       </div>
     );
@@ -64,25 +67,27 @@ export function UserMenu() {
   return (
     <div className="flex items-center gap-2">
       <Link
-        className="inline-flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-slate-700 hover:text-emerald-700"
+        className="inline-flex items-center gap-2 rounded-full py-1 pr-1 pl-1 text-sm font-medium text-fg transition hover:bg-surface-2 md:pr-3"
         href="/profile"
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-white">
+        <span className="flex size-7 items-center justify-center rounded-full bg-fg text-bg">
           <UserRound size={16} />
         </span>
-        <span className="max-w-40 truncate">{displayName(session.user)}</span>
+        <span className="hidden max-w-40 truncate md:inline">
+          {displayName(session.user)}
+        </span>
       </Link>
       <button
-        className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:border-emerald-300 hover:text-emerald-700 disabled:opacity-60"
+        className="inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1.5 text-sm font-medium text-muted transition hover:border-line-strong hover:text-fg disabled:opacity-60"
         disabled={isSigningOut}
         onClick={() => void handleSignOut()}
         type="button"
       >
-        <LogOut size={16} />
-        Sign out
+        <LogOut aria-hidden size={15} />
+        <span className="sr-only sm:not-sr-only">Sign out</span>
       </button>
       {error ? (
-        <p className="max-w-56 text-xs text-red-700" role="alert">
+        <p className="max-w-56 text-xs text-danger" role="alert">
           {error}
         </p>
       ) : null}

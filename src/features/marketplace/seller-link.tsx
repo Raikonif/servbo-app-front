@@ -28,7 +28,7 @@ export function SellerLink({
         {children}
       </Link>
       {showHint && isAnonymous ? (
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-muted">
           Sign in to see the seller profile
         </span>
       ) : null}

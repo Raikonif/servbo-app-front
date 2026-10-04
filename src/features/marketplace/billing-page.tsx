@@ -8,18 +8,18 @@ import { EntityTable } from "./entity-table";
 import { StatCard } from "./stat-card";
 
 const STATUS_STYLES: Record<string, string> = {
-  active: "bg-emerald-50 text-emerald-700",
-  paid: "bg-emerald-50 text-emerald-700",
-  pending: "bg-amber-50 text-amber-700",
-  incomplete: "bg-amber-50 text-amber-700",
-  past_due: "bg-red-50 text-red-700",
+  active: "bg-accent-soft text-accent-text",
+  paid: "bg-accent-soft text-accent-text",
+  pending: "bg-warning-soft text-warning",
+  incomplete: "bg-warning-soft text-warning",
+  past_due: "bg-danger-soft text-danger",
 };
 
 function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className={`rounded-md px-2 py-1 text-xs font-semibold uppercase ${
-        STATUS_STYLES[status] ?? "bg-slate-100 text-slate-600"
+        STATUS_STYLES[status] ?? "bg-surface-2 text-muted"
       }`}
     >
       {status.replace("_", " ")}
@@ -35,37 +35,37 @@ export function BillingPage() {
   const records = recordsQuery.data ?? [];
 
   return (
-    <main className="bg-slate-50">
+    <main>
       <section className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-normal text-emerald-700">
+            <p className="text-sm font-semibold uppercase tracking-normal text-accent-text">
               Billing
             </p>
-            <h1 className="mt-2 text-4xl font-semibold leading-tight text-slate-950">
+            <h1 className="mt-2 text-4xl font-semibold leading-tight text-fg">
               Subscription and payments
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
               Your seller subscription and the history of your QR payments.
             </p>
           </div>
-          <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-5">
+          <section className="rounded-lg border border-accent/40 bg-accent-soft p-5">
             {subscriptionQuery.isPending ? (
-              <div className="h-20 animate-pulse rounded-lg bg-emerald-100" />
+              <div className="h-20 animate-pulse rounded-lg bg-accent-soft" />
             ) : subscription ? (
               <>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium text-emerald-800">
+                    <p className="text-sm font-medium text-accent-text">
                       Current plan
                     </p>
-                    <p className="mt-1 text-2xl font-semibold text-slate-950">
+                    <p className="mt-1 text-2xl font-semibold text-fg">
                       {subscription.name}
                     </p>
                   </div>
                   <StatusBadge status={subscription.status} />
                 </div>
-                <p className="mt-3 text-sm text-emerald-900">
+                <p className="mt-3 text-sm text-accent-text">
                   {formatMoney(
                     subscription.price_amount,
                     subscription.currency,
@@ -76,11 +76,11 @@ export function BillingPage() {
               </>
             ) : (
               <>
-                <p className="text-sm font-medium text-emerald-800">
+                <p className="text-sm font-medium text-accent-text">
                   No subscription yet
                 </p>
                 <Link
-                  className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:text-emerald-600"
+                  className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-accent-text hover:text-accent-text"
                   href="/become-a-vendor"
                 >
                   Become a seller
@@ -117,13 +117,13 @@ export function BillingPage() {
         </section>
 
         {recordsQuery.isPending ? (
-          <div className="h-64 animate-pulse rounded-lg bg-slate-200/70" />
+          <div className="h-64 animate-pulse rounded-lg bg-surface-2" />
         ) : recordsQuery.isError ? (
-          <section className="rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
+          <section className="rounded-lg border border-line bg-surface p-5 text-sm text-muted shadow-sm">
             We could not load your payment history.
           </section>
         ) : records.length === 0 ? (
-          <section className="rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
+          <section className="rounded-lg border border-line bg-surface p-5 text-sm text-muted shadow-sm">
             No payments yet.
           </section>
         ) : (
@@ -133,16 +133,16 @@ export function BillingPage() {
             items={records}
             renderRow={(record) => (
               <>
-                <td className="px-5 py-4 text-slate-600">
+                <td className="px-5 py-4 text-muted">
                   {formatDate(record.paid_at ?? record.created_at)}
                 </td>
-                <td className="px-5 py-4 font-mono font-medium text-slate-950">
+                <td className="px-5 py-4 font-mono font-medium text-fg">
                   {record.bank_transfer_reference || "—"}
                 </td>
-                <td className="px-5 py-4 text-slate-600">
+                <td className="px-5 py-4 text-muted">
                   {record.payment_method.replaceAll("_", " ")}
                 </td>
-                <td className="px-5 py-4 font-medium text-slate-950">
+                <td className="px-5 py-4 font-medium text-fg">
                   {formatMoney(
                     record.status === "paid"
                       ? record.amount_paid

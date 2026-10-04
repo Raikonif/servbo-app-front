@@ -84,7 +84,7 @@ export function ResetPasswordForm() {
           type="password"
           value={confirmation}
         />
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted">
           At least 8 characters, with an uppercase letter, a lowercase letter
           and a number.
         </p>

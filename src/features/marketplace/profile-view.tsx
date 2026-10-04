@@ -60,37 +60,37 @@ function Profile({ user }: { user: SessionUser }) {
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-      <section className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white">
+      <section className="flex items-center gap-4 rounded-lg border border-line bg-surface p-6 shadow-sm">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-fg text-bg">
           <UserRound size={24} />
         </span>
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-semibold">
             {displayName(user)}
           </h1>
-          <p className="truncate text-sm text-slate-500">{user.email}</p>
+          <p className="truncate text-sm text-muted">{user.email}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {roleLabels(user).map((role) => (
               <span
-                className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700"
+                className="rounded-md bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-text"
                 key={role}
               >
                 {role}
               </span>
             ))}
             {!user.is_email_verified ? (
-              <span className="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
+              <span className="rounded-md bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
                 Email not verified
               </span>
             ) : null}
           </div>
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-muted">
             Member since {formatDate(user.created_at)}
           </p>
         </div>
       </section>
 
-      <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="space-y-4 rounded-lg border border-line bg-surface p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Account details</h2>
         {error ? <FormAlert>{error.message}</FormAlert> : null}
         {saved ? <FormAlert tone="success">Profile updated.</FormAlert> : null}

@@ -30,11 +30,11 @@ export function RequireSession({ children }: { children: ReactNode }) {
       aria-busy="true"
       className="mx-auto max-w-7xl space-y-4 px-4 py-8 sm:px-6 lg:px-8"
     >
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         {isAnonymous ? "Redirecting to sign in…" : "Checking your session…"}
       </p>
-      <div className="h-40 animate-pulse rounded-lg bg-slate-200/70" />
-      <div className="h-64 animate-pulse rounded-lg bg-slate-200/50" />
+      <div className="h-40 animate-pulse rounded-lg bg-surface-2" />
+      <div className="h-64 animate-pulse rounded-lg bg-surface-2" />
     </main>
   );
 }

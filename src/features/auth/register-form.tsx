@@ -67,7 +67,7 @@ export function RegisterForm() {
       footer={
         <>
           Already have an account?{" "}
-          <Link className="font-medium text-emerald-700" href={loginHref(next)}>
+          <Link className="font-medium text-accent-text" href={loginHref(next)}>
             Sign in
           </Link>
         </>
@@ -125,7 +125,7 @@ export function RegisterForm() {
           type="password"
           value={form.confirmation}
         />
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted">
           At least 8 characters, with an uppercase letter, a lowercase letter
           and a number.
         </p>

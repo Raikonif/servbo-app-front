@@ -33,7 +33,7 @@ export function ForgotPasswordForm() {
   return (
     <AuthShell
       footer={
-        <Link className="font-medium text-emerald-700" href={loginHref(next)}>
+        <Link className="font-medium text-accent-text" href={loginHref(next)}>
           Back to sign in
         </Link>
       }

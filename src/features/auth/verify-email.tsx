@@ -37,7 +37,7 @@ export function VerifyEmail() {
   if (status === "verifying") {
     return (
       <AuthShell title="Verifying your email…">
-        <LoaderCircle className="animate-spin text-emerald-600" size={32} />
+        <LoaderCircle className="animate-spin text-accent-text" size={32} />
       </AuthShell>
     );
   }
@@ -45,7 +45,7 @@ export function VerifyEmail() {
   if (status === "failed") {
     return (
       <AuthShell subtitle={message} title="We couldn’t verify your email">
-        <CircleX className="text-red-500" size={40} />
+        <CircleX className="text-danger" size={40} />
         <Link className={buttonStyles.primary} href="/check-email">
           Send a new link
         </Link>
@@ -58,7 +58,7 @@ export function VerifyEmail() {
       subtitle="Thanks for confirming your address. You can sign in now."
       title="Email verified"
     >
-      <BadgeCheck className="text-emerald-600" size={40} />
+      <BadgeCheck className="text-accent-text" size={40} />
       <Link
         className={buttonStyles.primary}
         href={loginHref(searchParams.get("next") ?? "/")}
