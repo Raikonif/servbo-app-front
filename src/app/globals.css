@@ -27,6 +27,7 @@
   --danger-soft: #fef2f2;
   --warning: #b45309;
   --warning-soft: #fffbeb;
+  --star: #d97706; /* rating stars (graphic, 3.2:1 on surface) */
   --scrim: rgb(9 9 11 / 0.5);
   --shadow: 0 1px 2px rgb(9 9 11 / 0.04), 0 8px 24px -12px rgb(9 9 11 / 0.12);
   --shadow-lg: 0 24px 64px -16px rgb(9 9 11 / 0.28);
@@ -51,6 +52,7 @@
   --danger-soft: rgb(248 113 113 / 0.12);
   --warning: #fbbf24;
   --warning-soft: rgb(251 191 36 / 0.12);
+  --star: #fbbf24;
   --scrim: rgb(0 0 0 / 0.65);
   --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
   --shadow-lg: 0 24px 64px -16px rgb(0 0 0 / 0.8);
@@ -78,6 +80,7 @@
   --color-danger-soft: var(--danger-soft);
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
+  --color-star: var(--star);
   --shadow-soft: var(--shadow);
   --shadow-float: var(--shadow-lg);
 }

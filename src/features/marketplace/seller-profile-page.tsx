@@ -11,8 +11,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { ServiceUnavailable } from "@/features/auth/service-unavailable";
 import { StatusPage, statusLinkStyles } from "@/features/errors/status-page";
+import { ReviewsSection } from "@/features/reviews/reviews-section";
+import { RatingSummary } from "@/features/reviews/stars";
 import { useSeller, useSellerProducts } from "@/hooks/use-catalog";
 import { formatDate } from "@/lib/billing";
+import { ratingNumber } from "@/lib/reviews";
 import { ProductGrid } from "./product-grid";
 
 const isNotFound = (error: unknown) =>
@@ -77,14 +80,24 @@ export function SellerProfilePage({ sellerId }: { sellerId: string }) {
             {profile.product_count === 1 ? "product" : "products"}
             {profile.joined ? ` · Joined ${formatDate(profile.joined)}` : ""}
           </p>
+          <RatingSummary
+            avg={ratingNumber(profile.rating_avg)}
+            className="mt-1 text-sm"
+            count={profile.rating_count ?? 0}
+          />
         </div>
       </section>
 
-      {/*
-       * PLACEHOLDER — next phase: seller ratings, comments and favorites.
-       * No UI yet; this is where the rating summary, the comment list and the
-       * "favorite seller" action will go.
-       */}
+      {/* Seller reviews: about the seller (service, delivery), not a product. */}
+      <section className="rounded-lg border border-line bg-surface p-6 shadow-sm">
+        <ReviewsSection
+          id={profile.id}
+          kind="seller"
+          ratingAvg={profile.rating_avg}
+          ratingCount={profile.rating_count ?? 0}
+          title="Seller reviews"
+        />
+      </section>
 
       <section className="space-y-3">
         <h2 className="text-xl font-semibold">Products</h2>

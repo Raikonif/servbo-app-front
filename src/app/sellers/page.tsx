@@ -3,7 +3,9 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { StatusPage, statusLinkStyles } from "@/features/errors/status-page";
 import { SellerLink } from "@/features/marketplace/seller-link";
+import { RatingSummary } from "@/features/reviews/stars";
 import { getSellers, type Seller } from "@/lib/catalog";
+import { ratingNumber } from "@/lib/reviews";
 
 export const metadata: Metadata = {
   title: "Sellers",
@@ -61,6 +63,13 @@ export default async function SellersPage() {
                   {seller.product_count}{" "}
                   {seller.product_count === 1 ? "product" : "products"}
                 </p>
+                <RatingSummary
+                  avg={ratingNumber(seller.rating_avg)}
+                  className="text-xs"
+                  count={seller.rating_count ?? 0}
+                  emptyLabel={null}
+                  size={12}
+                />
               </div>
             </li>
           ))}

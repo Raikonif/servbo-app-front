@@ -1,6 +1,8 @@
 import { Store } from "lucide-react";
 import Link from "next/link";
 import { AddToCart } from "@/features/cart/add-to-cart";
+import { ReviewsSection } from "@/features/reviews/reviews-section";
+import { RatingSummary } from "@/features/reviews/stars";
 import {
   formatDateTime,
   formatPrice,
@@ -8,6 +10,7 @@ import {
   productHref,
   wasModified,
 } from "@/lib/catalog";
+import { ratingNumber } from "@/lib/reviews";
 import { absoluteUrl } from "@/lib/site";
 import { FavoriteButton } from "./favorite-button";
 import { ProductGallery } from "./product-gallery";
@@ -52,6 +55,12 @@ export function ProductDetail({ product }: { product: Product }) {
           <p className="text-3xl font-semibold tracking-tight tabular-nums">
             {formatPrice(product.price, product.currency)}
           </p>
+          <a className="block w-fit text-sm" href="#product-reviews">
+            <RatingSummary
+              avg={ratingNumber(product.rating_avg)}
+              count={product.rating_count}
+            />
+          </a>
           <AddToCart
             className="max-w-md"
             productId={product.id}
@@ -125,6 +134,18 @@ export function ProductDetail({ product }: { product: Product }) {
           </div>
         </dl>
       </div>
+
+      <div
+        className="scroll-mt-24 border-t border-line pt-8 lg:col-span-2"
+        id="product-reviews"
+      >
+        <ReviewsSection
+          id={product.id}
+          kind="product"
+          ratingAvg={product.rating_avg}
+          ratingCount={product.rating_count}
+        />
+      </div>
     </article>
   );
 }
@@ -146,6 +167,17 @@ function ProductJsonLd({ product }: { product: Product }) {
     ...(images.length ? { image: images } : {}),
     brand: { "@type": "Brand", name: product.brand },
     url: absoluteUrl(productHref(product.id)),
+    ...(product.rating_count > 0 && product.rating_avg
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: product.rating_avg,
+            reviewCount: product.rating_count,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
     offers: {
       "@type": "Offer",
       price: product.price,

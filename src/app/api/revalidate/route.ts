@@ -5,7 +5,7 @@ import { revalidateTag } from "next/cache";
 // product-images-and-showcase D14). `{ expire: 0 }` rather than "max": the
 // next visitor — often the seller checking their edit — must get fresh data,
 // and the re-fetch is cheap because the API answers from Redis.
-const TAG = /^(products|categories|product:[\w-]+|seller:[\w-]+)$/;
+const TAG = /^(products|categories|sellers|product:[\w-]+|seller:[\w-]+)$/;
 
 const sameSecret = (given: string, expected: string) => {
   const a = Buffer.from(given);

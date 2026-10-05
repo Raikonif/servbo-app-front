@@ -2,6 +2,7 @@ import { ArrowUpRight, ImageIcon, Package } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { RatingSummary } from "@/features/reviews/stars";
 import {
   formatDate,
   formatPrice,
@@ -9,6 +10,7 @@ import {
   productHref,
   wasModified,
 } from "@/lib/catalog";
+import { ratingNumber } from "@/lib/reviews";
 import { ClampedText } from "./clamped-text";
 import { FavoriteButton } from "./favorite-button";
 import { Morph } from "./product-transition";
@@ -136,6 +138,17 @@ function ProductCard({
               {formatPrice(product.price, product.currency)}
             </p>
           </div>
+
+          {/* From the cached payload: in the HTML, so no jump on load. */}
+          {product.rating_count > 0 ? (
+            <RatingSummary
+              avg={ratingNumber(product.rating_avg)}
+              className="-mt-1 text-xs"
+              count={product.rating_count}
+              emptyLabel={null}
+              size={13}
+            />
+          ) : null}
 
           {product.categories?.length ? (
             <ul className="flex flex-wrap gap-1.5">

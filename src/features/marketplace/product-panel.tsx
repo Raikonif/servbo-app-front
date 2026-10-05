@@ -2,12 +2,15 @@ import { ImageIcon, Images, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { AddToCart } from "@/features/cart/add-to-cart";
+import { ReviewsSection } from "@/features/reviews/reviews-section";
+import { RatingSummary } from "@/features/reviews/stars";
 import {
   formatDate,
   formatPrice,
   type Product,
   wasModified,
 } from "@/lib/catalog";
+import { ratingNumber } from "@/lib/reviews";
 import { FavoriteButton } from "./favorite-button";
 import { PanelKeys } from "./panel-keys";
 import { SeeMoreLink } from "./product-grid";
@@ -106,6 +109,11 @@ export function ProductPanel({
             <p className="mt-3 text-2xl font-semibold tracking-tight tabular-nums">
               {formatPrice(product.price, product.currency)}
             </p>
+            <RatingSummary
+              avg={ratingNumber(product.rating_avg)}
+              className="mt-1 text-sm"
+              count={product.rating_count}
+            />
 
             {product.categories?.length ? (
               <ul className="mt-4 flex flex-wrap gap-1.5">
@@ -153,6 +161,16 @@ export function ProductPanel({
                 value={photos ? String(photos) : "None"}
               />
             </dl>
+
+            <div className="mt-6 border-t border-line pt-5">
+              <ReviewsSection
+                compact
+                id={product.id}
+                kind="product"
+                ratingAvg={product.rating_avg}
+                ratingCount={product.rating_count}
+              />
+            </div>
           </div>
 
           <div className="flex flex-col gap-2 border-t border-line p-4">

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { RateOrder } from "@/features/reviews/rate-order";
 import { useNow } from "@/hooks/use-now";
 import { AuthError } from "@/lib/auth/errors";
 import { formatDateTime, formatPrice } from "@/lib/catalog";
@@ -218,6 +219,8 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
           <Fact label="Your note" value={order.buyer_note} />
         ) : null}
       </dl>
+
+      {order.status === "delivered" ? <RateOrder order={order} /> : null}
 
       {order.status === "shipped" || order.status === "ready_for_pickup" ? (
         <ConfirmReceived onUpdated={update} orderId={order.id} />

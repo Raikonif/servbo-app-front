@@ -30,6 +30,8 @@ export type Product = {
   seller_name?: string;
   images: ProductImage[]; // upload order; exactly one is_main when non-empty
   main_image: string | null;
+  rating_avg: string | null; // visible product reviews, e.g. "4.5"; null if none
+  rating_count: number;
   created_at: string; // ISO 8601
   updated_at: string;
 };
@@ -41,6 +43,8 @@ export type Seller = {
   last_name: string | null;
   display_name: string;
   product_count: number;
+  rating_avg: string | null; // visible seller reviews, e.g. "4.5"; null if none
+  rating_count: number;
   joined?: string;
 };
 
@@ -83,6 +87,7 @@ const REVALIDATE_SECONDS = 300;
 
 export const cacheTags = {
   products: "products",
+  sellers: "sellers", // seller directory: product counts and seller ratings
   categories: "categories",
   product: (id: string) => `product:${id}`,
   seller: (id: string) => `seller:${id}`,
@@ -138,7 +143,10 @@ export async function getCategories(): Promise<Category[]> {
 
 // Product counts change with products, so the directory shares that tag.
 export const getSellers = async () =>
-  (await serverGet<Seller[]>("/api/sellers/", [cacheTags.products])) ?? [];
+  (await serverGet<Seller[]>("/api/sellers/", [
+    cacheTags.products,
+    cacheTags.sellers,
+  ])) ?? [];
 
 // ---------- Browser (signed-in data, cookies + CSRF) ----------
 
