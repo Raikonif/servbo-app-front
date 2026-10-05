@@ -49,8 +49,8 @@ export function OrdersView() {
             </p>
             <p className="mt-1 text-sm text-muted">
               Open each order to see how to pay. QR orders: pay the seller's QR
-              and attach your receipt; the seller confirms once they get the
-              payment. Cash orders are confirmed: pay on delivery or pickup.
+              and attach your receipt. The seller confirms once they get the
+              payment.
             </p>
           </div>
         </div>

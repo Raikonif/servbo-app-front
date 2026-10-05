@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserMenu } from "@/features/auth/user-menu";
 import { CartLink } from "@/features/cart/cart-link";
+import { NotificationBell } from "@/features/notifications/notification-bell";
 import { useSession } from "@/hooks/use-session";
 import { CREATOR_URL } from "@/lib/billing";
 import { ThemeToggle } from "./theme-toggle";
@@ -82,6 +83,7 @@ export function StoreHeader() {
         </nav>
         <div className="flex shrink-0 items-center gap-2">
           <ThemeToggle />
+          <NotificationBell />
           <CartLink />
           <UserMenu />
         </div>

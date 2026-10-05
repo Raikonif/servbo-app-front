@@ -1,23 +1,15 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  ChevronLeft,
-  FileImage,
-  LoaderCircle,
-  PackageCheck,
-  Upload,
-} from "lucide-react";
+import { ChevronLeft, FileImage, LoaderCircle, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { useNow } from "@/hooks/use-now";
 import { AuthError } from "@/lib/auth/errors";
 import { formatDateTime, formatPrice } from "@/lib/catalog";
 import {
   cancelOrder,
   DELIVERY_LABELS,
   getOrder,
-  markReceived,
   type OrderDetail,
   orderKeys,
   PAYMENT_LABELS,
@@ -27,8 +19,7 @@ import { StatusBadge } from "./order-badges";
 
 const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
 
-// One order for its buyer: progress, what to pay and how, receipt upload,
-// "I received it" and cancel (openspec order-fulfillment D6).
+// One order for its buyer: what to pay and how, receipt upload, cancel.
 export function OrderDetailView({ orderId }: { orderId: string }) {
   const queryClient = useQueryClient();
   const {
@@ -66,9 +57,6 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
   }
 
   const pending = order.status === "pending_payment";
-  const pickup = order.delivery_method === "pickup";
-  const cash = order.payment_method === "cash";
-  const total = formatPrice(order.total, order.currency);
 
   return (
     <Shell>
@@ -82,84 +70,38 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
         Placed {formatDateTime(order.created_at)} · Seller {order.seller.name}
       </p>
 
-      <StatusTimeline order={order} />
-
       {order.status === "cancelled" ? (
         <div className="mt-6 rounded-2xl border border-line bg-surface-2 p-4 text-sm">
-          {order.cancelled_by === "system"
-            ? "Expired: payment not received in time"
-            : `Cancelled by ${order.cancelled_by === "seller" ? "the seller" : "you"}`}
+          Cancelled by {order.cancelled_by === "seller" ? "the seller" : "you"}
           {order.cancelled_at
             ? ` on ${formatDateTime(order.cancelled_at)}`
             : ""}
           .
-          {order.cancel_reason && order.cancelled_by !== "system" ? (
+          {order.cancel_reason ? (
             <p className="mt-1 text-muted">Reason: {order.cancel_reason}</p>
           ) : null}
         </div>
       ) : order.status === "confirmed" ? (
         <div className="mt-6 rounded-2xl border border-accent/40 bg-accent-soft p-4 text-sm text-accent-text">
-          {cash ? (
-            <>
-              Confirmed. Pay <strong>{total}</strong> in cash{" "}
-              {pickup ? "when you pick it up" : "on delivery"}. The seller{" "}
-              {pickup
-                ? "lets you know when it is ready for pickup"
-                : "ships it next"}
-              .
-            </>
-          ) : (
-            <>
-              The seller confirmed your payment
-              {order.confirmed_at
-                ? ` on ${formatDateTime(order.confirmed_at)}`
-                : ""}
-              . They {pickup ? "get it ready for pickup" : "ship it"} next.
-            </>
-          )}
-        </div>
-      ) : order.status === "shipped" || order.status === "ready_for_pickup" ? (
-        <div className="mt-6 rounded-2xl border border-accent/40 bg-accent-soft p-4 text-sm text-accent-text">
-          {order.status === "shipped"
-            ? "Your order is on its way."
-            : `Ready for pickup at ${order.pickup_address || "the seller's address"}.`}
-          {cash ? (
-            <>
-              {" "}
-              Pay <strong>{total}</strong> in cash when you get it.
-            </>
-          ) : null}
-        </div>
-      ) : order.status === "delivered" ? (
-        <div className="mt-6 rounded-2xl border border-line bg-surface p-4 text-sm">
-          Delivered
-          {order.delivered_at
-            ? ` on ${formatDateTime(order.delivered_at)}`
+          The seller confirmed your payment
+          {order.confirmed_at
+            ? ` on ${formatDateTime(order.confirmed_at)}`
             : ""}
           .
-          {order.delivered_by === "system" ? (
-            <span className="text-muted">
-              {" "}
-              Marked automatically 7 days after the seller{" "}
-              {pickup ? "had it ready" : "shipped it"}.
-            </span>
-          ) : null}
         </div>
-      ) : null}
-
-      {order.fulfilment_note ? (
-        <div className="mt-4 rounded-2xl border border-line bg-surface p-4 text-sm">
-          <p className="text-xs text-muted">Note from the seller</p>
-          <p className="mt-1 whitespace-pre-line">{order.fulfilment_note}</p>
-        </div>
-      ) : null}
-
-      {pending && order.expires_at ? (
-        <PaymentDeadline expiresAt={order.expires_at} />
       ) : null}
 
       {pending && order.payment_method === "qr" ? (
         <PayByQr onUpdated={update} order={order} />
+      ) : pending ? (
+        <div className="mt-6 rounded-2xl border border-line bg-surface p-4 text-sm">
+          Pay <strong>{formatPrice(order.total, order.currency)}</strong> in
+          cash{" "}
+          {order.delivery_method === "pickup"
+            ? "when you pick up"
+            : "on delivery"}
+          . The seller confirms when they receive it.
+        </div>
       ) : null}
 
       <section className="mt-6 overflow-hidden rounded-3xl border border-line bg-surface">
@@ -219,12 +161,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
         ) : null}
       </dl>
 
-      {order.status === "shipped" || order.status === "ready_for_pickup" ? (
-        <ConfirmReceived onUpdated={update} orderId={order.id} />
-      ) : null}
-      {order.buyer_can_cancel ? (
-        <CancelOrder onUpdated={update} orderId={order.id} />
-      ) : null}
+      {pending ? <CancelOrder onUpdated={update} orderId={order.id} /> : null}
     </Shell>
   );
 }
@@ -270,7 +207,7 @@ function PayByQr({
         <div className="mt-4">
           {order.receipt_url ? (
             <a
-              className="mb-3 flex w-fit items-center gap-1.5 text-sm font-medium text-accent-text underline-offset-4 hover:underline"
+              className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-accent-text underline-offset-4 hover:underline"
               href={order.receipt_url}
               rel="noreferrer"
               target="_blank"
@@ -315,184 +252,6 @@ function PayByQr({
         </div>
       </div>
     </section>
-  );
-}
-
-type Step = { label: string; at: string | null; cancelled?: boolean };
-
-// Placed → Paid (QR only) → Shipped / Ready for pickup → Delivered. A
-// cancelled order shows the steps it reached and then who cancelled it.
-function StatusTimeline({ order }: { order: OrderDetail }) {
-  const pickup = order.delivery_method === "pickup";
-  const steps: Step[] = [
-    { label: "Placed", at: order.created_at },
-    ...(order.payment_method === "qr"
-      ? [{ label: "Paid", at: order.confirmed_at }]
-      : []),
-    pickup
-      ? { label: "Ready for pickup", at: order.ready_at }
-      : { label: "Shipped", at: order.shipped_at },
-    { label: "Delivered", at: order.delivered_at },
-  ];
-  const shown: Step[] =
-    order.status === "cancelled"
-      ? [
-          ...steps.filter((step) => step.at),
-          {
-            label:
-              order.cancelled_by === "system"
-                ? "Expired: payment not received in time"
-                : order.cancelled_by === "seller"
-                  ? "Cancelled by the seller"
-                  : "Cancelled by you",
-            at: order.cancelled_at,
-            cancelled: true,
-          },
-        ]
-      : steps;
-  const current =
-    order.status === "cancelled" ? -1 : shown.findIndex((step) => !step.at);
-
-  return (
-    <ol aria-label="Order progress" className="mt-6 grid gap-0">
-      {shown.map((step, index) => {
-        const done = Boolean(step.at) && !step.cancelled;
-        const last = index === shown.length - 1;
-        return (
-          <li
-            aria-current={index === current ? "step" : undefined}
-            className="relative flex gap-3 pb-4 last:pb-0"
-            key={step.label}
-          >
-            {last ? null : (
-              <span
-                aria-hidden
-                className={`absolute top-4 bottom-0 left-[7px] w-px ${
-                  done ? "bg-accent" : "bg-line"
-                }`}
-              />
-            )}
-            <span
-              aria-hidden
-              className={`relative mt-0.5 size-[15px] shrink-0 rounded-full border-2 ${
-                step.cancelled
-                  ? "border-danger bg-danger"
-                  : done
-                    ? "border-accent bg-accent"
-                    : index === current
-                      ? "border-accent bg-surface"
-                      : "border-line-strong bg-surface"
-              }`}
-            />
-            <span className="text-sm">
-              <span
-                className={
-                  done || step.cancelled || index === current
-                    ? "font-medium"
-                    : "text-muted"
-                }
-              >
-                {step.label}
-              </span>
-              {step.at ? (
-                <span className="block text-xs text-muted">
-                  {formatDateTime(step.at)}
-                </span>
-              ) : index === current ? (
-                <span className="block text-xs text-muted">Next</span>
-              ) : null}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
-// Unpaid QR orders without a receipt are cancelled when `expires_at` passes.
-function PaymentDeadline({ expiresAt }: { expiresAt: string }) {
-  const now = useNow();
-  const left = now === null ? null : new Date(expiresAt).getTime() - now;
-  const urgent = left !== null && left < 12 * 3_600_000;
-  return (
-    <div
-      className={`mt-6 rounded-2xl border p-4 text-sm ${
-        urgent
-          ? "border-warning/40 bg-warning-soft text-warning"
-          : "border-line bg-surface"
-      }`}
-    >
-      Pay and attach your receipt before{" "}
-      <strong>{formatDateTime(expiresAt)}</strong> or the order is cancelled
-      automatically.
-      {left === null ? null : left > 0 ? (
-        <span className="mt-1 block font-medium tabular-nums">
-          {formatLeft(left)} left
-        </span>
-      ) : (
-        <span className="mt-1 block font-medium">
-          Time is up; the order will be cancelled shortly.
-        </span>
-      )}
-    </div>
-  );
-}
-
-const formatLeft = (ms: number) => {
-  const minutes = Math.max(1, Math.floor(ms / 60_000));
-  const days = Math.floor(minutes / 1440);
-  const hours = Math.floor((minutes % 1440) / 60);
-  if (days) return `${days} d ${hours} h`;
-  return hours ? `${hours} h ${minutes % 60} min` : `${minutes} min`;
-};
-
-function ConfirmReceived({
-  orderId,
-  onUpdated,
-}: {
-  orderId: string;
-  onUpdated: (o: OrderDetail | null) => void;
-}) {
-  const [confirming, setConfirming] = useState(false);
-  const received = useMutation({
-    mutationFn: () => markReceived(orderId),
-    onSuccess: onUpdated,
-  });
-
-  return (
-    <div className="mt-6">
-      {confirming ? (
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <span>Did you get everything? The seller sees it as delivered.</span>
-          <button
-            className="rounded-full bg-accent px-4 py-2 font-semibold text-accent-fg disabled:opacity-60"
-            disabled={received.isPending}
-            onClick={() => received.mutate()}
-            type="button"
-          >
-            Yes, I received it
-          </button>
-          <button
-            className="font-medium text-muted"
-            onClick={() => setConfirming(false)}
-            type="button"
-          >
-            Not yet
-          </button>
-        </div>
-      ) : (
-        <button
-          className="inline-flex min-h-11 items-center gap-2 rounded-full bg-fg px-5 text-sm font-semibold text-bg transition hover:opacity-90"
-          onClick={() => setConfirming(true)}
-          type="button"
-        >
-          <PackageCheck size={16} /> I received it
-        </button>
-      )}
-      {received.error ? (
-        <p className="mt-2 text-sm text-danger">{received.error.message}</p>
-      ) : null}
-    </div>
   );
 }
 

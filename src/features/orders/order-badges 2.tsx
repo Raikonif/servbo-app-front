@@ -3,9 +3,6 @@ import { type OrderStatus, STATUS_LABELS } from "@/lib/orders";
 const tones: Record<OrderStatus, string> = {
   pending_payment: "bg-warning-soft text-warning",
   confirmed: "bg-accent-soft text-accent-text",
-  shipped: "bg-accent-soft text-accent-text",
-  ready_for_pickup: "bg-accent-soft text-accent-text",
-  delivered: "bg-accent text-accent-fg",
   cancelled: "bg-surface-2 text-muted",
 };
 

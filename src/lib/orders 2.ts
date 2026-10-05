@@ -2,15 +2,7 @@ import { request } from "@/lib/auth/client";
 import { AuthError } from "@/lib/auth/errors";
 import type { Page } from "@/lib/catalog";
 
-// QR orders start awaiting payment; cash orders start confirmed (paid on
-// delivery or pickup). Delivery orders ship, pickup orders become ready.
-export type OrderStatus =
-  | "pending_payment"
-  | "confirmed"
-  | "shipped"
-  | "ready_for_pickup"
-  | "delivered"
-  | "cancelled";
+export type OrderStatus = "pending_payment" | "confirmed" | "cancelled";
 export type PaymentMethod = "qr" | "cash";
 export type DeliveryMethod = "delivery" | "pickup";
 
@@ -47,15 +39,8 @@ export type OrderDetail = OrderSummary & {
   pickup_notes: string;
   buyer_note: string;
   confirmed_at: string | null;
-  shipped_at: string | null;
-  ready_at: string | null;
-  delivered_at: string | null;
-  delivered_by: "buyer" | "system" | ""; // system: auto-delivered after 7 days
-  fulfilment_note: string; // from the seller: courier, tracking, when to come
-  expires_at: string | null; // unpaid QR orders without a receipt only
-  buyer_can_cancel: boolean;
   cancelled_at: string | null;
-  cancelled_by: "buyer" | "seller" | "system" | ""; // system: payment expired
+  cancelled_by: "buyer" | "seller" | "";
   cancel_reason: string;
   updated_at: string;
 };
@@ -165,21 +150,11 @@ export const cancelOrder = (id: string) =>
     raw: true,
   });
 
-// Allowed while the order is shipped or ready for pickup.
-export const markReceived = (id: string) =>
-  request<OrderDetail>(`/api/orders/${encodeURIComponent(id)}/received/`, {
-    method: "POST",
-    raw: true,
-  });
-
 export const orderHref = (id: string) => `/orders/${encodeURIComponent(id)}`;
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
   pending_payment: "Awaiting payment",
   confirmed: "Confirmed",
-  shipped: "Shipped",
-  ready_for_pickup: "Ready for pickup",
-  delivered: "Delivered",
   cancelled: "Cancelled",
 };
 
