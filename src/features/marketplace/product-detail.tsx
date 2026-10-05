@@ -1,5 +1,6 @@
 import { Store } from "lucide-react";
 import Link from "next/link";
+import { AddToCart } from "@/features/cart/add-to-cart";
 import {
   formatDateTime,
   formatPrice,
@@ -51,6 +52,12 @@ export function ProductDetail({ product }: { product: Product }) {
           <p className="text-3xl font-semibold tracking-tight tabular-nums">
             {formatPrice(product.price, product.currency)}
           </p>
+          <AddToCart
+            className="max-w-md"
+            productId={product.id}
+            sellerId={product.seller}
+            stock={product.stock}
+          />
         </header>
 
         {product.categories?.length ? (

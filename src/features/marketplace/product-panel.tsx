@@ -1,6 +1,7 @@
 import { ImageIcon, Images, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { AddToCart } from "@/features/cart/add-to-cart";
 import {
   formatDate,
   formatPrice,
@@ -154,9 +155,14 @@ export function ProductPanel({
             </dl>
           </div>
 
-          <div className="border-t border-line p-4">
+          <div className="flex flex-col gap-2 border-t border-line p-4">
+            <AddToCart
+              productId={product.id}
+              sellerId={product.seller}
+              stock={product.stock}
+            />
             <SeeMoreLink
-              className="h-11 w-full rounded-full bg-accent text-sm font-semibold text-accent-fg transition hover:bg-accent-hover"
+              className="h-11 w-full rounded-full border border-line text-sm font-semibold text-fg transition hover:border-line-strong hover:bg-surface-2"
               productId={product.id}
             >
               See more

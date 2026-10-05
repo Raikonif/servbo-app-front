@@ -35,3 +35,10 @@ export const consumeNext = () => {
   sessionStorage.removeItem(STORAGE_KEY);
   return safeNext(path);
 };
+
+// Leave a sign-in page for `next` with a full page load, not a client
+// navigation: a soft navigation to /products/<id> would be intercepted by the
+// @modal route and opened as a modal over the sign-in page.
+export const leaveAuthPage = (next: string) => {
+  window.location.replace(safeNext(next));
+};

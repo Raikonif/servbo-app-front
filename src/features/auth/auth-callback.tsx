@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { sessionQueryKey } from "@/hooks/use-session";
 import { getSession } from "@/lib/auth/client";
-import { consumeNext } from "@/lib/auth/redirect";
+import { consumeNext, leaveAuthPage } from "@/lib/auth/redirect";
 import { AuthShell } from "./auth-shell";
 
 // Google sends the browser here after the backend set the session cookies.
@@ -30,9 +30,9 @@ export function AuthCallback() {
       })
       .then(
         (session) =>
-          router.replace(
-            session.authenticated ? next : "/login?auth_error=google_failed",
-          ),
+          session.authenticated
+            ? leaveAuthPage(next)
+            : router.replace("/login?auth_error=google_failed"),
         () => router.replace("/login?auth_error=NETWORK_ERROR"),
       );
   }, [queryClient, router]);

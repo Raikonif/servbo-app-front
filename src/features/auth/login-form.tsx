@@ -2,12 +2,12 @@
 
 import { LoaderCircle } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 import { useSession, useSetSession } from "@/hooks/use-session";
 import { signIn, startGoogleSignIn } from "@/lib/auth/client";
 import { AuthError } from "@/lib/auth/errors";
-import { safeNext } from "@/lib/auth/redirect";
+import { leaveAuthPage, safeNext } from "@/lib/auth/redirect";
 import { AuthShell } from "./auth-shell";
 import { buttonStyles, Field, FormAlert } from "./form-controls";
 
@@ -15,7 +15,6 @@ const asAuthError = (error: unknown) =>
   error instanceof AuthError ? error : new AuthError("UNKNOWN");
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const next = safeNext(searchParams.get("next"));
   // Set by the backend when the Google round-trip fails (canceled, denied...).
@@ -33,8 +32,8 @@ export function LoginForm() {
 
   // Already signed in (e.g. back button, or another tab signed in).
   useEffect(() => {
-    if (session?.authenticated) router.replace(next);
-  }, [session?.authenticated, next, router]);
+    if (session?.authenticated) leaveAuthPage(next);
+  }, [session?.authenticated, next]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -42,7 +41,7 @@ export function LoginForm() {
     setPending("password");
     try {
       setSession(await signIn(email, password));
-      router.replace(next);
+      leaveAuthPage(next);
     } catch (err) {
       setError(asAuthError(err));
       setPending(null);

@@ -4,6 +4,7 @@ import { Store } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserMenu } from "@/features/auth/user-menu";
+import { CartLink } from "@/features/cart/cart-link";
 import { useSession } from "@/hooks/use-session";
 import { CREATOR_URL } from "@/lib/billing";
 import { ThemeToggle } from "./theme-toggle";
@@ -19,6 +20,7 @@ export function StoreHeader() {
     { href: "/sellers", label: "Sellers" },
     ...(user
       ? [
+          { href: "/orders", label: "Orders" },
           { href: "/profile", label: "Profile" },
           { href: "/billing", label: "Billing" },
           user.is_seller
@@ -80,6 +82,7 @@ export function StoreHeader() {
         </nav>
         <div className="flex shrink-0 items-center gap-2">
           <ThemeToggle />
+          <CartLink />
           <UserMenu />
         </div>
       </div>

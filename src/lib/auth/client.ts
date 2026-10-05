@@ -59,18 +59,20 @@ const readCookie = (name: string) =>
 
 async function send(path: string, method: string, body?: unknown) {
   const csrf = readCookie("csrftoken");
+  // FormData (file uploads) sets its own multipart Content-Type.
+  const multipart = body instanceof FormData;
   try {
     return await fetch(new URL(path, BACKEND_URL), {
       method,
       credentials: "include",
       headers: {
         Accept: "application/json",
-        ...(body ? { "Content-Type": "application/json" } : {}),
+        ...(body && !multipart ? { "Content-Type": "application/json" } : {}),
         ...(method !== "GET" && csrf
           ? { "X-CSRFToken": decodeURIComponent(csrf) }
           : {}),
       },
-      body: body ? JSON.stringify(body) : undefined,
+      body: multipart ? body : body ? JSON.stringify(body) : undefined,
     });
   } catch {
     throw new AuthError("NETWORK_ERROR");
@@ -78,7 +80,8 @@ async function send(path: string, method: string, body?: unknown) {
 }
 
 // `raw` returns the whole JSON body, for DRF endpoints (e.g. paginated lists)
-// that don't use the {success, data, errors} envelope.
+// that don't use the {success, data, errors} envelope. `body` may be FormData
+// for uploads.
 export async function request<T>(
   path: string,
   init: { method?: string; body?: unknown; raw?: boolean } = {},
@@ -112,7 +115,10 @@ export async function request<T>(
       code = "VALIDATION_ERROR";
       detail = detailFromErrors(errors);
     }
-    throw new AuthError(code, detail, response.status);
+    // DRF's own message (e.g. 409 "A confirmed order cannot be cancelled.").
+    const drfDetail = (payload as { detail?: unknown } | null)?.detail;
+    if (!detail && typeof drfDetail === "string") detail = drfDetail;
+    throw new AuthError(code, detail, response.status, payload);
   }
   if (init.raw) return (payload as T | null) ?? null;
   return payload?.data ?? null;
