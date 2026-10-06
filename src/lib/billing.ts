@@ -3,13 +3,15 @@ import { request } from "@/lib/auth/client";
 export const CREATOR_URL =
   process.env.NEXT_PUBLIC_CREATOR_URL ?? "http://localhost:5178";
 
+export type PlanInterval = "month" | "quarter" | "year";
+
 export type SellerPlan = {
   id: string;
   name: string;
   description: string;
   price_amount: number;
   currency: string;
-  interval: string;
+  interval: PlanInterval | string;
   payment_instructions: string;
 };
 
@@ -29,9 +31,13 @@ export type PendingPayment = {
   amount_due: number;
   currency: string;
   reference: string;
+  // An https URL or a `data:image/png;base64,…` URI (provider-generated QR).
   qr_image_url: string | null;
   payment_instructions: string;
   created_at: string;
+  plan: { id: string; name: string; interval: PlanInterval | string } | null;
+  // Null for the manual QR, which never expires.
+  expires_at: string | null;
 };
 
 export type SellerSubscriptionState = {
@@ -53,20 +59,14 @@ export type BillingRecord = {
 };
 
 export const billingKeys = {
-  sellerPlan: ["billing", "seller-plan"] as const,
+  sellerPlans: ["billing", "seller-plans"] as const,
   sellerSubscription: ["billing", "seller-subscription"] as const,
   records: ["billing", "records"] as const,
 };
 
-// Null when the admin hasn't configured a plan yet (404 NO_PLAN).
-export const getSellerPlan = async (): Promise<SellerPlan | null> => {
-  try {
-    return await request<SellerPlan>("/api/billing/seller-plan/");
-  } catch (error) {
-    if ((error as { code?: string }).code === "NO_PLAN") return null;
-    throw error;
-  }
-};
+// Active plans ordered month, quarter, year; empty until an admin adds one.
+export const getSellerPlans = async (): Promise<SellerPlan[]> =>
+  (await request<SellerPlan[]>("/api/billing/seller-plans/")) ?? [];
 
 const EMPTY_STATE: SellerSubscriptionState = {
   is_seller: false,
@@ -79,11 +79,35 @@ export const getSellerSubscription = async () =>
     "/api/billing/seller-subscription/",
   )) ?? EMPTY_STATE;
 
-// Creates (or returns the existing) pending QR payment: first upgrade or renewal.
-export const startSellerPayment = async () =>
+// Creates the pending QR payment for a plan (first upgrade or renewal). The
+// same plan with an unexpired QR returns that one; another plan, or an expired
+// QR, cancels it and makes a new one. Errors: INVALID_PLAN, PAYMENT_PROVIDER_ERROR.
+export const startSellerPayment = async (planId: string) =>
   (await request<SellerSubscriptionState>("/api/billing/seller-subscription/", {
     method: "POST",
+    body: { plan_id: planId },
   })) ?? EMPTY_STATE;
+
+const INTERVAL_MONTHS: Record<string, number> = {
+  month: 1,
+  quarter: 3,
+  year: 12,
+};
+
+export const INTERVAL_LABELS: Record<
+  string,
+  { period: string; adverb: string }
+> = {
+  month: { period: "month", adverb: "Monthly" },
+  quarter: { period: "3 months", adverb: "Quarterly" },
+  year: { period: "year", adverb: "Yearly" },
+};
+
+export const isExpired = (expiresAt: string | null, now = Date.now()) =>
+  expiresAt !== null && new Date(expiresAt).getTime() <= now;
+
+export const intervalMonths = (interval: string) =>
+  INTERVAL_MONTHS[interval] ?? 1;
 
 type ListPayload<T> =
   | T[]
@@ -104,7 +128,15 @@ export const getBillingRecords = async (): Promise<BillingRecord[]> => {
   return [];
 };
 
+// Bolivianos read as "Bs 13" / "Bs 4.33"; Intl would print "BOB 13.00".
 export const formatMoney = (minor: number, currency: string) => {
+  if (currency.toUpperCase() === "BOB") {
+    const whole = Number.isInteger(minor / 100);
+    return `Bs ${new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: whole ? 0 : 2,
+      maximumFractionDigits: 2,
+    }).format(minor / 100)}`;
+  }
   try {
     return new Intl.NumberFormat("en-US", {
       style: "currency",

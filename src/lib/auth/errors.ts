@@ -22,6 +22,9 @@ const MESSAGES: Record<string, string> = {
   google_canceled: "Google sign-in was canceled.",
   google_failed: "We could not sign you in with Google. Please try again.",
   NO_PLAN: "Seller plans are coming soon.",
+  INVALID_PLAN: "Choose one of the available plans.",
+  PAYMENT_PROVIDER_ERROR:
+    "We couldn't create the payment QR right now. Try again in a minute.",
   NETWORK_ERROR:
     "We could not reach the server. Check your connection and try again.",
   THROTTLED: "Too many attempts. Wait a minute and try again.",

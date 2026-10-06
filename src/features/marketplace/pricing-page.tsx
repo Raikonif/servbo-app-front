@@ -2,22 +2,28 @@
 
 import { ArrowRight, Check, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useSellerPlan } from "@/hooks/use-billing";
+import { useSellerPlans } from "@/hooks/use-billing";
 import { useSession } from "@/hooks/use-session";
 import { loginHref } from "@/lib/auth/redirect";
-import { formatMoney } from "@/lib/billing";
+import {
+  formatMoney,
+  INTERVAL_LABELS,
+  intervalMonths,
+  type SellerPlan,
+} from "@/lib/billing";
 
 const INCLUDED = [
   "Secure seller profile",
   "Unlimited product listings in the creator app",
   "Buyer message routing",
-  "Pay monthly with a QR transfer",
+  "Pay by QR monthly, quarterly or yearly",
 ];
 
 export function PricingPage() {
-  const { data: plan, isPending, isError, refetch } = useSellerPlan();
+  const { data: plans, isPending, isError, refetch } = useSellerPlans();
   const signedIn = Boolean(useSession().data?.authenticated);
   const ctaHref = signedIn ? "/become-a-vendor" : loginHref("/become-a-vendor");
+  const bestValueId = bestValuePlanId(plans ?? []);
 
   return (
     <main>
@@ -29,11 +35,11 @@ export function PricingPage() {
               Pricing
             </p>
             <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight text-fg sm:text-5xl">
-              Sell on Servbo with one simple monthly plan.
+              Sell on Servbo with a simple seller plan.
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-              Pay by scanning a QR code. Once an admin confirms your payment,
-              your account is upgraded to seller.
+              Pick a period and pay by scanning a QR code. As soon as the
+              payment is confirmed, your account is upgraded to seller.
             </p>
           </div>
           <aside className="rounded-lg border border-line bg-surface p-5 shadow-sm">
@@ -55,13 +61,20 @@ export function PricingPage() {
           </aside>
         </section>
 
-        <section className="mt-8 max-w-xl">
+        <section className="mt-8">
           {isPending ? (
-            <div className="h-64 animate-pulse rounded-lg bg-surface-2" />
+            <div className="grid gap-4 md:grid-cols-3">
+              {[0, 1, 2].map((key) => (
+                <div
+                  className="h-64 animate-pulse rounded-lg bg-surface-2"
+                  key={key}
+                />
+              ))}
+            </div>
           ) : isError ? (
-            <article className="rounded-lg border border-line bg-surface p-5 shadow-sm">
+            <article className="max-w-xl rounded-lg border border-line bg-surface p-5 shadow-sm">
               <p className="text-sm text-muted">
-                We could not load the seller plan.
+                We could not load the seller plans.
               </p>
               <button
                 className="mt-4 inline-flex min-h-10 items-center justify-center rounded-md border border-line px-4 text-sm font-medium text-fg hover:border-accent hover:text-accent-text"
@@ -71,43 +84,95 @@ export function PricingPage() {
                 Try again
               </button>
             </article>
-          ) : !plan ? (
-            <article className="rounded-lg border border-line bg-surface p-5 shadow-sm">
+          ) : !plans?.length ? (
+            <article className="max-w-xl rounded-lg border border-line bg-surface p-5 shadow-sm">
               <h2 className="text-2xl font-semibold text-fg">
-                Seller plans are coming soon
+                Seller plans are not available yet
               </h2>
               <p className="mt-3 text-sm leading-6 text-muted">
                 We are finishing the seller subscription. Check back shortly.
               </p>
             </article>
           ) : (
-            <article className="rounded-lg border border-accent bg-surface p-5 shadow-sm ring-2 ring-accent/40">
-              <p className="text-sm font-medium text-accent-text">Sellers</p>
-              <h2 className="mt-1 text-2xl font-semibold text-fg">
-                {plan.name}
-              </h2>
-              {plan.description ? (
-                <p className="mt-3 text-sm leading-6 text-muted">
-                  {plan.description}
-                </p>
-              ) : null}
-              <p className="mt-5 text-4xl font-semibold text-fg">
-                {formatMoney(plan.price_amount, plan.currency)}
-                <span className="text-sm font-medium text-muted">
-                  /{plan.interval}
-                </span>
-              </p>
-              <Link
-                className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-accent-fg hover:bg-accent-hover"
-                href={ctaHref}
-              >
-                Become a seller
-                <ArrowRight size={16} />
-              </Link>
-            </article>
+            <ul className="grid gap-4 md:grid-cols-3">
+              {plans.slice(0, 3).map((plan) => (
+                <li key={plan.id}>
+                  <PlanCard
+                    ctaHref={ctaHref}
+                    highlighted={plan.id === bestValueId}
+                    plan={plan}
+                  />
+                </li>
+              ))}
+            </ul>
           )}
         </section>
       </section>
     </main>
+  );
+}
+
+// Lowest per-month price, flagged only when there is more than one plan.
+function bestValuePlanId(plans: SellerPlan[]) {
+  if (plans.length < 2) return null;
+  let best = plans[0];
+  for (const plan of plans) {
+    if (perMonth(plan) < perMonth(best)) best = plan;
+  }
+  return best.id;
+}
+
+const perMonth = (plan: SellerPlan) =>
+  Math.round(plan.price_amount / intervalMonths(plan.interval));
+
+function PlanCard({
+  plan,
+  highlighted,
+  ctaHref,
+}: {
+  plan: SellerPlan;
+  highlighted: boolean;
+  ctaHref: string;
+}) {
+  const label = INTERVAL_LABELS[plan.interval];
+  const months = intervalMonths(plan.interval);
+
+  return (
+    <article
+      className={`flex h-full flex-col rounded-lg border bg-surface p-5 shadow-sm ${
+        highlighted ? "border-accent ring-2 ring-accent/40" : "border-line"
+      }`}
+    >
+      <p className="flex items-center justify-between gap-2 text-sm font-medium text-accent-text">
+        {label?.adverb ?? plan.interval}
+        {highlighted ? (
+          <span className="rounded-md bg-accent-soft px-2 py-0.5 text-xs font-semibold">
+            Best value
+          </span>
+        ) : null}
+      </p>
+      <h2 className="mt-1 text-2xl font-semibold text-fg">{plan.name}</h2>
+      {plan.description ? (
+        <p className="mt-3 text-sm leading-6 text-muted">{plan.description}</p>
+      ) : null}
+      <p className="mt-5 text-4xl font-semibold text-fg">
+        {formatMoney(plan.price_amount, plan.currency)}
+        <span className="text-sm font-medium text-muted">
+          /{label?.period ?? plan.interval}
+        </span>
+      </p>
+      <p className="mt-1 min-h-5 flex-1 text-sm text-muted">
+        {months > 1
+          ? `${formatMoney(perMonth(plan), plan.currency)}/month`
+          : null}
+      </p>
+      <Link
+        className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-accent-fg hover:bg-accent-hover"
+        href={ctaHref}
+      >
+        Become a seller
+        <ArrowRight size={16} />
+      </Link>
+    </article>
   );
 }
