@@ -401,6 +401,10 @@ function PendingPaymentCard({
   const interval = payment.plan
     ? INTERVAL_LABELS[payment.plan.interval]
     : undefined;
+  // Relay QRs carry their code as the glosa: the payer types nothing.
+  const relay = payment.provider === "relay_qr";
+  const partial =
+    payment.amount_paid > 0 && payment.amount_paid < payment.amount_due;
 
   return (
     <section className={card}>
@@ -463,6 +467,15 @@ function PendingPaymentCard({
             </dd>
           </div>
         ) : null}
+        {partial ? (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
+            <dt className="text-muted">Received</dt>
+            <dd className="text-right font-medium text-fg" role="status">
+              {formatMoney(payment.amount_paid, payment.currency)} of{" "}
+              {formatMoney(payment.amount_due, payment.currency)}
+            </dd>
+          </div>
+        ) : null}
         {expiresAt && !expired ? (
           <div className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
             <dt className="text-muted">Expires in</dt>
@@ -475,20 +488,24 @@ function PendingPaymentCard({
         ) : null}
         <div className="rounded-lg border border-accent/40 bg-accent-soft p-3">
           <dt className="text-accent-text">
-            Reference — write it in the payment note
+            {relay
+              ? "QR code — pay this exact QR without changing the amount or the note"
+              : "Reference — write it in the payment note"}
           </dt>
           <dd className="mt-2 flex flex-wrap items-center justify-between gap-3">
             <span className="font-mono text-2xl font-semibold tracking-wider text-fg">
               {payment.reference}
             </span>
-            <button
-              className="inline-flex min-h-9 items-center gap-2 rounded-md border border-accent/60 bg-surface px-3 text-sm font-medium text-accent-text hover:bg-accent-soft"
-              onClick={() => void copy()}
-              type="button"
-            >
-              {copied ? <Check size={15} /> : <Copy size={15} />}
-              {copied ? "Copied" : "Copy"}
-            </button>
+            {relay ? null : (
+              <button
+                className="inline-flex min-h-9 items-center gap-2 rounded-md border border-accent/60 bg-surface px-3 text-sm font-medium text-accent-text hover:bg-accent-soft"
+                onClick={() => void copy()}
+                type="button"
+              >
+                {copied ? <Check size={15} /> : <Copy size={15} />}
+                {copied ? "Copied" : "Copy"}
+              </button>
+            )}
           </dd>
         </div>
       </dl>

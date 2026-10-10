@@ -29,6 +29,10 @@ export type SellerSubscription = {
 export type PendingPayment = {
   id: string;
   amount_due: number;
+  // Received so far: relay payments can arrive in parts (amount_paid < amount_due).
+  amount_paid: number;
+  // "manual_qr" | "cucu" | "relay_qr"
+  provider: string;
   currency: string;
   reference: string;
   // An https URL or a `data:image/png;base64,…` URI (provider-generated QR).
@@ -81,7 +85,8 @@ export const getSellerSubscription = async () =>
 
 // Creates the pending QR payment for a plan (first upgrade or renewal). The
 // same plan with an unexpired QR returns that one; another plan, or an expired
-// QR, cancels it and makes a new one. Errors: INVALID_PLAN, PAYMENT_PROVIDER_ERROR.
+// QR, cancels it and makes a new one. Errors: INVALID_PLAN, PAYMENT_PROVIDER_ERROR,
+// NO_QR_AVAILABLE (relay: every pooled QR is busy, retry in a few minutes).
 export const startSellerPayment = async (planId: string) =>
   (await request<SellerSubscriptionState>("/api/billing/seller-subscription/", {
     method: "POST",
