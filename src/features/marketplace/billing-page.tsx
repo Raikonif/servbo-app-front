@@ -73,6 +73,14 @@ export function BillingPage() {
                   /{subscription.interval} · until{" "}
                   {formatDate(subscription.current_period_end)}
                 </p>
+                {/* QR plans never renew by themselves (openspec subscription-lifecycle). */}
+                <Link
+                  className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-accent-text hover:text-accent-text"
+                  href="/become-a-vendor"
+                >
+                  Renew by paying again
+                  <ArrowRight size={16} />
+                </Link>
               </>
             ) : (
               <>
@@ -143,11 +151,29 @@ export function BillingPage() {
                   {record.payment_method.replaceAll("_", " ")}
                 </td>
                 <td className="px-5 py-4 font-medium text-fg">
-                  {formatMoney(
-                    record.status === "paid"
-                      ? record.amount_paid
-                      : record.amount_due,
-                    record.currency,
+                  {record.payment_method === "promotion" &&
+                  record.amount_due === 0 ? (
+                    `Free (code ${record.promotion_code ?? "—"})`
+                  ) : (
+                    <>
+                      {record.original_amount &&
+                      record.original_amount > record.amount_due ? (
+                        <s className="mr-1.5 font-normal text-muted">
+                          {formatMoney(record.original_amount, record.currency)}
+                        </s>
+                      ) : null}
+                      {formatMoney(
+                        record.status === "paid"
+                          ? record.amount_paid
+                          : record.amount_due,
+                        record.currency,
+                      )}
+                      {record.promotion_code ? (
+                        <span className="ml-2 rounded-md bg-accent-soft px-1.5 py-0.5 font-mono text-xs text-accent-text">
+                          {record.promotion_code}
+                        </span>
+                      ) : null}
+                    </>
                   )}
                 </td>
                 <td className="px-5 py-4">
@@ -158,6 +184,10 @@ export function BillingPage() {
             title="Payment history"
           />
         )}
+        <p className="text-xs leading-5 text-muted">
+          Subscriptions are paid by QR only. These entries are payment receipts:
+          no tax invoice (factura) is issued yet.
+        </p>
       </section>
     </main>
   );

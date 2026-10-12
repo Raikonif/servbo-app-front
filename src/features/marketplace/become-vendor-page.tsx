@@ -7,25 +7,31 @@ import {
   Check,
   Clock3,
   Copy,
+  Gift,
   QrCode,
   RefreshCw,
   Repeat,
   Store,
+  Ticket,
   TimerOff,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { useSellerPlans, useSellerSubscription } from "@/hooks/use-billing";
 import { useNow } from "@/hooks/use-now";
 import {
+  activatePromotion,
   billingKeys,
   CREATOR_URL,
+  checkPromotion,
   formatDate,
   formatMoney,
   INTERVAL_LABELS,
   intervalMonths,
   isExpired,
   type PendingPayment,
+  type PromotionCheck,
   type SellerSubscriptionState,
   startSellerPayment,
 } from "@/lib/billing";
@@ -43,15 +49,29 @@ export function BecomeVendorPage() {
   // Picker open over the QR (switch plan) or the seller card (renew).
   const [choosing, setChoosing] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  // A checked promotion code (openspec subscription-promotions): free access
+  // replaces the plan picker; a discount rides along with "Get QR".
+  const [promo, setPromo] = useState<PromotionCheck | null>(null);
+  const showState = (state: SellerSubscriptionState) => {
+    queryClient.setQueryData<SellerSubscriptionState>(
+      billingKeys.sellerSubscription,
+      state,
+    );
+    void queryClient.invalidateQueries({ queryKey: billingKeys.records });
+    setChoosing(false);
+    setPromo(null);
+  };
   const pay = useMutation({
-    mutationFn: startSellerPayment,
-    onSuccess: (state) => {
-      queryClient.setQueryData<SellerSubscriptionState>(
-        billingKeys.sellerSubscription,
-        state,
-      );
-      setChoosing(false);
-    },
+    mutationFn: (planId: string) =>
+      startSellerPayment({
+        planId,
+        promoCode: promo?.kind === "free_access" ? null : promo?.code,
+      }),
+    onSuccess: showState,
+  });
+  const activate = useMutation({
+    mutationFn: activatePromotion,
+    onSuccess: showState,
   });
 
   const state = subscription.data;
@@ -72,30 +92,54 @@ export function BecomeVendorPage() {
 
   const planId =
     selectedPlanId ?? pending?.plan?.id ?? plans.data?.[0]?.id ?? null;
-  const choosePlan = (
-    <PlanPicker
-      busy={pay.isPending}
-      error={pay.error?.message ?? null}
-      onCancel={
-        choosing
-          ? () => {
-              setChoosing(false);
-              pay.reset();
-            }
-          : undefined
-      }
-      onRetry={() => void plans.refetch()}
-      onSelect={setSelectedPlanId}
-      onSubmit={() => {
-        if (planId) pay.mutate(planId);
+  const promoField = (
+    <PromoCodeField
+      applied={promo}
+      onApplied={(result) => {
+        pay.reset();
+        activate.reset();
+        setPromo(result);
       }}
-      plans={plans}
-      selectedId={planId}
-      title={
-        active ? "Renew your plan" : pending ? "Switch plan" : "Choose a plan"
-      }
     />
   );
+  const choosePlan =
+    promo?.kind === "free_access" ? (
+      <FreeAccessCard
+        busy={activate.isPending}
+        error={activate.error?.message ?? null}
+        onActivate={() => activate.mutate(promo.code)}
+        onDismiss={() => {
+          activate.reset();
+          setPromo(null);
+        }}
+        promo={promo}
+      />
+    ) : (
+      <PlanPicker
+        discounts={promo?.plans ?? null}
+        extra={promoField}
+        busy={pay.isPending}
+        error={pay.error?.message ?? null}
+        onCancel={
+          choosing
+            ? () => {
+                setChoosing(false);
+                pay.reset();
+              }
+            : undefined
+        }
+        onRetry={() => void plans.refetch()}
+        onSelect={setSelectedPlanId}
+        onSubmit={() => {
+          if (planId) pay.mutate(planId);
+        }}
+        plans={plans}
+        selectedId={planId}
+        title={
+          active ? "Renew your plan" : pending ? "Switch plan" : "Choose a plan"
+        }
+      />
+    );
 
   let content: ReactNode;
   if (subscription.isPending) {
@@ -204,8 +248,13 @@ export function BecomeVendorPage() {
               </li>
             ))}
           </ol>
+          <p className="mt-6 text-xs text-muted">
+            Payment by QR only · you get a payment receipt, no tax invoice
+            (factura) yet. Plans do not renew automatically: pay again before
+            the end date to keep selling.
+          </p>
           <Link
-            className="mt-8 inline-flex text-sm font-medium text-accent-text hover:text-accent-text"
+            className="mt-4 inline-flex text-sm font-medium text-accent-text hover:text-accent-text"
             href="/billing"
           >
             View billing history
@@ -221,6 +270,8 @@ type PlansQuery = ReturnType<typeof useSellerPlans>;
 
 function PlanPicker({
   plans,
+  discounts,
+  extra,
   selectedId,
   onSelect,
   onSubmit,
@@ -231,6 +282,9 @@ function PlanPicker({
   title,
 }: {
   plans: PlansQuery;
+  // From a checked discount code: each plan's price with it (null = not covered).
+  discounts: PromotionCheck["plans"] | null;
+  extra: ReactNode;
   selectedId: string | null;
   onSelect: (id: string) => void;
   onSubmit: () => void;
@@ -290,6 +344,9 @@ function PlanPicker({
             {plans.data.map((plan) => {
               const label = INTERVAL_LABELS[plan.interval];
               const months = intervalMonths(plan.interval);
+              const discounted = discounts?.find(
+                (entry) => entry.id === plan.id,
+              )?.discounted_amount;
               return (
                 <label
                   className="flex cursor-pointer items-start gap-3 rounded-lg border border-line p-4 hover:border-accent has-checked:border-accent has-checked:bg-accent-soft has-focus-visible:ring-2 has-focus-visible:ring-accent"
@@ -318,7 +375,16 @@ function PlanPicker({
                     </span>
                   </span>
                   <span className="shrink-0 text-right font-semibold text-fg">
-                    {formatMoney(plan.price_amount, plan.currency)}
+                    {discounted != null ? (
+                      <>
+                        <s className="mr-1.5 text-sm font-medium text-muted">
+                          {formatMoney(plan.price_amount, plan.currency)}
+                        </s>
+                        {formatMoney(discounted, plan.currency)}
+                      </>
+                    ) : (
+                      formatMoney(plan.price_amount, plan.currency)
+                    )}
                     <span className="block text-xs font-medium text-muted">
                       /{label?.period ?? plan.interval}
                     </span>
@@ -328,6 +394,7 @@ function PlanPicker({
             })}
           </div>
         </fieldset>
+        {extra}
         {error ? (
           <p className="mt-3 text-sm text-danger" role="alert">
             {error}
@@ -456,6 +523,21 @@ function PendingPaymentCard({
             {formatMoney(payment.amount_due, payment.currency)}
           </dd>
         </div>
+        {payment.promotion ? (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
+            <dt className="text-muted">Code</dt>
+            <dd className="text-right font-medium text-fg">
+              {payment.promotion.code}
+              {payment.original_amount &&
+              payment.original_amount > payment.amount_due ? (
+                <span className="text-muted">
+                  {" "}
+                  · was {formatMoney(payment.original_amount, payment.currency)}
+                </span>
+              ) : null}
+            </dd>
+          </div>
+        ) : null}
         {payment.plan ? (
           <div className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
             <dt className="text-muted">Plan</dt>
@@ -534,6 +616,156 @@ function PendingPaymentCard({
           Switch plan
         </button>
       </div>
+    </section>
+  );
+}
+
+// "Have a code?" (openspec subscription-promotions): checks the code without
+// using it; a discount then shows on the plans, free access replaces them.
+function PromoCodeField({
+  applied,
+  onApplied,
+}: {
+  applied: PromotionCheck | null;
+  onApplied: (promo: PromotionCheck | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [code, setCode] = useState("");
+  const check = useMutation({
+    mutationFn: checkPromotion,
+    onSuccess: (result) => {
+      if (result) onApplied(result);
+    },
+  });
+
+  if (applied) {
+    return (
+      <p className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-accent/40 bg-accent-soft p-3 text-sm text-accent-text">
+        <span className="inline-flex items-center gap-2 font-medium">
+          <Ticket size={16} />
+          Code {applied.code} applied
+        </span>
+        <button
+          aria-label={`Remove code ${applied.code}`}
+          className="rounded-md p-1 hover:bg-surface"
+          onClick={() => {
+            onApplied(null);
+            setCode("");
+          }}
+          type="button"
+        >
+          <X size={16} />
+        </button>
+      </p>
+    );
+  }
+  if (!open) {
+    return (
+      <button
+        className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-accent-text hover:underline"
+        onClick={() => setOpen(true)}
+        type="button"
+      >
+        <Ticket size={16} />
+        Have a code?
+      </button>
+    );
+  }
+  const apply = () => {
+    if (code.trim()) check.mutate(code);
+  };
+  return (
+    <div className="mt-4">
+      <label className="text-sm font-medium text-fg" htmlFor="promo-code">
+        Promotion code
+      </label>
+      <div className="mt-2 flex gap-2">
+        <input
+          autoCapitalize="characters"
+          // biome-ignore lint/a11y/noAutofocus: opened on purpose by the user
+          autoFocus
+          className="min-h-11 min-w-0 flex-1 rounded-md border border-line bg-surface px-3 font-mono uppercase text-fg outline-none focus:border-accent"
+          id="promo-code"
+          maxLength={32}
+          onChange={(event) => {
+            setCode(event.target.value);
+            check.reset();
+          }}
+          onKeyDown={(event) => {
+            // Inside the plan form: Enter checks the code instead of getting a QR.
+            if (event.key === "Enter") {
+              event.preventDefault();
+              apply();
+            }
+          }}
+          value={code}
+        />
+        <button
+          className={secondaryButton}
+          disabled={check.isPending || !code.trim()}
+          onClick={apply}
+          type="button"
+        >
+          {check.isPending ? "Checking…" : "Apply"}
+        </button>
+      </div>
+      {check.error ? (
+        <p className="mt-2 text-sm text-danger" role="alert">
+          {check.error.message}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function FreeAccessCard({
+  promo,
+  busy,
+  error,
+  onActivate,
+  onDismiss,
+}: {
+  promo: PromotionCheck;
+  busy: boolean;
+  error: string | null;
+  onActivate: () => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <section className={card}>
+      <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent-soft text-accent-text">
+        <Gift size={24} />
+      </span>
+      <h2 className="mt-4 text-2xl font-semibold text-fg">
+        Free seller access until {formatDate(promo.free_until)}
+      </h2>
+      <p className="mt-2 text-sm leading-6 text-muted">
+        Code <span className="font-mono font-medium text-fg">{promo.code}</span>{" "}
+        opens your store now, with no QR to pay. Before it ends, choose a plan
+        to keep selling: its time is added after the free period.
+      </p>
+      {error ? (
+        <p className="mt-3 text-sm text-danger" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <button
+        className={`mt-5 w-full ${primaryButton}`}
+        disabled={busy}
+        onClick={onActivate}
+        type="button"
+      >
+        <BadgeCheck size={17} />
+        {busy ? "Activating…" : "Activate"}
+      </button>
+      <button
+        className={`mt-3 w-full ${secondaryButton}`}
+        disabled={busy}
+        onClick={onDismiss}
+        type="button"
+      >
+        Use another code or a plan
+      </button>
     </section>
   );
 }

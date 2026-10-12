@@ -25,6 +25,15 @@ const MESSAGES: Record<string, string> = {
   INVALID_PLAN: "Choose one of the available plans.",
   PAYMENT_PROVIDER_ERROR:
     "We couldn't create the payment QR right now. Try again in a minute.",
+  NO_QR_AVAILABLE:
+    "All payment QRs are in use right now. Try again in a few minutes.",
+  PROMO_INVALID: "This code is not valid.",
+  PROMO_EXHAUSTED: "This code has been used up.",
+  PROMO_ALREADY_USED: "You already used this code.",
+  PROMO_NOT_ELIGIBLE: "This code is only for new sellers.",
+  PROMO_PLAN: "This code does not apply to that plan.",
+  PROMO_NO_EFFECT:
+    "Your seller access already lasts longer than this code gives.",
   NETWORK_ERROR:
     "We could not reach the server. Check your connection and try again.",
   THROTTLED: "Too many attempts. Wait a minute and try again.",

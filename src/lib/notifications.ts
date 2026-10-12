@@ -12,8 +12,10 @@ export type NotificationItem = {
   title: string;
   body: string;
   order: string | null;
-  order_code: string;
-  link: string; // absolute: `${FRONTEND_URL}/orders/<id>` for buyers
+  order_code: string | null;
+  // Subscription notices (e.g. "subscription_expired") point here instead of an order.
+  subscription: string | null;
+  link: string | null; // absolute: `${FRONTEND_URL}/orders/<id>` or `/become-a-vendor`
   read_at: string | null;
   created_at: string;
 };
@@ -59,9 +61,10 @@ export const markAllNotificationsRead = () =>
 // the router stays client-side. Falls back to the order page.
 export const notificationPath = (notification: NotificationItem) => {
   try {
-    const url = new URL(notification.link);
+    const url = new URL(notification.link ?? "");
     return `${url.pathname}${url.search}`;
   } catch {
+    if (notification.subscription) return "/become-a-vendor";
     return notification.order
       ? `/orders/${encodeURIComponent(notification.order)}`
       : "/orders";

@@ -24,11 +24,18 @@ export type SellerSubscription = {
   interval: string;
   current_period_start: string | null;
   current_period_end: string | null;
+  // Set while the current period comes from a free-access code.
+  promotion?: { code: string; free_until: string | null } | null;
 };
+
+export type PromotionKind = "free_access" | "percent_off" | "amount_off";
 
 export type PendingPayment = {
   id: string;
   amount_due: number;
+  // The plan price before a discount code (equals amount_due without one).
+  original_amount?: number;
+  promotion?: { code: string; kind: PromotionKind | string } | null;
   // Received so far: relay payments can arrive in parts (amount_paid < amount_due).
   amount_paid: number;
   // "manual_qr" | "cucu" | "relay_qr"
@@ -60,6 +67,22 @@ export type BillingRecord = {
   bank_transfer_reference: string | null;
   paid_at: string | null;
   created_at: string;
+  promotion_code?: string | null;
+  original_amount?: number;
+};
+
+// What a code does for the signed-in user (openspec subscription-promotions).
+export type PromotionCheck = {
+  code: string;
+  kind: PromotionKind | string;
+  name: string;
+  free_until?: string | null;
+  // Discounts: every active plan, with null when the code does not cover it.
+  plans?: {
+    id: string;
+    price_amount: number;
+    discounted_amount: number | null;
+  }[];
 };
 
 export const billingKeys = {
@@ -87,11 +110,34 @@ export const getSellerSubscription = async () =>
 // same plan with an unexpired QR returns that one; another plan, or an expired
 // QR, cancels it and makes a new one. Errors: INVALID_PLAN, PAYMENT_PROVIDER_ERROR,
 // NO_QR_AVAILABLE (relay: every pooled QR is busy, retry in a few minutes).
-export const startSellerPayment = async (planId: string) =>
+// A discount code lowers this one payment. Errors add PROMO_* (see errors.ts).
+export const startSellerPayment = async ({
+  planId,
+  promoCode,
+}: {
+  planId: string;
+  promoCode?: string | null;
+}) =>
   (await request<SellerSubscriptionState>("/api/billing/seller-subscription/", {
     method: "POST",
-    body: { plan_id: planId },
+    body: promoCode
+      ? { plan_id: planId, promo_code: promoCode }
+      : { plan_id: planId },
   })) ?? EMPTY_STATE;
+
+// A free-access code: seller access at once until its date, no plan or QR.
+export const activatePromotion = async (code: string) =>
+  (await request<SellerSubscriptionState>("/api/billing/seller-subscription/", {
+    method: "POST",
+    body: { promo_code: code },
+  })) ?? EMPTY_STATE;
+
+// Nothing is used; errors are PROMO_* codes, THROTTLED after too many tries.
+export const checkPromotion = async (code: string) =>
+  request<PromotionCheck>("/api/billing/promotions/check/", {
+    method: "POST",
+    body: { code: code.trim() },
+  });
 
 const INTERVAL_MONTHS: Record<string, number> = {
   month: 1,
