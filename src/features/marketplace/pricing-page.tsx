@@ -2,28 +2,32 @@
 
 import { ArrowRight, Check, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useSellerPlans } from "@/hooks/use-billing";
+import { useCreditPacks, useSellerSubscription } from "@/hooks/use-billing";
 import { useSession } from "@/hooks/use-session";
 import { loginHref } from "@/lib/auth/redirect";
 import {
+  type CreditPack,
+  type CreditPricing,
   formatMoney,
-  INTERVAL_LABELS,
-  intervalMonths,
-  type SellerPlan,
+  packCoverage,
+  plural,
 } from "@/lib/billing";
 
 const INCLUDED = [
   "Secure seller profile",
-  "Unlimited product listings in the creator app",
+  "Monthly: unlimited product listings in the creator app",
+  "Per product: pay only for the products you post",
   "Buyer message routing",
-  "Pay by QR monthly, quarterly or yearly",
+  "Credits never expire · pay by QR",
 ];
 
 export function PricingPage() {
-  const { data: plans, isPending, isError, refetch } = useSellerPlans();
+  const { data: packs, isPending, isError, refetch } = useCreditPacks();
   const signedIn = Boolean(useSession().data?.authenticated);
+  // Credit prices come with the signed-in user's seller state.
+  const pricing = useSellerSubscription({ enabled: signedIn }).data?.pricing;
   const ctaHref = signedIn ? "/become-a-vendor" : loginHref("/become-a-vendor");
-  const bestValueId = bestValuePlanId(plans ?? []);
+  const bestValueId = bestValuePackId(packs ?? []);
 
   return (
     <main>
@@ -35,17 +39,23 @@ export function PricingPage() {
               Pricing
             </p>
             <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight text-fg sm:text-5xl">
-              Sell on Servbo with a simple seller plan.
+              Sell on Servbo with credits.
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-              Pick a period and pay by scanning a QR code. As soon as the
-              payment is confirmed, your account is upgraded to seller.
+              Buy a credit pack by scanning a QR code, then spend the credits on
+              seller access: Monthly with unlimited products
+              {pricing ? ` (${plural(pricing.monthly_fee, "credit")})` : ""}, or
+              Per product
+              {pricing
+                ? ` (${plural(pricing.product_fee, "credit")} each)`
+                : ""}{" "}
+              for a {pricing?.period_days ?? 30}-day period.
             </p>
           </div>
           <aside className="rounded-lg border border-line bg-surface p-5 shadow-sm">
             <div className="flex items-center gap-2 text-sm font-medium text-accent-text">
               <ShieldCheck size={17} />
-              The seller plan includes
+              Seller access includes
             </div>
             <ul className="mt-4 space-y-3 text-sm text-muted">
               {INCLUDED.map((item) => (
@@ -74,7 +84,7 @@ export function PricingPage() {
           ) : isError ? (
             <article className="max-w-xl rounded-lg border border-line bg-surface p-5 shadow-sm">
               <p className="text-sm text-muted">
-                We could not load the seller plans.
+                We could not load the credit packs.
               </p>
               <button
                 className="mt-4 inline-flex min-h-10 items-center justify-center rounded-md border border-line px-4 text-sm font-medium text-fg hover:border-accent hover:text-accent-text"
@@ -84,23 +94,24 @@ export function PricingPage() {
                 Try again
               </button>
             </article>
-          ) : !plans?.length ? (
+          ) : !packs?.length ? (
             <article className="max-w-xl rounded-lg border border-line bg-surface p-5 shadow-sm">
               <h2 className="text-2xl font-semibold text-fg">
-                Seller plans are not available yet
+                Credit packs are not available yet
               </h2>
               <p className="mt-3 text-sm leading-6 text-muted">
-                We are finishing the seller subscription. Check back shortly.
+                We are getting the seller packs ready. Check back shortly.
               </p>
             </article>
           ) : (
             <ul className="grid gap-4 md:grid-cols-3">
-              {plans.slice(0, 3).map((plan) => (
-                <li key={plan.id}>
-                  <PlanCard
+              {packs.slice(0, 3).map((pack) => (
+                <li key={pack.id}>
+                  <PackCard
                     ctaHref={ctaHref}
-                    highlighted={plan.id === bestValueId}
-                    plan={plan}
+                    highlighted={pack.id === bestValueId}
+                    pack={pack}
+                    pricing={pricing ?? null}
                   />
                 </li>
               ))}
@@ -112,30 +123,31 @@ export function PricingPage() {
   );
 }
 
-// Lowest per-month price, flagged only when there is more than one plan.
-function bestValuePlanId(plans: SellerPlan[]) {
-  if (plans.length < 2) return null;
-  let best = plans[0];
-  for (const plan of plans) {
-    if (perMonth(plan) < perMonth(best)) best = plan;
+// Most credits per boliviano, flagged only when there is more than one pack.
+function bestValuePackId(packs: CreditPack[]) {
+  if (packs.length < 2) return null;
+  let best = packs[0];
+  for (const pack of packs) {
+    if (perCredit(pack) < perCredit(best)) best = pack;
   }
   return best.id;
 }
 
-const perMonth = (plan: SellerPlan) =>
-  Math.round(plan.price_amount / intervalMonths(plan.interval));
+const perCredit = (pack: CreditPack) =>
+  pack.credits ? pack.price_amount / pack.credits : Number.POSITIVE_INFINITY;
 
-function PlanCard({
-  plan,
+function PackCard({
+  pack,
+  pricing,
   highlighted,
   ctaHref,
 }: {
-  plan: SellerPlan;
+  pack: CreditPack;
+  pricing: CreditPricing | null;
   highlighted: boolean;
   ctaHref: string;
 }) {
-  const label = INTERVAL_LABELS[plan.interval];
-  const months = intervalMonths(plan.interval);
+  const coverage = packCoverage(pack.credits, pricing);
 
   return (
     <article
@@ -144,33 +156,26 @@ function PlanCard({
       }`}
     >
       <p className="flex items-center justify-between gap-2 text-sm font-medium text-accent-text">
-        {label?.adverb ?? plan.interval}
+        {plural(pack.credits, "credit")}
         {highlighted ? (
           <span className="rounded-md bg-accent-soft px-2 py-0.5 text-xs font-semibold">
             Best value
           </span>
         ) : null}
       </p>
-      <h2 className="mt-1 text-2xl font-semibold text-fg">{plan.name}</h2>
-      {plan.description ? (
-        <p className="mt-3 text-sm leading-6 text-muted">{plan.description}</p>
+      <h2 className="mt-1 text-2xl font-semibold text-fg">{pack.name}</h2>
+      {pack.description ? (
+        <p className="mt-3 text-sm leading-6 text-muted">{pack.description}</p>
       ) : null}
       <p className="mt-5 text-4xl font-semibold text-fg">
-        {formatMoney(plan.price_amount, plan.currency)}
-        <span className="text-sm font-medium text-muted">
-          /{label?.period ?? plan.interval}
-        </span>
+        {formatMoney(pack.price_amount, pack.currency)}
       </p>
-      <p className="mt-1 min-h-5 flex-1 text-sm text-muted">
-        {months > 1
-          ? `${formatMoney(perMonth(plan), plan.currency)}/month`
-          : null}
-      </p>
+      <p className="mt-1 min-h-5 flex-1 text-sm text-muted">{coverage}</p>
       <Link
         className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-accent-fg hover:bg-accent-hover"
         href={ctaHref}
       >
-        Become a seller
+        Buy credits
         <ArrowRight size={16} />
       </Link>
     </article>

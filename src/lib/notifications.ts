@@ -13,7 +13,7 @@ export type NotificationItem = {
   body: string;
   order: string | null;
   order_code: string | null;
-  // Subscription notices (e.g. "subscription_expired") point here instead of an order.
+  // Seller-access notices (e.g. "credits_added", "subscription_expired") point here instead of an order.
   subscription: string | null;
   link: string | null; // absolute: `${FRONTEND_URL}/orders/<id>` or `/become-a-vendor`
   read_at: string | null;
@@ -57,14 +57,28 @@ export const markAllNotificationsRead = () =>
     raw: true,
   });
 
+// Seller-access notices without a usable link (credits added, access
+// renewed or ended…) open the credits page.
+const ACCESS_KINDS = new Set([
+  "credits_added",
+  "access_renewed",
+  "subscription_paid",
+  "subscription_ending",
+  "subscription_expired",
+]);
+
 // The API links to the storefront by absolute URL; navigate by its path so
-// the router stays client-side. Falls back to the order page.
+// the router stays client-side. Creator-app links (/dashboard/…) stay
+// absolute. Falls back to /become-a-vendor for access notices, else orders.
 export const notificationPath = (notification: NotificationItem) => {
   try {
     const url = new URL(notification.link ?? "");
+    if (url.pathname.startsWith("/dashboard")) return url.href;
     return `${url.pathname}${url.search}`;
   } catch {
-    if (notification.subscription) return "/become-a-vendor";
+    if (notification.subscription || ACCESS_KINDS.has(notification.kind)) {
+      return "/become-a-vendor";
+    }
     return notification.order
       ? `/orders/${encodeURIComponent(notification.order)}`
       : "/orders";

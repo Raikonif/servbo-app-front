@@ -21,8 +21,13 @@ const MESSAGES: Record<string, string> = {
     "We could not send the email. Try again in a few minutes.",
   google_canceled: "Google sign-in was canceled.",
   google_failed: "We could not sign you in with Google. Please try again.",
-  NO_PLAN: "Seller plans are coming soon.",
-  INVALID_PLAN: "Choose one of the available plans.",
+  INVALID_PACK: "Choose one of the available credit packs.",
+  INSUFFICIENT_CREDITS: "You don't have enough credits for this.",
+  ALREADY_ACTIVE: "Your seller access is already active.",
+  INVALID_SLOTS: "Choose from 1 to 100 product slots.",
+  INVALID_MODE: "Choose Monthly or Per product.",
+  NOT_ACTIVE: "You don't have active seller access.",
+  NOT_PER_PRODUCT: "Product slots are only for the Per product mode.",
   PAYMENT_PROVIDER_ERROR:
     "We couldn't create the payment QR right now. Try again in a minute.",
   NO_QR_AVAILABLE:
@@ -31,7 +36,7 @@ const MESSAGES: Record<string, string> = {
   PROMO_EXHAUSTED: "This code has been used up.",
   PROMO_ALREADY_USED: "You already used this code.",
   PROMO_NOT_ELIGIBLE: "This code is only for new sellers.",
-  PROMO_PLAN: "This code does not apply to that plan.",
+  PROMO_PLAN: "This code does not apply to that pack.",
   PROMO_NO_EFFECT:
     "Your seller access already lasts longer than this code gives.",
   NETWORK_ERROR:

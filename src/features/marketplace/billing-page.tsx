@@ -1,9 +1,28 @@
 "use client";
 
-import { ArrowRight, CalendarClock, ReceiptText, Store } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarClock,
+  ChevronLeft,
+  ChevronRight,
+  Coins,
+  Store,
+} from "lucide-react";
 import Link from "next/link";
-import { useBillingRecords, useSellerSubscription } from "@/hooks/use-billing";
-import { formatDate, formatMoney } from "@/lib/billing";
+import { useState } from "react";
+import {
+  useBillingRecords,
+  useCreditEntries,
+  useSellerSubscription,
+} from "@/hooks/use-billing";
+import {
+  CREDIT_ENTRY_LABELS,
+  formatDate,
+  formatMoney,
+  isRunning,
+  modeLabel,
+  plural,
+} from "@/lib/billing";
 import { EntityTable } from "./entity-table";
 import { StatCard } from "./stat-card";
 
@@ -32,6 +51,8 @@ export function BillingPage() {
   const recordsQuery = useBillingRecords();
   const state = subscriptionQuery.data;
   const subscription = state?.subscription ?? null;
+  const running = isRunning(subscription) ? subscription : null;
+  const balance = state?.wallet.balance ?? 0;
   const records = recordsQuery.data ?? [];
 
   return (
@@ -43,55 +64,45 @@ export function BillingPage() {
               Billing
             </p>
             <h1 className="mt-2 text-4xl font-semibold leading-tight text-fg">
-              Subscription and payments
+              Credits and payments
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
-              Your seller subscription and the history of your QR payments.
+              Your credit balance, how your credits were spent and the receipts
+              of your QR payments.
             </p>
           </div>
           <section className="rounded-lg border border-accent/40 bg-accent-soft p-5">
             {subscriptionQuery.isPending ? (
               <div className="h-20 animate-pulse rounded-lg bg-accent-soft" />
-            ) : subscription ? (
+            ) : (
               <>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium text-accent-text">
-                      Current plan
+                      Credit balance
                     </p>
                     <p className="mt-1 text-2xl font-semibold text-fg">
-                      {subscription.name}
+                      {plural(balance, "credit")}
                     </p>
                   </div>
-                  <StatusBadge status={subscription.status} />
+                  {subscription ? (
+                    <StatusBadge
+                      status={running ? "active" : subscription.status}
+                    />
+                  ) : null}
                 </div>
                 <p className="mt-3 text-sm text-accent-text">
-                  {formatMoney(
-                    subscription.price_amount,
-                    subscription.currency,
-                  )}
-                  /{subscription.interval} · until{" "}
-                  {formatDate(subscription.current_period_end)}
-                </p>
-                {/* QR plans never renew by themselves (openspec subscription-lifecycle). */}
-                <Link
-                  className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-accent-text hover:text-accent-text"
-                  href="/become-a-vendor"
-                >
-                  Renew by paying again
-                  <ArrowRight size={16} />
-                </Link>
-              </>
-            ) : (
-              <>
-                <p className="text-sm font-medium text-accent-text">
-                  No subscription yet
+                  {running
+                    ? `${modeLabel(running.mode, running.product_limit)} · until ${formatDate(running.current_period_end)}`
+                    : "No seller access running"}
                 </p>
                 <Link
                   className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-accent-text hover:text-accent-text"
                   href="/become-a-vendor"
                 >
-                  Become a seller
+                  {running
+                    ? "Buy more credits"
+                    : "Buy credits or open your store"}
                   <ArrowRight size={16} />
                 </Link>
               </>
@@ -107,20 +118,26 @@ export function BillingPage() {
             value={state?.is_seller ? "Seller" : "Buyer"}
           />
           <StatCard
-            helper="Current period start"
-            icon={CalendarClock}
-            label="Period start"
-            value={formatDate(subscription?.current_period_start)}
-          />
-          <StatCard
             helper={
               state?.pending_payment
                 ? `Pending payment ${state.pending_payment.reference}`
-                : "Renew from Become a seller"
+                : "Credits never expire"
             }
-            icon={ReceiptText}
-            label="Period end"
-            value={formatDate(subscription?.current_period_end)}
+            icon={Coins}
+            label="Credits"
+            value={balance.toLocaleString("en-US")}
+          />
+          <StatCard
+            helper={
+              running
+                ? running.auto_renew
+                  ? `Renews for ${plural(running.renewal_cost, "credit")}`
+                  : "Auto-renew is off"
+                : "No seller access running"
+            }
+            icon={CalendarClock}
+            label="Access until"
+            value={formatDate(running?.current_period_end)}
           />
         </section>
 
@@ -136,7 +153,14 @@ export function BillingPage() {
           </section>
         ) : (
           <EntityTable
-            columns={["Date", "Reference", "Method", "Amount", "Status"]}
+            columns={[
+              "Date",
+              "Reference",
+              "Pack",
+              "Method",
+              "Amount",
+              "Status",
+            ]}
             getRowKey={(record) => record.id}
             items={records}
             renderRow={(record) => (
@@ -146,6 +170,20 @@ export function BillingPage() {
                 </td>
                 <td className="px-5 py-4 font-mono font-medium text-fg">
                   {record.bank_transfer_reference || "—"}
+                </td>
+                <td className="px-5 py-4 text-fg">
+                  {record.pack_name ? (
+                    <>
+                      {record.pack_name}
+                      {record.credits ? (
+                        <span className="block text-xs text-muted">
+                          {plural(record.credits, "credit")}
+                        </span>
+                      ) : null}
+                    </>
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
                 </td>
                 <td className="px-5 py-4 text-muted">
                   {record.payment_method.replaceAll("_", " ")}
@@ -184,11 +222,97 @@ export function BillingPage() {
             title="Payment history"
           />
         )}
+        <CreditHistory />
         <p className="text-xs leading-5 text-muted">
-          Subscriptions are paid by QR only. These entries are payment receipts:
+          Credit packs are paid by QR only. These entries are payment receipts:
           no tax invoice (factura) is issued yet.
         </p>
       </section>
     </main>
+  );
+}
+
+function CreditHistory() {
+  const [page, setPage] = useState(1);
+  const query = useCreditEntries(page);
+  const data = query.data;
+
+  if (query.isPending) {
+    return <div className="h-48 animate-pulse rounded-lg bg-surface-2" />;
+  }
+  if (query.isError || !data) {
+    return (
+      <section className="rounded-lg border border-line bg-surface p-5 text-sm text-muted shadow-sm">
+        We could not load your credit history.
+      </section>
+    );
+  }
+  if (!data.results.length) {
+    return (
+      <section className="rounded-lg border border-line bg-surface p-5 text-sm text-muted shadow-sm">
+        No credit activity yet.
+      </section>
+    );
+  }
+  return (
+    <div className="space-y-3">
+      <EntityTable
+        columns={["Date", "Activity", "Credits", "Balance"]}
+        getRowKey={(entry) => entry.id}
+        items={data.results}
+        renderRow={(entry) => (
+          <>
+            <td className="px-5 py-4 text-muted">
+              {formatDate(entry.created_at)}
+            </td>
+            <td className="px-5 py-4 text-fg">
+              <span className="font-medium">
+                {CREDIT_ENTRY_LABELS[entry.kind] ?? entry.kind}
+              </span>
+              {entry.description ? (
+                <span className="block text-xs text-muted">
+                  {entry.description}
+                </span>
+              ) : null}
+            </td>
+            <td
+              className={`px-5 py-4 font-semibold ${
+                entry.amount > 0 ? "text-accent-text" : "text-fg"
+              }`}
+            >
+              {entry.amount > 0 ? "+" : "−"}
+              {Math.abs(entry.amount).toLocaleString("en-US")}
+            </td>
+            <td className="px-5 py-4 text-muted">
+              {entry.balance_after.toLocaleString("en-US")}
+            </td>
+          </>
+        )}
+        title="Credit history"
+      />
+      {data.next || data.previous ? (
+        <div className="flex items-center justify-end gap-2 text-sm">
+          <button
+            className="inline-flex min-h-9 items-center gap-1 rounded-md border border-line px-3 text-fg hover:border-accent disabled:opacity-40"
+            disabled={!data.previous || query.isFetching}
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            type="button"
+          >
+            <ChevronLeft size={15} />
+            Newer
+          </button>
+          <span className="text-muted">Page {page}</span>
+          <button
+            className="inline-flex min-h-9 items-center gap-1 rounded-md border border-line px-3 text-fg hover:border-accent disabled:opacity-40"
+            disabled={!data.next || query.isFetching}
+            onClick={() => setPage((current) => current + 1)}
+            type="button"
+          >
+            Older
+            <ChevronRight size={15} />
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }

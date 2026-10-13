@@ -1,108 +1,90 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import {
   ArrowRight,
   BadgeCheck,
-  Check,
   Clock3,
-  Copy,
   Gift,
   QrCode,
-  RefreshCw,
-  Repeat,
   Store,
   Ticket,
   TimerOff,
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { type FormEvent, type ReactNode, useState } from "react";
-import { useSellerPlans, useSellerSubscription } from "@/hooks/use-billing";
+import { useCreditPacks, useSellerSubscription } from "@/hooks/use-billing";
 import { useNow } from "@/hooks/use-now";
 import {
   activatePromotion,
-  billingKeys,
-  CREATOR_URL,
+  type CreditPricing,
+  cancelPayment,
   checkPromotion,
   formatDate,
   formatMoney,
-  INTERVAL_LABELS,
-  intervalMonths,
   isExpired,
+  isRunning,
   type PendingPayment,
   type PromotionCheck,
-  type SellerSubscriptionState,
-  startSellerPayment,
+  packCoverage,
+  plural,
+  startPackPayment,
 } from "@/lib/billing";
-
-const primaryButton =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-accent px-5 text-sm font-medium text-accent-fg hover:bg-accent-hover disabled:opacity-60";
-const secondaryButton =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-line px-5 text-sm font-medium text-fg hover:border-accent hover:text-accent-text disabled:opacity-60";
-const card = "rounded-lg border border-line bg-surface p-6 shadow-sm";
+import {
+  card,
+  ModeChooser,
+  payHref,
+  primaryButton,
+  SellerAccessCard,
+  secondaryButton,
+  useShowBillingState,
+} from "./seller-access";
 
 export function BecomeVendorPage() {
-  const queryClient = useQueryClient();
+  const router = useRouter();
   const subscription = useSellerSubscription();
-  const plans = useSellerPlans();
-  // Picker open over the QR (switch plan) or the seller card (renew).
-  const [choosing, setChoosing] = useState(false);
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const packs = useCreditPacks();
+  const showState = useShowBillingState();
+  const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
   // A checked promotion code (openspec subscription-promotions): free access
-  // replaces the plan picker; a discount rides along with "Get QR".
+  // replaces the pack picker; a discount rides along with the pack payment.
   const [promo, setPromo] = useState<PromotionCheck | null>(null);
-  const showState = (state: SellerSubscriptionState) => {
-    queryClient.setQueryData<SellerSubscriptionState>(
-      billingKeys.sellerSubscription,
-      state,
-    );
-    void queryClient.invalidateQueries({ queryKey: billingKeys.records });
-    setChoosing(false);
-    setPromo(null);
-  };
+  // Choosing a pack moves to the payment step; a 100% code adds the credits
+  // at once and the step shows them.
   const pay = useMutation({
-    mutationFn: (planId: string) =>
-      startSellerPayment({
-        planId,
+    mutationFn: (packId: string) =>
+      startPackPayment({
+        packId,
         promoCode: promo?.kind === "free_access" ? null : promo?.code,
       }),
-    onSuccess: showState,
+    onSuccess: (next) => {
+      showState(next);
+      const id = next.pending_payment?.id ?? next.last_purchase?.id;
+      if (id) router.push(payHref(id));
+    },
   });
   const activate = useMutation({
     mutationFn: activatePromotion,
+    onSuccess: (next) => {
+      showState(next);
+      setPromo(null);
+    },
+  });
+  const cancel = useMutation({
+    mutationFn: cancelPayment,
     onSuccess: showState,
   });
 
   const state = subscription.data;
-  const active =
-    state?.is_seller && state.subscription?.status === "active"
-      ? state.subscription
-      : null;
+  const running = isRunning(state?.subscription) ? state?.subscription : null;
   const pending = state?.pending_payment ?? null;
+  const balance = state?.wallet.balance ?? 0;
+  const pricing = state?.pricing ?? null;
 
-  // The pending payment went away (confirmed by the webhook or an admin):
-  // close the picker so the seller state shows without a reload.
-  const pendingId = pending?.id ?? null;
-  const [seenPendingId, setSeenPendingId] = useState(pendingId);
-  if (pendingId !== seenPendingId) {
-    setSeenPendingId(pendingId);
-    if (!pendingId) setChoosing(false);
-  }
-
-  const planId =
-    selectedPlanId ?? pending?.plan?.id ?? plans.data?.[0]?.id ?? null;
-  const promoField = (
-    <PromoCodeField
-      applied={promo}
-      onApplied={(result) => {
-        pay.reset();
-        activate.reset();
-        setPromo(result);
-      }}
-    />
-  );
-  const choosePlan =
+  const packId = selectedPackId ?? pending?.pack?.id ?? packs.data?.[0]?.id;
+  const buyPacks =
     promo?.kind === "free_access" ? (
       <FreeAccessCard
         busy={activate.isPending}
@@ -115,36 +97,41 @@ export function BecomeVendorPage() {
         promo={promo}
       />
     ) : (
-      <PlanPicker
-        discounts={promo?.plans ?? null}
-        extra={promoField}
-        busy={pay.isPending}
+      <PackPicker
+        busy={pay.isPending || pay.isSuccess}
+        discounts={promo?.packs ?? null}
         error={pay.error?.message ?? null}
-        onCancel={
-          choosing
-            ? () => {
-                setChoosing(false);
-                pay.reset();
-              }
-            : undefined
+        extra={
+          <PromoCodeField
+            applied={promo}
+            onApplied={(result) => {
+              pay.reset();
+              activate.reset();
+              setPromo(result);
+            }}
+          />
         }
-        onRetry={() => void plans.refetch()}
-        onSelect={setSelectedPlanId}
+        note={
+          pending
+            ? "Choosing another pack, or another code, replaces your pending payment."
+            : null
+        }
+        onRetry={() => void packs.refetch()}
+        onSelect={setSelectedPackId}
         onSubmit={() => {
-          if (planId) pay.mutate(planId);
+          if (packId) pay.mutate(packId);
         }}
-        plans={plans}
-        selectedId={planId}
-        title={
-          active ? "Renew your plan" : pending ? "Switch plan" : "Choose a plan"
-        }
+        packs={packs}
+        pricing={pricing}
+        selectedId={packId ?? null}
+        title={running || balance > 0 ? "Buy more credits" : "Buy credits"}
       />
     );
 
   let content: ReactNode;
   if (subscription.isPending) {
     content = <div className="h-64 animate-pulse rounded-lg bg-surface-2" />;
-  } else if (subscription.isError) {
+  } else if (subscription.isError || !state) {
     content = (
       <section className={card}>
         <p className="text-sm text-muted">
@@ -159,63 +146,25 @@ export function BecomeVendorPage() {
         </button>
       </section>
     );
-  } else if (choosing) {
-    content = choosePlan;
-  } else if (pending) {
-    content = (
-      <PendingPaymentCard
-        busy={pay.isPending}
-        error={pay.error?.message ?? null}
-        onNewQr={() => {
-          // Same plan again: the backend replaces the expired QR.
-          if (pending.plan) pay.mutate(pending.plan.id);
-          else setChoosing(true);
-        }}
-        onRefresh={() => void subscription.refetch()}
-        onSwitchPlan={() => {
-          pay.reset();
-          setSelectedPlanId(pending.plan?.id ?? null);
-          setChoosing(true);
-        }}
-        payment={pending}
-        refreshing={subscription.isFetching}
-      />
-    );
-  } else if (active) {
-    content = (
-      <section className={card}>
-        <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent-soft text-accent-text">
-          <BadgeCheck size={24} />
-        </span>
-        <h2 className="mt-4 text-2xl font-semibold text-fg">You're a seller</h2>
-        <p className="mt-2 text-sm leading-6 text-muted">
-          Your {active.name} subscription is active until{" "}
-          <span className="font-medium text-fg">
-            {formatDate(active.current_period_end)}
-          </span>
-          .
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <a className={primaryButton} href={CREATOR_URL}>
-            Open the creator app
-            <ArrowRight size={17} />
-          </a>
-          <button
-            className={secondaryButton}
-            onClick={() => {
-              pay.reset();
-              setChoosing(true);
-            }}
-            type="button"
-          >
-            <RefreshCw size={16} />
-            Renew
-          </button>
-        </div>
-      </section>
-    );
   } else {
-    content = choosePlan;
+    content = (
+      <>
+        {pending ? (
+          <ContinuePaymentCard
+            busy={cancel.isPending}
+            error={cancel.error?.message ?? null}
+            onCancel={() => cancel.mutate()}
+            payment={pending}
+          />
+        ) : null}
+        {running ? (
+          <SellerAccessCard state={state} subscription={running} />
+        ) : balance > 0 ? (
+          <ModeChooser state={state} />
+        ) : null}
+        {buyPacks}
+      </>
+    );
   }
 
   return (
@@ -230,15 +179,21 @@ export function BecomeVendorPage() {
             Open your store on Servbo.
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-muted">
-            Choose a monthly, quarterly or yearly plan and pay it with a QR
-            transfer. Your seller account is activated as soon as the payment is
-            confirmed, then you manage your products from the creator app.
+            Buy a credit pack with a QR transfer, then spend the credits on
+            seller access: <span className="font-medium text-fg">Monthly</span>
+            {pricing ? ` (${plural(pricing.monthly_fee, "credit")}, ` : " ("}
+            unlimited products) or{" "}
+            <span className="font-medium text-fg">Per product</span>
+            {pricing
+              ? ` (${plural(pricing.product_fee, "credit")} for each product you post)`
+              : " (pay only for the products you post)"}
+            . You manage your products from the creator app.
           </p>
           <ol className="mt-8 space-y-3 text-sm text-muted">
             {[
-              "Choose a plan and get your QR",
-              "Pay it from your bank app before it expires",
-              "Your seller account activates once the payment is confirmed",
+              "Choose a credit pack and pay its QR",
+              "Your credits are added once the payment is confirmed",
+              "Choose Monthly or Per product to open your store",
             ].map((step, index) => (
               <li className="flex items-center gap-3" key={step}>
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-fg text-xs font-semibold text-bg">
@@ -250,62 +205,65 @@ export function BecomeVendorPage() {
           </ol>
           <p className="mt-6 text-xs text-muted">
             Payment by QR only · you get a payment receipt, no tax invoice
-            (factura) yet. Plans do not renew automatically: pay again before
-            the end date to keep selling.
+            (factura) yet. Credits never expire: at the end of each period your
+            access renews from your balance, and it ends if the balance is not
+            enough.
           </p>
           <Link
             className="mt-4 inline-flex text-sm font-medium text-accent-text hover:text-accent-text"
             href="/billing"
           >
-            View billing history
+            View credits and billing history
           </Link>
         </div>
-        <div>{content}</div>
+        <div className="space-y-6">{content}</div>
       </section>
     </main>
   );
 }
 
-type PlansQuery = ReturnType<typeof useSellerPlans>;
+type PacksQuery = ReturnType<typeof useCreditPacks>;
 
-function PlanPicker({
-  plans,
+function PackPicker({
+  packs,
+  pricing,
   discounts,
   extra,
+  note,
   selectedId,
   onSelect,
   onSubmit,
-  onCancel,
   onRetry,
   busy,
   error,
   title,
 }: {
-  plans: PlansQuery;
-  // From a checked discount code: each plan's price with it (null = not covered).
-  discounts: PromotionCheck["plans"] | null;
+  packs: PacksQuery;
+  pricing: CreditPricing | null;
+  // From a checked discount code: each pack's price with it (null = not covered).
+  discounts: PromotionCheck["packs"] | null;
   extra: ReactNode;
+  note: string | null;
   selectedId: string | null;
   onSelect: (id: string) => void;
   onSubmit: () => void;
-  onCancel?: () => void;
   onRetry: () => void;
   busy: boolean;
   error: string | null;
   title: string;
 }) {
-  if (plans.isPending) {
+  if (packs.isPending) {
     return (
       <section className={card}>
         <div className="h-48 animate-pulse rounded-lg bg-surface-2" />
       </section>
     );
   }
-  if (plans.isError) {
+  if (packs.isError) {
     return (
       <section className={card}>
         <p className="text-sm text-muted">
-          We could not load the seller plans.
+          We could not load the credit packs.
         </p>
         <button
           className={`mt-4 ${secondaryButton}`}
@@ -317,14 +275,14 @@ function PlanPicker({
       </section>
     );
   }
-  if (!plans.data.length) {
+  if (!packs.data.length) {
     return (
       <section className={card}>
         <h2 className="text-2xl font-semibold text-fg">
-          Seller plans are not available yet
+          Credit packs are not available yet
         </h2>
         <p className="mt-2 text-sm leading-6 text-muted">
-          We are finishing the seller subscription. Check back shortly.
+          We are getting the seller packs ready. Check back shortly.
         </p>
       </section>
     );
@@ -336,58 +294,53 @@ function PlanPicker({
   };
 
   return (
-    <section className={card}>
+    <section className={card} id="packs">
       <form onSubmit={submit}>
         <fieldset>
           <legend className="text-xl font-semibold text-fg">{title}</legend>
           <div className="mt-4 space-y-3">
-            {plans.data.map((plan) => {
-              const label = INTERVAL_LABELS[plan.interval];
-              const months = intervalMonths(plan.interval);
+            {packs.data.map((pack) => {
               const discounted = discounts?.find(
-                (entry) => entry.id === plan.id,
+                (entry) => entry.id === pack.id,
               )?.discounted_amount;
+              const coverage = packCoverage(pack.credits, pricing);
               return (
                 <label
                   className="flex cursor-pointer items-start gap-3 rounded-lg border border-line p-4 hover:border-accent has-checked:border-accent has-checked:bg-accent-soft has-focus-visible:ring-2 has-focus-visible:ring-accent"
-                  key={plan.id}
+                  key={pack.id}
                 >
                   <input
-                    checked={plan.id === selectedId}
+                    checked={pack.id === selectedId}
                     className="mt-1 size-4 shrink-0 accent-accent"
-                    name="seller-plan"
-                    onChange={() => onSelect(plan.id)}
+                    name="credit-pack"
+                    onChange={() => onSelect(pack.id)}
                     type="radio"
-                    value={plan.id}
+                    value={pack.id}
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium text-fg">
-                      {plan.name}
+                      {pack.name}
                     </span>
-                    <span className="block text-sm text-muted">
-                      {label?.adverb ?? plan.interval}
-                      {months > 1
-                        ? ` · ${formatMoney(
-                            Math.round(plan.price_amount / months),
-                            plan.currency,
-                          )}/month`
-                        : null}
+                    <span className="block text-sm font-medium text-accent-text">
+                      {plural(pack.credits, "credit")}
                     </span>
+                    {coverage ? (
+                      <span className="mt-0.5 block text-xs text-muted">
+                        {coverage}
+                      </span>
+                    ) : null}
                   </span>
                   <span className="shrink-0 text-right font-semibold text-fg">
                     {discounted != null ? (
                       <>
                         <s className="mr-1.5 text-sm font-medium text-muted">
-                          {formatMoney(plan.price_amount, plan.currency)}
+                          {formatMoney(pack.price_amount, pack.currency)}
                         </s>
-                        {formatMoney(discounted, plan.currency)}
+                        {formatMoney(discounted, pack.currency)}
                       </>
                     ) : (
-                      formatMoney(plan.price_amount, plan.currency)
+                      formatMoney(pack.price_amount, pack.currency)
                     )}
-                    <span className="block text-xs font-medium text-muted">
-                      /{label?.period ?? plan.interval}
-                    </span>
                   </span>
                 </label>
               );
@@ -395,6 +348,7 @@ function PlanPicker({
           </div>
         </fieldset>
         {extra}
+        {note ? <p className="mt-3 text-xs text-muted">{note}</p> : null}
         {error ? (
           <p className="mt-3 text-sm text-danger" role="alert">
             {error}
@@ -406,73 +360,27 @@ function PlanPicker({
           type="submit"
         >
           <QrCode size={17} />
-          {busy ? "Preparing QR…" : "Get QR"}
+          {busy ? "Preparing payment…" : "Continue to payment"}
         </button>
-        {onCancel ? (
-          <button
-            className={`mt-3 w-full ${secondaryButton}`}
-            disabled={busy}
-            onClick={onCancel}
-            type="button"
-          >
-            Cancel
-          </button>
-        ) : null}
       </form>
     </section>
   );
 }
 
-// "4:59" / "1:02:03" until the QR expires.
-const formatCountdown = (ms: number) => {
-  const total = Math.max(0, Math.ceil(ms / 1000));
-  const hours = Math.floor(total / 3600);
-  const minutes = Math.floor((total % 3600) / 60);
-  const seconds = String(total % 60).padStart(2, "0");
-  return hours
-    ? `${hours}:${String(minutes).padStart(2, "0")}:${seconds}`
-    : `${minutes}:${seconds}`;
-};
-
-function PendingPaymentCard({
+// A pack payment is open: back to its QR, or cancel it.
+function ContinuePaymentCard({
   payment,
-  refreshing,
   busy,
   error,
-  onRefresh,
-  onNewQr,
-  onSwitchPlan,
+  onCancel,
 }: {
   payment: PendingPayment;
-  refreshing: boolean;
   busy: boolean;
   error: string | null;
-  onRefresh: () => void;
-  onNewQr: () => void;
-  onSwitchPlan: () => void;
+  onCancel: () => void;
 }) {
-  const [copied, setCopied] = useState(false);
-  // Null on the server and the first client render: no hydration mismatch.
-  const now = useNow(1000);
-  const expiresAt = payment.expires_at;
-  const expired = now !== null && isExpired(expiresAt, now);
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(payment.reference);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard blocked: the code is still visible to copy by hand.
-    }
-  };
-  const interval = payment.plan
-    ? INTERVAL_LABELS[payment.plan.interval]
-    : undefined;
-  // Relay QRs carry their code as the glosa: the payer types nothing.
-  const relay = payment.provider === "relay_qr";
-  const partial =
-    payment.amount_paid > 0 && payment.amount_paid < payment.amount_due;
-
+  const now = useNow(30_000);
+  const expired = now !== null && isExpired(payment.expires_at, now);
   return (
     <section className={card}>
       {expired ? (
@@ -483,137 +391,43 @@ function PendingPaymentCard({
       ) : (
         <p className="inline-flex items-center gap-2 rounded-md bg-warning-soft px-2 py-1 text-xs font-semibold uppercase text-warning">
           <Clock3 size={14} />
-          Waiting for payment
+          Payment pending
         </p>
       )}
-      <p className="mt-3 text-sm leading-6 text-muted" role="status">
-        {expired
-          ? "This QR can no longer be paid. Get a new one to continue."
-          : "Your seller account is activated as soon as the payment is confirmed. This page updates on its own."}
+      <h2 className="mt-3 text-xl font-semibold text-fg">
+        {payment.pack ? `${payment.pack.name} pack` : "Your payment"}
+        {payment.credits ? (
+          <span className="text-muted">
+            {" "}
+            · {plural(payment.credits, "credit")}
+          </span>
+        ) : null}
+      </h2>
+      <p className="mt-1 text-sm text-muted">
+        {formatMoney(payment.amount_due, payment.currency)} · code{" "}
+        <span className="font-mono font-medium text-fg">
+          {payment.reference}
+        </span>
+        {expired ? " · get a new QR on the payment page" : null}
       </p>
-      {expired ? (
-        <button
-          className={`mt-5 w-full ${primaryButton}`}
-          disabled={busy}
-          onClick={onNewQr}
-          type="button"
-        >
-          <RefreshCw className={busy ? "animate-spin" : ""} size={16} />
-          {busy ? "Preparing QR…" : "QR expired — get a new one"}
-        </button>
-      ) : payment.qr_image_url ? (
-        // A storage/provider URL or a data URI: a plain <img> handles both
-        // without configuring next/image hosts.
-        // biome-ignore lint/performance/noImgElement: see above
-        <img
-          alt={`QR code to pay ${formatMoney(payment.amount_due, payment.currency)}, reference ${payment.reference}`}
-          className="mx-auto mt-5 aspect-square w-full max-w-72 rounded-lg border border-line bg-white object-contain"
-          src={payment.qr_image_url}
-        />
-      ) : null}
       {error ? (
         <p className="mt-3 text-sm text-danger" role="alert">
           {error}
         </p>
       ) : null}
-      <dl className="mt-5 space-y-3 text-sm">
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
-          <dt className="text-muted">Amount</dt>
-          <dd className="text-lg font-semibold text-fg">
-            {formatMoney(payment.amount_due, payment.currency)}
-          </dd>
-        </div>
-        {payment.promotion ? (
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
-            <dt className="text-muted">Code</dt>
-            <dd className="text-right font-medium text-fg">
-              {payment.promotion.code}
-              {payment.original_amount &&
-              payment.original_amount > payment.amount_due ? (
-                <span className="text-muted">
-                  {" "}
-                  · was {formatMoney(payment.original_amount, payment.currency)}
-                </span>
-              ) : null}
-            </dd>
-          </div>
-        ) : null}
-        {payment.plan ? (
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
-            <dt className="text-muted">Plan</dt>
-            <dd className="text-right font-medium text-fg">
-              {payment.plan.name}
-              {interval ? (
-                <span className="text-muted"> · {interval.adverb}</span>
-              ) : null}
-            </dd>
-          </div>
-        ) : null}
-        {partial ? (
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
-            <dt className="text-muted">Received</dt>
-            <dd className="text-right font-medium text-fg" role="status">
-              {formatMoney(payment.amount_paid, payment.currency)} of{" "}
-              {formatMoney(payment.amount_due, payment.currency)}
-            </dd>
-          </div>
-        ) : null}
-        {expiresAt && !expired ? (
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
-            <dt className="text-muted">Expires in</dt>
-            <dd className="font-mono font-semibold text-fg" role="timer">
-              {now === null
-                ? "—"
-                : formatCountdown(new Date(expiresAt).getTime() - now)}
-            </dd>
-          </div>
-        ) : null}
-        <div className="rounded-lg border border-accent/40 bg-accent-soft p-3">
-          <dt className="text-accent-text">
-            {relay
-              ? "QR code — pay this exact QR without changing the amount or the note"
-              : "Reference — write it in the payment note"}
-          </dt>
-          <dd className="mt-2 flex flex-wrap items-center justify-between gap-3">
-            <span className="font-mono text-2xl font-semibold tracking-wider text-fg">
-              {payment.reference}
-            </span>
-            {relay ? null : (
-              <button
-                className="inline-flex min-h-9 items-center gap-2 rounded-md border border-accent/60 bg-surface px-3 text-sm font-medium text-accent-text hover:bg-accent-soft"
-                onClick={() => void copy()}
-                type="button"
-              >
-                {copied ? <Check size={15} /> : <Copy size={15} />}
-                {copied ? "Copied" : "Copy"}
-              </button>
-            )}
-          </dd>
-        </div>
-      </dl>
-      {payment.payment_instructions ? (
-        <p className="mt-4 whitespace-pre-line text-sm leading-6 text-muted">
-          {payment.payment_instructions}
-        </p>
-      ) : null}
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <button
-          className={secondaryButton}
-          disabled={refreshing}
-          onClick={onRefresh}
-          type="button"
-        >
-          <RefreshCw className={refreshing ? "animate-spin" : ""} size={16} />
-          Refresh status
-        </button>
+        <Link className={primaryButton} href={payHref(payment.id)}>
+          Continue to payment
+          <ArrowRight size={17} />
+        </Link>
         <button
           className={secondaryButton}
           disabled={busy}
-          onClick={onSwitchPlan}
+          onClick={onCancel}
           type="button"
         >
-          <Repeat size={16} />
-          Switch plan
+          <X size={16} />
+          {busy ? "Cancelling…" : "Cancel payment"}
         </button>
       </div>
     </section>
@@ -621,7 +435,7 @@ function PendingPaymentCard({
 }
 
 // "Have a code?" (openspec subscription-promotions): checks the code without
-// using it; a discount then shows on the plans, free access replaces them.
+// using it; a discount then shows on the packs, free access replaces them.
 function PromoCodeField({
   applied,
   onApplied,
@@ -692,7 +506,7 @@ function PromoCodeField({
             check.reset();
           }}
           onKeyDown={(event) => {
-            // Inside the plan form: Enter checks the code instead of getting a QR.
+            // Inside the pack form: Enter checks the code instead of paying.
             if (event.key === "Enter") {
               event.preventDefault();
               apply();
@@ -741,8 +555,9 @@ function FreeAccessCard({
       </h2>
       <p className="mt-2 text-sm leading-6 text-muted">
         Code <span className="font-mono font-medium text-fg">{promo.code}</span>{" "}
-        opens your store now, with no QR to pay. Before it ends, choose a plan
-        to keep selling: its time is added after the free period.
+        opens your store now with unlimited products, and no QR to pay. When it
+        ends your access renews from credits: buy a pack before then to keep
+        selling.
       </p>
       {error ? (
         <p className="mt-3 text-sm text-danger" role="alert">
@@ -764,7 +579,7 @@ function FreeAccessCard({
         onClick={onDismiss}
         type="button"
       >
-        Use another code or a plan
+        Use another code or buy a pack
       </button>
     </section>
   );
