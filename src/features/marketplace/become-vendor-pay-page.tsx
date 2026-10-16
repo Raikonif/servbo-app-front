@@ -3,7 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import {
   ArrowLeft,
-  BadgeCheck,
+  ArrowRight,
   Check,
   CircleCheck,
   Clock3,
@@ -15,7 +15,10 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
-import { useSellerSubscription } from "@/hooks/use-billing";
+import {
+  useSellerSubscription,
+  useShowBillingState,
+} from "@/hooks/use-billing";
 import { useNow } from "@/hooks/use-now";
 import {
   CREATOR_URL,
@@ -23,7 +26,6 @@ import {
   formatDate,
   formatMoney,
   isExpired,
-  isRunning,
   type LastPurchase,
   type PendingPayment,
   plural,
@@ -32,17 +34,17 @@ import {
 } from "@/lib/billing";
 import {
   BalanceBadge,
+  BecomeSellerCard,
+  CREATOR_BILLING_URL,
   card,
-  ModeChooser,
   payHref,
   primaryButton,
   secondaryButton,
-  useShowBillingState,
-} from "./seller-access";
+} from "./seller-credits";
 
 // The payment step (openspec subscription-payments "Customer buys a pack in
 // the app"): the pending pack QR, polled until it is confirmed, then the
-// credits and the mode chooser. Anything else goes back to /become-a-vendor.
+// new balance (and, for a non-seller, the become-a-seller button). Anything else goes back to /become-a-vendor.
 export function BecomeVendorPayPage() {
   const router = useRouter();
   const paymentId = useSearchParams().get("payment");
@@ -152,7 +154,7 @@ function PaidView({
   purchase: LastPurchase;
   state: SellerSubscriptionState;
 }) {
-  const running = isRunning(state.subscription) ? state.subscription : null;
+  const { credits } = state;
   return (
     <>
       <section className={card}>
@@ -165,36 +167,50 @@ function PaidView({
         <p className="mt-2 text-sm leading-6 text-muted">
           {purchase.pack ? `${purchase.pack.name} pack` : "Credit pack"}
           {purchase.paid_at ? ` · paid ${formatDate(purchase.paid_at)}` : ""}.
-          Your balance is now{" "}
-          <span className="font-medium text-fg">
-            {plural(state.wallet.balance, "credit")}
-          </span>
-          . Credits never expire.
+          Paid credits never expire.
         </p>
-      </section>
-      {running ? (
-        <section className={card}>
-          <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent-soft text-accent-text">
-            <BadgeCheck size={24} />
-          </span>
-          <h2 className="mt-4 text-xl font-semibold text-fg">
-            You're a seller until {formatDate(running.current_period_end)}
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-muted">
-            Your access renews from these credits when the period ends.
-          </p>
+        <dl className="mt-4 space-y-2 text-sm">
+          <div className={row}>
+            <dt className="text-muted">Paid credits</dt>
+            <dd className="font-medium text-fg">
+              {plural(credits.paid, "credit")}
+            </dd>
+          </div>
+          {state.is_seller ? (
+            <div className={row}>
+              <dt className="text-muted">Free credits</dt>
+              <dd className="text-right font-medium text-fg">
+                {plural(credits.free, "credit")}
+                {credits.free_resets_at ? (
+                  <span className="block text-xs font-normal text-muted">
+                    Reset on {formatDate(credits.free_resets_at)}
+                  </span>
+                ) : null}
+              </dd>
+            </div>
+          ) : null}
+          <div className={row}>
+            <dt className="text-muted">Total</dt>
+            <dd className="text-lg font-semibold text-fg">
+              {plural(credits.total, "credit")}
+            </dd>
+          </div>
+        </dl>
+        {state.is_seller ? (
           <div className="mt-5 flex flex-wrap gap-3">
             <a className={primaryButton} href={CREATOR_URL}>
-              Open the creator app
+              Open the creator dashboard
+              <ArrowRight size={17} />
             </a>
-            <Link className={secondaryButton} href="/become-a-vendor">
-              Seller access
-            </Link>
+            <a className={secondaryButton} href={CREATOR_BILLING_URL}>
+              Credit history
+            </a>
           </div>
-        </section>
-      ) : state.wallet.balance > 0 ? (
-        <ModeChooser state={state} title="Now open your store" />
-      ) : null}
+        ) : null}
+      </section>
+      {state.is_seller ? null : (
+        <BecomeSellerCard state={state} title="Now open your store" />
+      )}
     </>
   );
 }

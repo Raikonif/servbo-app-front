@@ -2,18 +2,22 @@
 
 import {
   keepPreviousData,
+  useMutation,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { sessionQueryKey, useSession } from "@/hooks/use-session";
 import {
+  activateSeller,
   billingKeys,
   getBillingRecords,
   getCreditEntries,
   getCreditPacks,
   getSellerSubscription,
   isExpired,
+  redeemPromotion,
+  type SellerSubscriptionState,
 } from "@/lib/billing";
 
 export function useCreditPacks() {
@@ -30,7 +34,43 @@ export function useCreditPacks() {
 const PENDING_POLL_MS = 4_000;
 const EXPIRY_GRACE_MS = 2 * 60_000;
 
-// Once access starts the backend reports is_seller; refetch the session so
+// Shows a state returned by a billing mutation without a refetch; the
+// receipts and the credit history may have changed with it.
+export function useShowBillingState() {
+  const queryClient = useQueryClient();
+  return (state: SellerSubscriptionState) => {
+    queryClient.setQueryData<SellerSubscriptionState>(
+      billingKeys.sellerSubscription,
+      state,
+    );
+    void queryClient.invalidateQueries({ queryKey: billingKeys.records });
+    void queryClient.invalidateQueries({ queryKey: billingKeys.creditEntries });
+  };
+}
+
+// Becomes a seller for free (openspec seller-free-credits). The new state
+// shows at once; useSellerSubscription then refreshes the session role.
+export function useActivateSeller() {
+  const queryClient = useQueryClient();
+  const showState = useShowBillingState();
+  return useMutation({
+    mutationFn: activateSeller,
+    onSuccess: showState,
+    // ALREADY_ACTIVE: the cached state is stale, show the current one.
+    onError: () =>
+      void queryClient.invalidateQueries({
+        queryKey: billingKeys.sellerSubscription,
+      }),
+  });
+}
+
+// Claims a bonus-credits code; the new paid balance shows at once.
+export function useRedeemPromotion() {
+  const showState = useShowBillingState();
+  return useMutation({ mutationFn: redeemPromotion, onSuccess: showState });
+}
+
+// Once a user becomes a seller the backend reports is_seller; refetch the session so
 // the header and menus pick up the new role. `enabled: false` for anonymous
 // visitors (the endpoint needs a session).
 export function useSellerSubscription({ enabled = true } = {}) {

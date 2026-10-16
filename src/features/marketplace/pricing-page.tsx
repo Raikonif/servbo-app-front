@@ -14,11 +14,11 @@ import {
 } from "@/lib/billing";
 
 const INCLUDED = [
-  "Secure seller profile",
-  "Monthly: unlimited product listings in the creator app",
-  "Per product: pay only for the products you post",
+  "Free seller account and profile",
+  "Free credits every cycle to publish and update products",
+  "Drafts are always free",
   "Buyer message routing",
-  "Credits never expire · pay by QR",
+  "Paid credits never expire · pay by QR",
 ];
 
 export function PricingPage() {
@@ -39,23 +39,26 @@ export function PricingPage() {
               Pricing
             </p>
             <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight text-fg sm:text-5xl">
-              Sell on Servbo with credits.
+              Sell on Servbo for free.
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-              Buy a credit pack by scanning a QR code, then spend the credits on
-              seller access: Monthly with unlimited products
-              {pricing ? ` (${plural(pricing.monthly_fee, "credit")})` : ""}, or
-              Per product
+              Becoming a seller costs nothing: every{" "}
+              {pricing?.period_days ?? 30} days you get{" "}
               {pricing
-                ? ` (${plural(pricing.product_fee, "credit")} each)`
-                : ""}{" "}
-              for a {pricing?.period_days ?? 30}-day period.
+                ? plural(pricing.free_credits, "free credit")
+                : "free credits"}
+              . Publishing a product costs{" "}
+              {pricing ? plural(pricing.publish_cost, "credit") : "a credit"}{" "}
+              and saving changes to a published product costs{" "}
+              {pricing ? plural(pricing.edit_cost, "credit") : "a credit"}.
+              Drafts are free. Need more? Buy a credit pack by scanning a QR
+              code: paid credits never expire and are spent after the free ones.
             </p>
           </div>
           <aside className="rounded-lg border border-line bg-surface p-5 shadow-sm">
             <div className="flex items-center gap-2 text-sm font-medium text-accent-text">
               <ShieldCheck size={17} />
-              Seller access includes
+              Every seller gets
             </div>
             <ul className="mt-4 space-y-3 text-sm text-muted">
               {INCLUDED.map((item) => (

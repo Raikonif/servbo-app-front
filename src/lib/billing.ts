@@ -14,37 +14,27 @@ export type CreditPack = {
   currency: string;
 };
 
-export type AccessMode = "monthly" | "per_product";
-
-// Credit prices of seller access, editable in the admin.
+// Credit prices, editable by staff (openspec seller-free-credits): every
+// seller gets `free_credits` every `period_days` days (they reset, no carry
+// over); publishing a product costs `publish_cost`, saving changes to a
+// published product costs `edit_cost`, drafts are free.
 export type CreditPricing = {
-  monthly_fee: number; // credits for one period with unlimited products
-  product_fee: number; // credits per product slot for one period
+  free_credits: number;
   period_days: number;
+  publish_cost: number;
+  edit_cost: number;
 };
 
-export type SellerSubscription = {
-  id: string;
-  name: string;
-  status: "incomplete" | "active" | "canceled" | "past_due" | string;
-  price_amount: number;
-  currency: string;
-  interval: string;
-  current_period_start: string | null;
-  current_period_end: string | null;
-  // Set while the current period comes from a free-access code.
-  promotion?: { code: string; free_until: string | null } | null;
-  mode: AccessMode | string;
-  // Null for the monthly mode (unlimited products).
-  product_limit: number | null;
-  auto_renew: boolean;
-  next_mode: AccessMode | string;
-  next_product_limit: number | null;
-  // Credits the next renewal takes from the balance.
-  renewal_cost: number;
+// Free credits are spent first; paid credits (packs, bonus codes) never
+// expire. `free_resets_at` is null for a user who is not a seller.
+export type SellerCredits = {
+  free: number;
+  free_resets_at: string | null;
+  paid: number;
+  total: number;
 };
 
-export type PromotionKind = "free_access" | "percent_off" | "amount_off";
+export type PromotionKind = "bonus_credits" | "percent_off" | "amount_off";
 
 type PackRef = { id: string; name: string; credits: number };
 
@@ -82,10 +72,9 @@ export type LastPurchase = {
 
 export type SellerSubscriptionState = {
   is_seller: boolean;
-  wallet: { balance: number };
+  credits: SellerCredits;
   pricing: CreditPricing | null;
-  products_used: number;
-  subscription: SellerSubscription | null;
+  products: { published: number; drafts: number };
   pending_payment: PendingPayment | null;
   last_purchase: LastPurchase | null;
 };
@@ -109,35 +98,52 @@ export type BillingRecord = {
 export type CreditEntryKind =
   | "purchase"
   | "promotion"
+  | "free_grant"
+  | "free_reset"
+  | "publish"
+  | "edit"
+  | "adjustment"
+  // Legacy: seller access paid with credits before seller-free-credits.
   | "monthly_fee"
-  | "product_slots"
-  | "adjustment";
+  | "product_slots";
 
 // One line of the credit ledger: + for credits in, − for credits spent.
+// `amount` is the signed total, `free_amount` the part of it from or to the
+// free credits; `balance_after` is the paid balance after the entry.
 export type CreditEntry = {
   id: string;
   amount: number;
+  free_amount: number;
   kind: CreditEntryKind | string;
   balance_after: number;
+  free_balance_after: number;
   description: string;
+  product: string | null;
+  product_name: string | null;
   record: string | null;
   created_at: string;
 };
 
 export const CREDIT_ENTRY_LABELS: Record<string, string> = {
   purchase: "Pack purchase",
-  promotion: "Promotion",
-  monthly_fee: "Monthly access",
-  product_slots: "Product slots",
+  promotion: "Bonus code",
+  free_grant: "Free credits",
+  free_reset: "Free credits renewed",
+  publish: "Product published",
+  edit: "Product edited",
   adjustment: "Adjustment",
+  monthly_fee: "Monthly access (old plan)",
+  product_slots: "Product slots (old plan)",
 };
 
-// What a code does for the signed-in user (openspec subscription-promotions).
+// What a code does for the signed-in user (openspec subscription-promotions):
+// a bonus code adds paid credits (claimed with redeemPromotion), a discount
+// lowers the pack prices (sent along with the pack payment).
 export type PromotionCheck = {
   code: string;
   kind: PromotionKind | string;
-  name: string;
-  free_until?: string | null;
+  name?: string;
+  bonus_credits?: number | null;
   // Discounts: every active pack, with null when the code does not cover it.
   packs?: {
     id: string;
@@ -159,10 +165,9 @@ export const getCreditPacks = async (): Promise<CreditPack[]> =>
 
 const EMPTY_STATE: SellerSubscriptionState = {
   is_seller: false,
-  wallet: { balance: 0 },
+  credits: { free: 0, free_resets_at: null, paid: 0, total: 0 },
   pricing: null,
-  products_used: 0,
-  subscription: null,
+  products: { published: 0, drafts: 0 },
   pending_payment: null,
   last_purchase: null,
 };
@@ -176,8 +181,8 @@ export const getSellerSubscription = async () =>
 // QR returns that one; another pack, or an expired QR, cancels it and makes a
 // new one. A discount code lowers this one payment; a 100% code adds the
 // credits at once (no pending payment, a new last_purchase). Errors:
-// INVALID_PACK, PROMO_*, NO_QR_AVAILABLE (relay pool busy),
-// PAYMENT_PROVIDER_ERROR, THROTTLED.
+// INVALID_PACK, PROMO_* (a bonus code is PROMO_INVALID here: redeem it),
+// NO_QR_AVAILABLE (relay pool busy), PAYMENT_PROVIDER_ERROR, THROTTLED.
 export const startPackPayment = async ({
   packId,
   promoCode,
@@ -198,25 +203,19 @@ export const cancelPayment = async () =>
     method: "DELETE",
   })) ?? EMPTY_STATE;
 
-// Starts seller access now, paid from the balance. Errors:
-// INSUFFICIENT_CREDITS, ALREADY_ACTIVE, INVALID_MODE, INVALID_SLOTS.
-export const activateAccess = async ({
-  mode,
-  slots,
-}: {
-  mode: AccessMode;
-  slots?: number;
-}) =>
+// Becomes a seller for free, with the free credits. Error: ALREADY_ACTIVE.
+export const activateSeller = async () =>
   (await request<SellerSubscriptionState>(`${SUBSCRIPTION_PATH}activate/`, {
     method: "POST",
-    body: mode === "per_product" ? { mode, slots } : { mode },
   })) ?? EMPTY_STATE;
 
-// A free-access code: seller access at once until its date, no pack or QR.
-export const activatePromotion = async (code: string) =>
-  (await request<SellerSubscriptionState>(SUBSCRIPTION_PATH, {
+// Claims a bonus-credits code: paid credits at once, no pack or QR. Errors:
+// PROMO_INVALID, PROMO_EXHAUSTED, PROMO_ALREADY_USED, PROMO_NOT_ELIGIBLE,
+// THROTTLED.
+export const redeemPromotion = async (code: string) =>
+  (await request<SellerSubscriptionState>("/api/billing/promotions/redeem/", {
     method: "POST",
-    body: { promo_code: code },
+    body: { code: code.trim() },
   })) ?? EMPTY_STATE;
 
 // Nothing is used; errors are PROMO_* codes, THROTTLED after too many tries.
@@ -229,44 +228,16 @@ export const checkPromotion = async (code: string) =>
 export const isExpired = (expiresAt: string | null, now = Date.now()) =>
   expiresAt !== null && new Date(expiresAt).getTime() <= now;
 
-// Seller access is running: active and its period has not ended yet.
-export const isRunning = (
-  subscription: SellerSubscription | null | undefined,
-  now = Date.now(),
-): subscription is SellerSubscription =>
-  Boolean(
-    subscription &&
-      subscription.status === "active" &&
-      subscription.current_period_end &&
-      new Date(subscription.current_period_end).getTime() > now,
-  );
-
-// Credits for one period in a mode (per product: one slot each).
-export const accessCost = (
-  pricing: CreditPricing,
-  mode: AccessMode,
-  slots = 1,
-) => (mode === "monthly" ? pricing.monthly_fee : pricing.product_fee * slots);
-
-export const MAX_SLOTS = 100;
-
-export const modeLabel = (mode: string, slots?: number | null) =>
-  mode === "per_product"
-    ? `Per product${slots ? ` · ${slots} ${slots === 1 ? "slot" : "slots"}` : ""}`
-    : "Monthly";
-
 export const plural = (count: number, one: string, many = `${one}s`) =>
   `${count.toLocaleString("en-US")} ${count === 1 ? one : many}`;
 
-// What a pack buys at the current prices: "≈ 1 month" and "7 products".
+// What a pack buys at the current prices: "35 products to publish".
 export function packCoverage(credits: number, pricing: CreditPricing | null) {
-  if (!pricing) return null;
-  const months = Math.floor(credits / pricing.monthly_fee);
-  const products = Math.floor(credits / pricing.product_fee);
-  const parts = [];
-  if (months > 0) parts.push(`≈ ${plural(months, "month")} unlimited`);
-  if (products > 0) parts.push(`${plural(products, "product")} for a month`);
-  return parts.join(" · or ") || null;
+  if (!pricing || pricing.publish_cost <= 0) return null;
+  const products = Math.floor(credits / pricing.publish_cost);
+  return products > 0
+    ? `Publish up to ${plural(products, "product")}, or spend them on edits`
+    : null;
 }
 
 type ListPayload<T> =

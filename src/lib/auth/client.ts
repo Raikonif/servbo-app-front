@@ -31,12 +31,8 @@ export type Session = {
 export const ANONYMOUS_SESSION: Session = { authenticated: false, user: null };
 
 // Codes whose backend message says more than the generic text (Django's
-// password validators; "You have 3 products: choose at least 3 slots").
-const DETAILED_CODES = new Set([
-  "WEAK_PASSWORD",
-  "INSUFFICIENT_CREDITS",
-  "INVALID_SLOTS",
-]);
+// password validators).
+const DETAILED_CODES = new Set(["WEAK_PASSWORD"]);
 
 type Envelope<T> = { data?: T | null; errors?: unknown; message?: unknown };
 

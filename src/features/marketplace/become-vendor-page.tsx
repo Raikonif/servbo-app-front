@@ -3,7 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import {
   ArrowRight,
-  BadgeCheck,
+  CircleCheck,
   Clock3,
   Gift,
   QrCode,
@@ -15,17 +15,19 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, type ReactNode, useState } from "react";
-import { useCreditPacks, useSellerSubscription } from "@/hooks/use-billing";
+import {
+  useCreditPacks,
+  useRedeemPromotion,
+  useSellerSubscription,
+  useShowBillingState,
+} from "@/hooks/use-billing";
 import { useNow } from "@/hooks/use-now";
 import {
-  activatePromotion,
   type CreditPricing,
   cancelPayment,
   checkPromotion,
-  formatDate,
   formatMoney,
   isExpired,
-  isRunning,
   type PendingPayment,
   type PromotionCheck,
   packCoverage,
@@ -33,14 +35,16 @@ import {
   startPackPayment,
 } from "@/lib/billing";
 import {
+  BecomeSellerCard,
   card,
-  ModeChooser,
   payHref,
   primaryButton,
-  SellerAccessCard,
+  SellerCreditsCard,
   secondaryButton,
-  useShowBillingState,
-} from "./seller-access";
+} from "./seller-credits";
+
+const isBonus = (promo: PromotionCheck | null) =>
+  promo?.kind === "bonus_credits";
 
 export function BecomeVendorPage() {
   const router = useRouter();
@@ -48,16 +52,18 @@ export function BecomeVendorPage() {
   const packs = useCreditPacks();
   const showState = useShowBillingState();
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
-  // A checked promotion code (openspec subscription-promotions): free access
-  // replaces the pack picker; a discount rides along with the pack payment.
+  // A checked promotion code (openspec subscription-promotions): a bonus code
+  // is claimed on its own; a discount rides along with the pack payment.
   const [promo, setPromo] = useState<PromotionCheck | null>(null);
+  // Credits of the bonus code just claimed, for the confirmation line.
+  const [claimed, setClaimed] = useState<number | null>(null);
   // Choosing a pack moves to the payment step; a 100% code adds the credits
   // at once and the step shows them.
   const pay = useMutation({
     mutationFn: (packId: string) =>
       startPackPayment({
         packId,
-        promoCode: promo?.kind === "free_access" ? null : promo?.code,
+        promoCode: isBonus(promo) ? null : promo?.code,
       }),
     onSuccess: (next) => {
       showState(next);
@@ -65,68 +71,69 @@ export function BecomeVendorPage() {
       if (id) router.push(payHref(id));
     },
   });
-  const activate = useMutation({
-    mutationFn: activatePromotion,
-    onSuccess: (next) => {
-      showState(next);
-      setPromo(null);
-    },
-  });
+  const redeem = useRedeemPromotion();
   const cancel = useMutation({
     mutationFn: cancelPayment,
     onSuccess: showState,
   });
 
   const state = subscription.data;
-  const running = isRunning(state?.subscription) ? state?.subscription : null;
   const pending = state?.pending_payment ?? null;
-  const balance = state?.wallet.balance ?? 0;
   const pricing = state?.pricing ?? null;
 
   const packId = selectedPackId ?? pending?.pack?.id ?? packs.data?.[0]?.id;
-  const buyPacks =
-    promo?.kind === "free_access" ? (
-      <FreeAccessCard
-        busy={activate.isPending}
-        error={activate.error?.message ?? null}
-        onActivate={() => activate.mutate(promo.code)}
+  const codeBox =
+    promo && isBonus(promo) ? (
+      <BonusCode
+        busy={redeem.isPending}
+        error={redeem.error?.message ?? null}
+        onClaim={() =>
+          redeem.mutate(promo.code, {
+            onSuccess: () => {
+              setClaimed(promo.bonus_credits ?? null);
+              setPromo(null);
+            },
+          })
+        }
         onDismiss={() => {
-          activate.reset();
+          redeem.reset();
           setPromo(null);
         }}
         promo={promo}
       />
     ) : (
-      <PackPicker
-        busy={pay.isPending || pay.isSuccess}
-        discounts={promo?.packs ?? null}
-        error={pay.error?.message ?? null}
-        extra={
-          <PromoCodeField
-            applied={promo}
-            onApplied={(result) => {
-              pay.reset();
-              activate.reset();
-              setPromo(result);
-            }}
-          />
-        }
-        note={
-          pending
-            ? "Choosing another pack, or another code, replaces your pending payment."
-            : null
-        }
-        onRetry={() => void packs.refetch()}
-        onSelect={setSelectedPackId}
-        onSubmit={() => {
-          if (packId) pay.mutate(packId);
+      <PromoCodeField
+        applied={promo}
+        onApplied={(result) => {
+          pay.reset();
+          redeem.reset();
+          setClaimed(null);
+          setPromo(result);
         }}
-        packs={packs}
-        pricing={pricing}
-        selectedId={packId ?? null}
-        title={running || balance > 0 ? "Buy more credits" : "Buy credits"}
       />
     );
+  const buyPacks = (
+    <PackPicker
+      busy={pay.isPending || pay.isSuccess}
+      discounts={promo?.packs ?? null}
+      error={pay.error?.message ?? null}
+      extra={codeBox}
+      note={
+        pending
+          ? "Choosing another pack, or another code, replaces your pending payment."
+          : null
+      }
+      onRetry={() => void packs.refetch()}
+      onSelect={setSelectedPackId}
+      onSubmit={() => {
+        if (packId) pay.mutate(packId);
+      }}
+      packs={packs}
+      pricing={pricing}
+      selectedId={packId ?? null}
+      title={state?.credits.total ? "Buy more credits" : "Buy credits"}
+    />
+  );
 
   let content: ReactNode;
   if (subscription.isPending) {
@@ -157,15 +164,37 @@ export function BecomeVendorPage() {
             payment={pending}
           />
         ) : null}
-        {running ? (
-          <SellerAccessCard state={state} subscription={running} />
-        ) : balance > 0 ? (
-          <ModeChooser state={state} />
+        {claimed ? (
+          <p
+            className="flex items-center gap-2 rounded-lg border border-accent/40 bg-accent-soft p-3 text-sm font-medium text-accent-text"
+            role="status"
+          >
+            <CircleCheck size={16} />
+            {plural(claimed, "credit")} added · you now have{" "}
+            {plural(state.credits.paid, "paid credit")}
+          </p>
         ) : null}
+        {state.is_seller ? (
+          <SellerCreditsCard state={state} />
+        ) : (
+          <BecomeSellerCard state={state} />
+        )}
         {buyPacks}
       </>
     );
   }
+
+  const steps = pricing
+    ? [
+        `Become a seller for free: you get ${plural(pricing.free_credits, "free credit")} every ${pricing.period_days} days`,
+        `Publish a product for ${plural(pricing.publish_cost, "credit")}, save changes to a published one for ${plural(pricing.edit_cost, "credit")}. Drafts are free`,
+        "Need more? Buy a credit pack by QR: paid credits never expire",
+      ]
+    : [
+        "Become a seller for free and get free credits every month",
+        "Spend credits to publish and update products. Drafts are free",
+        "Need more? Buy a credit pack by QR: paid credits never expire",
+      ];
 
   return (
     <main>
@@ -176,25 +205,28 @@ export function BecomeVendorPage() {
             Become a seller
           </p>
           <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight text-fg sm:text-5xl">
-            Open your store on Servbo.
+            Open your store on Servbo for free.
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-muted">
-            Buy a credit pack with a QR transfer, then spend the credits on
-            seller access: <span className="font-medium text-fg">Monthly</span>
-            {pricing ? ` (${plural(pricing.monthly_fee, "credit")}, ` : " ("}
-            unlimited products) or{" "}
-            <span className="font-medium text-fg">Per product</span>
-            {pricing
-              ? ` (${plural(pricing.product_fee, "credit")} for each product you post)`
-              : " (pay only for the products you post)"}
-            . You manage your products from the creator app.
+            Becoming a seller costs nothing.{" "}
+            {pricing ? (
+              <>
+                Every {pricing.period_days} days you get{" "}
+                <span className="font-medium text-fg">
+                  {plural(pricing.free_credits, "free credit")}
+                </span>{" "}
+                to publish and update your products
+              </>
+            ) : (
+              "Every month you get free credits to publish and update your products"
+            )}
+            : they reset each cycle and don't carry over. When you need more,
+            credit packs add paid credits that never expire and add up. Free
+            credits are always spent first. You manage your products from the
+            creator app.
           </p>
           <ol className="mt-8 space-y-3 text-sm text-muted">
-            {[
-              "Choose a credit pack and pay its QR",
-              "Your credits are added once the payment is confirmed",
-              "Choose Monthly or Per product to open your store",
-            ].map((step, index) => (
+            {steps.map((step, index) => (
               <li className="flex items-center gap-3" key={step}>
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-fg text-xs font-semibold text-bg">
                   {index + 1}
@@ -204,10 +236,8 @@ export function BecomeVendorPage() {
             ))}
           </ol>
           <p className="mt-6 text-xs text-muted">
-            Payment by QR only · you get a payment receipt, no tax invoice
-            (factura) yet. Credits never expire: at the end of each period your
-            access renews from your balance, and it ends if the balance is not
-            enough.
+            Credit packs are paid by QR only · you get a payment receipt, no tax
+            invoice (factura) yet.
           </p>
           <Link
             className="mt-4 inline-flex text-sm font-medium text-accent-text hover:text-accent-text"
@@ -435,7 +465,7 @@ function ContinuePaymentCard({
 }
 
 // "Have a code?" (openspec subscription-promotions): checks the code without
-// using it; a discount then shows on the packs, free access replaces them.
+// using it; a discount then shows on the packs, a bonus code offers a claim.
 function PromoCodeField({
   applied,
   onApplied,
@@ -532,55 +562,57 @@ function PromoCodeField({
   );
 }
 
-function FreeAccessCard({
+// A checked bonus-credits code: "+30 credits" and a claim button. The
+// credits go to the paid balance at once, with no pack or QR.
+function BonusCode({
   promo,
   busy,
   error,
-  onActivate,
+  onClaim,
   onDismiss,
 }: {
   promo: PromotionCheck;
   busy: boolean;
   error: string | null;
-  onActivate: () => void;
+  onClaim: () => void;
   onDismiss: () => void;
 }) {
+  const credits = promo.bonus_credits ?? 0;
   return (
-    <section className={card}>
-      <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent-soft text-accent-text">
-        <Gift size={24} />
-      </span>
-      <h2 className="mt-4 text-2xl font-semibold text-fg">
-        Free seller access until {formatDate(promo.free_until)}
-      </h2>
-      <p className="mt-2 text-sm leading-6 text-muted">
+    <div className="mt-4 rounded-lg border border-accent/40 bg-accent-soft p-4">
+      <div className="flex items-start justify-between gap-3">
+        <p className="inline-flex items-center gap-2 text-lg font-semibold text-accent-text">
+          <Gift size={18} />+{plural(credits, "credit")}
+        </p>
+        <button
+          aria-label={`Remove code ${promo.code}`}
+          className="rounded-md p-1 text-accent-text hover:bg-surface"
+          disabled={busy}
+          onClick={onDismiss}
+          type="button"
+        >
+          <X size={16} />
+        </button>
+      </div>
+      <p className="mt-1 text-sm leading-6 text-muted">
         Code <span className="font-mono font-medium text-fg">{promo.code}</span>{" "}
-        opens your store now with unlimited products, and no QR to pay. When it
-        ends your access renews from credits: buy a pack before then to keep
-        selling.
+        adds {plural(credits, "paid credit")} that never expire. No pack or QR
+        needed.
       </p>
       {error ? (
-        <p className="mt-3 text-sm text-danger" role="alert">
+        <p className="mt-2 text-sm text-danger" role="alert">
           {error}
         </p>
       ) : null}
       <button
-        className={`mt-5 w-full ${primaryButton}`}
+        className={`mt-3 w-full ${primaryButton}`}
         disabled={busy}
-        onClick={onActivate}
+        onClick={onClaim}
         type="button"
       >
-        <BadgeCheck size={17} />
-        {busy ? "Activating…" : "Activate"}
+        <Ticket size={17} />
+        {busy ? "Claiming…" : "Claim"}
       </button>
-      <button
-        className={`mt-3 w-full ${secondaryButton}`}
-        disabled={busy}
-        onClick={onDismiss}
-        type="button"
-      >
-        Use another code or buy a pack
-      </button>
-    </section>
+    </div>
   );
 }

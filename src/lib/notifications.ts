@@ -57,8 +57,9 @@ export const markAllNotificationsRead = () =>
     raw: true,
   });
 
-// Seller-access notices without a usable link (credits added, access
-// renewed or ended…) open the credits page.
+// Seller notices without a usable link (credits added; older access renewed
+// or ended notices are kept so past ones still open somewhere) open the
+// credits page.
 const ACCESS_KINDS = new Set([
   "credits_added",
   "access_renewed",
