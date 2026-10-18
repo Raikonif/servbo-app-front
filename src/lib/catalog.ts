@@ -12,7 +12,8 @@ export type Category = { id: number; name: string };
 
 export type ProductImage = {
   id: string;
-  url: string;
+  url: string; // at most 1600 px, WebP
+  thumbnail: string; // at most 640 px; the full URL for images stored before thumbnails
   position: number; // upload order
   is_main: boolean;
 };
@@ -30,6 +31,7 @@ export type Product = {
   seller_name?: string;
   images: ProductImage[]; // upload order; exactly one is_main when non-empty
   main_image: string | null;
+  main_thumbnail: string | null; // for cards; see ProductImage.thumbnail
   rating_avg: string | null; // visible product reviews, e.g. "4.5"; null if none
   rating_count: number;
   created_at: string; // ISO 8601

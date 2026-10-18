@@ -90,7 +90,7 @@ function ProductCard({
       >
         <Morph id={product.id} owner="card" part="image">
           <div className="relative aspect-[4/3] overflow-hidden bg-surface-2">
-            {product.main_image ? (
+            {product.main_thumbnail ? (
               <Image
                 alt={product.name}
                 className="object-cover transition duration-500 group-hover:scale-[1.03]"
@@ -98,7 +98,7 @@ function ProductCard({
                 fill
                 loading={eager ? "eager" : "lazy"}
                 sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
-                src={product.main_image}
+                src={product.main_thumbnail}
                 unoptimized
               />
             ) : (
