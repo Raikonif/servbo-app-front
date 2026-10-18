@@ -4,8 +4,19 @@ import { rememberNext } from "./redirect";
 // BFF: the backend keeps the session in httpOnly cookies shared with the
 // creator app. The browser only sends them (credentials: "include") and echoes
 // Django's CSRF cookie on unsafe requests. No token ever reaches JavaScript.
+// "/" means the API shares this site's origin (one Vercel domain, API at /api).
 export const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8008";
+
+// Absolute base for `new URL(path, base)`. A same-origin "/" resolves against
+// the page in the browser, and against the in-network API (BACKEND_URL, the
+// Vercel service binding) on the server.
+export const apiBase = () =>
+  !BACKEND_URL.startsWith("/")
+    ? BACKEND_URL
+    : typeof window === "undefined"
+      ? (process.env.BACKEND_URL ?? "http://localhost:8008")
+      : window.location.origin;
 
 export type SessionUser = {
   id: string;
@@ -66,7 +77,7 @@ async function send(path: string, method: string, body?: unknown) {
   // FormData (file uploads) sets its own multipart Content-Type.
   const multipart = body instanceof FormData;
   try {
-    return await fetch(new URL(path, BACKEND_URL), {
+    return await fetch(new URL(path, apiBase()), {
       method,
       credentials: "include",
       headers: {
@@ -192,7 +203,7 @@ export const resetPassword = (
 export async function startGoogleSignIn(next: string) {
   if (!readCookie("csrftoken")) {
     try {
-      await fetch(new URL("/api/auth/csrf/", BACKEND_URL), {
+      await fetch(new URL("/api/auth/csrf/", apiBase()), {
         credentials: "include",
       });
     } catch {
@@ -206,7 +217,7 @@ export async function startGoogleSignIn(next: string) {
 
   const form = document.createElement("form");
   form.method = "POST";
-  form.action = new URL("/api/auth/login/google-oauth2/", BACKEND_URL).href;
+  form.action = new URL("/api/auth/login/google-oauth2/", apiBase()).href;
   form.style.display = "none";
   for (const [name, value] of [
     ["csrfmiddlewaretoken", decodeURIComponent(csrf)],

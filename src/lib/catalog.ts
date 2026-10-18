@@ -2,11 +2,16 @@ import { request, type SessionUser } from "@/lib/auth/client";
 import { type CatalogQuery, toApiParams } from "@/lib/catalog-query";
 
 // Server components fetch public catalog data straight from the API:
-// BACKEND_URL is the in-network address (e.g. backend:8000 in containers).
-const SERVER_API_URL =
-  process.env.BACKEND_URL ??
-  process.env.NEXT_PUBLIC_BACKEND_URL ??
-  "http://localhost:8008";
+// BACKEND_URL is the in-network address (backend:8000 in containers, the
+// service binding on Vercel). Read per call: bindings exist only at runtime.
+const serverApiUrl = () => {
+  const publicUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  return (
+    process.env.BACKEND_URL ??
+    (publicUrl && !publicUrl.startsWith("/") ? publicUrl : undefined) ??
+    "http://localhost:8008"
+  );
+};
 
 export type Category = { id: number; name: string };
 
@@ -95,7 +100,7 @@ export const cacheTags = {
 
 // Null on 404; any other failure throws so the page can show an error state.
 async function serverGet<T>(path: string, tags: string[]): Promise<T | null> {
-  const response = await fetch(new URL(path, SERVER_API_URL), {
+  const response = await fetch(new URL(path, serverApiUrl()), {
     headers: { Accept: "application/json" },
     next: { revalidate: REVALIDATE_SECONDS, tags },
   });
