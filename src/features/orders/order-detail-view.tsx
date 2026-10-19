@@ -8,29 +8,32 @@ import {
   PackageCheck,
   Upload,
 } from "lucide-react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { RateOrder } from "@/features/reviews/rate-order";
 import { useNow } from "@/hooks/use-now";
+import { useFormat } from "@/i18n/format";
+import { Link } from "@/i18n/navigation";
 import { AuthError } from "@/lib/auth/errors";
-import { formatDateTime, formatPrice } from "@/lib/catalog";
 import {
   cancelOrder,
-  DELIVERY_LABELS,
   getOrder,
   markReceived,
   type OrderDetail,
   orderKeys,
-  PAYMENT_LABELS,
   uploadReceipt,
 } from "@/lib/orders";
 import { StatusBadge } from "./order-badges";
 
 const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
 
+const bold = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
+
 // One order for its buyer: progress, what to pay and how, receipt upload,
 // "I received it" and cancel (openspec order-fulfillment D6).
 export function OrderDetailView({ orderId }: { orderId: string }) {
+  const t = useTranslations("orders");
+  const format = useFormat();
   const queryClient = useQueryClient();
   const {
     data: order,
@@ -60,7 +63,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
     return (
       <Shell>
         <p className="mt-8 text-muted">
-          {missing ? "We could not find this order." : error?.message}
+          {missing ? t("detail.notFound") : error?.message}
         </p>
       </Shell>
     );
@@ -69,7 +72,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
   const pending = order.status === "pending_payment";
   const pickup = order.delivery_method === "pickup";
   const cash = order.payment_method === "cash";
-  const total = formatPrice(order.total, order.currency);
+  const total = format.price(order.total, order.currency);
 
   return (
     <Shell>
@@ -80,69 +83,65 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
         <StatusBadge status={order.status} />
       </header>
       <p className="mt-1 text-sm text-muted">
-        Placed {formatDateTime(order.created_at)} · Seller {order.seller.name}
+        {t("detail.placedBy", {
+          date: format.dateTime(order.created_at),
+          seller: order.seller.name,
+        })}
       </p>
 
       <StatusTimeline order={order} />
 
       {order.status === "cancelled" ? (
         <div className="mt-6 rounded-2xl border border-line bg-surface-2 p-4 text-sm">
-          {order.cancelled_by === "system"
-            ? "Expired: payment not received in time"
-            : `Cancelled by ${order.cancelled_by === "seller" ? "the seller" : "you"}`}
           {order.cancelled_at
-            ? ` on ${formatDateTime(order.cancelled_at)}`
-            : ""}
-          .
+            ? t("detail.cancelledOn", {
+                by: order.cancelled_by,
+                date: format.dateTime(order.cancelled_at),
+              })
+            : t("detail.cancelled", { by: order.cancelled_by })}
           {order.cancel_reason && order.cancelled_by !== "system" ? (
-            <p className="mt-1 text-muted">Reason: {order.cancel_reason}</p>
+            <p className="mt-1 text-muted">
+              {t("detail.reason", { reason: order.cancel_reason })}
+            </p>
           ) : null}
         </div>
       ) : order.status === "confirmed" ? (
         <div className="mt-6 rounded-2xl border border-accent/40 bg-accent-soft p-4 text-sm text-accent-text">
-          {cash ? (
-            <>
-              Confirmed. Pay <strong>{total}</strong> in cash{" "}
-              {pickup ? "when you pick it up" : "on delivery"}. The seller{" "}
-              {pickup
-                ? "lets you know when it is ready for pickup"
-                : "ships it next"}
-              .
-            </>
-          ) : (
-            <>
-              The seller confirmed your payment
-              {order.confirmed_at
-                ? ` on ${formatDateTime(order.confirmed_at)}`
-                : ""}
-              . They {pickup ? "get it ready for pickup" : "ship it"} next.
-            </>
-          )}
+          {cash
+            ? t.rich("detail.confirmedCash", {
+                total,
+                pickup: pickup ? "yes" : "no",
+                b: bold,
+              })
+            : order.confirmed_at
+              ? t("detail.confirmedQrOn", {
+                  date: format.dateTime(order.confirmed_at),
+                  pickup: pickup ? "yes" : "no",
+                })
+              : t("detail.confirmedQr", { pickup: pickup ? "yes" : "no" })}
         </div>
       ) : order.status === "shipped" || order.status === "ready_for_pickup" ? (
         <div className="mt-6 rounded-2xl border border-accent/40 bg-accent-soft p-4 text-sm text-accent-text">
           {order.status === "shipped"
-            ? "Your order is on its way."
-            : `Ready for pickup at ${order.pickup_address || "the seller's address"}.`}
+            ? t("detail.shipped")
+            : order.pickup_address
+              ? t("detail.readyAt", { address: order.pickup_address })
+              : t("detail.ready")}
           {cash ? (
-            <>
-              {" "}
-              Pay <strong>{total}</strong> in cash when you get it.
-            </>
+            <> {t.rich("detail.payCashOnArrival", { total, b: bold })}</>
           ) : null}
         </div>
       ) : order.status === "delivered" ? (
         <div className="mt-6 rounded-2xl border border-line bg-surface p-4 text-sm">
-          Delivered
           {order.delivered_at
-            ? ` on ${formatDateTime(order.delivered_at)}`
-            : ""}
-          .
+            ? t("detail.deliveredOn", {
+                date: format.dateTime(order.delivered_at),
+              })
+            : t("detail.delivered")}
           {order.delivered_by === "system" ? (
             <span className="text-muted">
               {" "}
-              Marked automatically 7 days after the seller{" "}
-              {pickup ? "had it ready" : "shipped it"}.
+              {t("detail.autoDelivered", { pickup: pickup ? "yes" : "no" })}
             </span>
           ) : null}
         </div>
@@ -150,7 +149,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
 
       {order.fulfilment_note ? (
         <div className="mt-4 rounded-2xl border border-line bg-surface p-4 text-sm">
-          <p className="text-xs text-muted">Note from the seller</p>
+          <p className="text-xs text-muted">{t("detail.sellerNote")}</p>
           <p className="mt-1 whitespace-pre-line">{order.fulfilment_note}</p>
         </div>
       ) : null}
@@ -171,31 +170,35 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
               key={`${item.product}-${item.product_name}`}
             >
               <span>
-                {item.quantity} × {item.product_name}
+                {t("detail.line", {
+                  quantity: item.quantity,
+                  name: item.product_name,
+                })}
                 <span className="block text-xs text-muted tabular-nums">
-                  {formatPrice(item.unit_price, order.currency)} each
+                  {t("detail.each", {
+                    price: format.price(item.unit_price, order.currency),
+                  })}
                 </span>
               </span>
               <span className="font-medium tabular-nums">
-                {formatPrice(item.subtotal, order.currency)}
+                {format.price(item.subtotal, order.currency)}
               </span>
             </li>
           ))}
         </ul>
         <div className="flex justify-between border-t border-line bg-surface-2/50 px-5 py-3">
-          <span className="text-sm text-muted">
-            Total (shipping agreed with the seller)
-          </span>
-          <span className="font-semibold tabular-nums">
-            {formatPrice(order.total, order.currency)}
-          </span>
+          <span className="text-sm text-muted">{t("detail.total")}</span>
+          <span className="font-semibold tabular-nums">{total}</span>
         </div>
       </section>
 
       <dl className="mt-6 grid gap-px overflow-hidden rounded-3xl border border-line bg-line text-sm sm:grid-cols-2">
-        <Fact label="Payment" value={PAYMENT_LABELS[order.payment_method]} />
         <Fact
-          label={DELIVERY_LABELS[order.delivery_method]}
+          label={t("detail.payment")}
+          value={t(`payment.${order.payment_method}`)}
+        />
+        <Fact
+          label={t(`delivery.${order.delivery_method}`)}
           value={
             order.delivery_method === "pickup" ? (
               <>
@@ -216,7 +219,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
           }
         />
         {order.buyer_note ? (
-          <Fact label="Your note" value={order.buyer_note} />
+          <Fact label={t("detail.yourNote")} value={order.buyer_note} />
         ) : null}
       </dl>
 
@@ -239,6 +242,8 @@ function PayByQr({
   order: OrderDetail;
   onUpdated: (o: OrderDetail | null) => void;
 }) {
+  const t = useTranslations("orders.qr");
+  const format = useFormat();
   const file = useRef<HTMLInputElement>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const upload = useMutation({
@@ -251,24 +256,21 @@ function PayByQr({
       {order.payment_qr_url ? (
         // biome-ignore lint/performance/noImgElement: presigned, expiring URL; next/image would cache it.
         <img
-          alt={`Payment QR of ${order.seller.name}`}
+          alt={t("alt", { seller: order.seller.name })}
           className="aspect-square w-full rounded-2xl border border-line bg-white object-contain p-2"
           src={order.payment_qr_url}
         />
       ) : null}
       <div>
-        <h2 className="font-semibold">Pay with QR</h2>
+        <h2 className="font-semibold">{t("title")}</h2>
         <p className="mt-1 text-sm text-muted">
-          Scan the seller's QR with your banking app and pay exactly{" "}
-          <strong className="text-fg">
-            {formatPrice(order.total, order.currency)}
-          </strong>
-          . Add <strong className="text-fg">{order.code}</strong> as the payment
-          reference.
+          {t.rich("instructions", {
+            total: format.price(order.total, order.currency),
+            code: order.code,
+            b: (chunks) => <strong className="text-fg">{chunks}</strong>,
+          })}
         </p>
-        <p className="mt-2 text-xs text-muted">
-          You pay the seller directly; ServBo does not hold the money.
-        </p>
+        <p className="mt-2 text-xs text-muted">{t("direct")}</p>
 
         <div className="mt-4">
           {order.receipt_url ? (
@@ -278,7 +280,7 @@ function PayByQr({
               rel="noreferrer"
               target="_blank"
             >
-              <FileImage size={15} /> Receipt attached — view
+              <FileImage size={15} /> {t("receiptAttached")}
             </a>
           ) : null}
           <input
@@ -290,7 +292,7 @@ function PayByQr({
               event.target.value = "";
               if (!chosen) return;
               if (chosen.size > MAX_RECEIPT_BYTES) {
-                setLocalError("The image must be 5 MB or smaller.");
+                setLocalError(t("tooLarge"));
                 return;
               }
               setLocalError(null);
@@ -310,7 +312,7 @@ function PayByQr({
             ) : (
               <Upload size={16} />
             )}
-            {order.receipt_url ? "Replace receipt" : "Attach receipt"}
+            {order.receipt_url ? t("replace") : t("attach")}
           </button>
           <p aria-live="polite" className="mt-2 text-sm text-danger">
             {localError ?? upload.error?.message ?? ""}
@@ -326,28 +328,25 @@ type Step = { label: string; at: string | null; cancelled?: boolean };
 // Placed → Paid (QR only) → Shipped / Ready for pickup → Delivered. A
 // cancelled order shows the steps it reached and then who cancelled it.
 function StatusTimeline({ order }: { order: OrderDetail }) {
+  const t = useTranslations("orders.timeline");
+  const format = useFormat();
   const pickup = order.delivery_method === "pickup";
   const steps: Step[] = [
-    { label: "Placed", at: order.created_at },
+    { label: t("placed"), at: order.created_at },
     ...(order.payment_method === "qr"
-      ? [{ label: "Paid", at: order.confirmed_at }]
+      ? [{ label: t("paid"), at: order.confirmed_at }]
       : []),
     pickup
-      ? { label: "Ready for pickup", at: order.ready_at }
-      : { label: "Shipped", at: order.shipped_at },
-    { label: "Delivered", at: order.delivered_at },
+      ? { label: t("ready"), at: order.ready_at }
+      : { label: t("shipped"), at: order.shipped_at },
+    { label: t("delivered"), at: order.delivered_at },
   ];
   const shown: Step[] =
     order.status === "cancelled"
       ? [
           ...steps.filter((step) => step.at),
           {
-            label:
-              order.cancelled_by === "system"
-                ? "Expired: payment not received in time"
-                : order.cancelled_by === "seller"
-                  ? "Cancelled by the seller"
-                  : "Cancelled by you",
+            label: t("cancelled", { by: order.cancelled_by }),
             at: order.cancelled_at,
             cancelled: true,
           },
@@ -357,7 +356,7 @@ function StatusTimeline({ order }: { order: OrderDetail }) {
     order.status === "cancelled" ? -1 : shown.findIndex((step) => !step.at);
 
   return (
-    <ol aria-label="Order progress" className="mt-6 grid gap-0">
+    <ol aria-label={t("label")} className="mt-6 grid gap-0">
       {shown.map((step, index) => {
         const done = Boolean(step.at) && !step.cancelled;
         const last = index === shown.length - 1;
@@ -399,10 +398,10 @@ function StatusTimeline({ order }: { order: OrderDetail }) {
               </span>
               {step.at ? (
                 <span className="block text-xs text-muted">
-                  {formatDateTime(step.at)}
+                  {format.dateTime(step.at)}
                 </span>
               ) : index === current ? (
-                <span className="block text-xs text-muted">Next</span>
+                <span className="block text-xs text-muted">{t("next")}</span>
               ) : null}
             </span>
           </li>
@@ -414,9 +413,18 @@ function StatusTimeline({ order }: { order: OrderDetail }) {
 
 // Unpaid QR orders without a receipt are cancelled when `expires_at` passes.
 function PaymentDeadline({ expiresAt }: { expiresAt: string }) {
+  const t = useTranslations("orders.deadline");
+  const format = useFormat();
   const now = useNow();
   const left = now === null ? null : new Date(expiresAt).getTime() - now;
   const urgent = left !== null && left < 12 * 3_600_000;
+  const timeLeft = (ms: number) => {
+    const { days, hours, minutes, total } = splitLeft(ms);
+    if (days) return t("leftDays", { days, hours });
+    return hours
+      ? t("leftHours", { hours, minutes })
+      : t("leftMinutes", { minutes: total });
+  };
   return (
     <div
       className={`mt-6 rounded-2xl border p-4 text-sm ${
@@ -425,28 +433,27 @@ function PaymentDeadline({ expiresAt }: { expiresAt: string }) {
           : "border-line bg-surface"
       }`}
     >
-      Pay and attach your receipt before{" "}
-      <strong>{formatDateTime(expiresAt)}</strong> or the order is cancelled
-      automatically.
+      {t.rich("notice", { date: format.dateTime(expiresAt), b: bold })}
       {left === null ? null : left > 0 ? (
         <span className="mt-1 block font-medium tabular-nums">
-          {formatLeft(left)} left
+          {timeLeft(left)}
         </span>
       ) : (
-        <span className="mt-1 block font-medium">
-          Time is up; the order will be cancelled shortly.
-        </span>
+        <span className="mt-1 block font-medium">{t("timeUp")}</span>
       )}
     </div>
   );
 }
 
-const formatLeft = (ms: number) => {
-  const minutes = Math.max(1, Math.floor(ms / 60_000));
-  const days = Math.floor(minutes / 1440);
-  const hours = Math.floor((minutes % 1440) / 60);
-  if (days) return `${days} d ${hours} h`;
-  return hours ? `${hours} h ${minutes % 60} min` : `${minutes} min`;
+// Minutes, hours and days left, split for the "2 d 3 h left" countdown.
+const splitLeft = (ms: number) => {
+  const total = Math.max(1, Math.floor(ms / 60_000));
+  return {
+    days: Math.floor(total / 1440),
+    hours: Math.floor((total % 1440) / 60),
+    minutes: total % 60,
+    total,
+  };
 };
 
 function ConfirmReceived({
@@ -456,6 +463,7 @@ function ConfirmReceived({
   orderId: string;
   onUpdated: (o: OrderDetail | null) => void;
 }) {
+  const t = useTranslations("orders.received");
   const [confirming, setConfirming] = useState(false);
   const received = useMutation({
     mutationFn: () => markReceived(orderId),
@@ -466,21 +474,21 @@ function ConfirmReceived({
     <div className="mt-6">
       {confirming ? (
         <div className="flex flex-wrap items-center gap-3 text-sm">
-          <span>Did you get everything? The seller sees it as delivered.</span>
+          <span>{t("question")}</span>
           <button
             className="rounded-full bg-accent px-4 py-2 font-semibold text-accent-fg disabled:opacity-60"
             disabled={received.isPending}
             onClick={() => received.mutate()}
             type="button"
           >
-            Yes, I received it
+            {t("confirm")}
           </button>
           <button
             className="font-medium text-muted"
             onClick={() => setConfirming(false)}
             type="button"
           >
-            Not yet
+            {t("notYet")}
           </button>
         </div>
       ) : (
@@ -489,7 +497,7 @@ function ConfirmReceived({
           onClick={() => setConfirming(true)}
           type="button"
         >
-          <PackageCheck size={16} /> I received it
+          <PackageCheck size={16} /> {t("button")}
         </button>
       )}
       {received.error ? (
@@ -506,6 +514,7 @@ function CancelOrder({
   orderId: string;
   onUpdated: (o: OrderDetail | null) => void;
 }) {
+  const t = useTranslations("orders.cancel");
   const [confirming, setConfirming] = useState(false);
   const cancel = useMutation({
     mutationFn: () => cancelOrder(orderId),
@@ -516,23 +525,21 @@ function CancelOrder({
     <div className="mt-8 border-t border-line pt-6">
       {confirming ? (
         <div className="flex flex-wrap items-center gap-3 text-sm">
-          <span>
-            Cancel this order? The items go back to the seller's stock.
-          </span>
+          <span>{t("question")}</span>
           <button
             className="rounded-full bg-danger px-4 py-2 font-semibold text-white disabled:opacity-60"
             disabled={cancel.isPending}
             onClick={() => cancel.mutate()}
             type="button"
           >
-            Yes, cancel
+            {t("confirm")}
           </button>
           <button
             className="font-medium text-muted"
             onClick={() => setConfirming(false)}
             type="button"
           >
-            Keep it
+            {t("keep")}
           </button>
         </div>
       ) : (
@@ -541,7 +548,7 @@ function CancelOrder({
           onClick={() => setConfirming(true)}
           type="button"
         >
-          Cancel order
+          {t("button")}
         </button>
       )}
       {cancel.error ? (
@@ -552,13 +559,14 @@ function CancelOrder({
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("orders");
   return (
     <main className="mx-auto max-w-3xl px-4 pt-8 pb-24 sm:px-6">
       <Link
         className="inline-flex items-center gap-1 text-sm text-muted hover:text-fg"
         href="/orders"
       >
-        <ChevronLeft size={16} /> My orders
+        <ChevronLeft size={16} /> {t("title")}
       </Link>
       {children}
     </main>

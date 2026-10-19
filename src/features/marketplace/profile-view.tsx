@@ -1,22 +1,25 @@
 "use client";
 
 import { LoaderCircle, UserRound } from "lucide-react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
 import { buttonStyles, Field, FormAlert } from "@/features/auth/form-controls";
+import { LanguageSwitcher } from "@/features/i18n/language-switcher";
 import { useUpdateProfile } from "@/hooks/use-catalog";
 import { displayName, useSession } from "@/hooks/use-session";
+import { useFormat } from "@/i18n/format";
+import { Link } from "@/i18n/navigation";
 import type { SessionUser } from "@/lib/auth/client";
 import { AuthError } from "@/lib/auth/errors";
-import { CREATOR_URL, formatDate } from "@/lib/billing";
+import { CREATOR_URL } from "@/lib/billing";
 import { SignInMethods } from "./sign-in-methods";
 
-const roleLabels = (user: SessionUser) =>
+const roleKeys = (user: SessionUser) =>
   [
-    user.is_staff ? "Staff" : null,
-    user.is_seller ? "Seller" : null,
-    user.is_client ? "Buyer" : null,
-  ].filter(Boolean) as string[];
+    user.is_staff ? "staff" : null,
+    user.is_seller ? "seller" : null,
+    user.is_client ? "buyer" : null,
+  ].filter(Boolean) as ("staff" | "seller" | "buyer")[];
 
 // Rendered inside RequireSession: the session user is always present.
 export function ProfileView() {
@@ -27,6 +30,8 @@ export function ProfileView() {
 }
 
 function Profile({ user }: { user: SessionUser }) {
+  const t = useTranslations("profile");
+  const format = useFormat();
   const [form, setForm] = useState({
     username: user.username ?? "",
     first_name: user.first_name ?? "",
@@ -71,35 +76,35 @@ function Profile({ user }: { user: SessionUser }) {
           </h1>
           <p className="truncate text-sm text-muted">{user.email}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {roleLabels(user).map((role) => (
+            {roleKeys(user).map((role) => (
               <span
                 className="rounded-md bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-text"
                 key={role}
               >
-                {role}
+                {t(`roles.${role}`)}
               </span>
             ))}
             {!user.is_email_verified ? (
               <span className="rounded-md bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
-                Email not verified
+                {t("emailNotVerified")}
               </span>
             ) : null}
           </div>
           <p className="mt-2 text-xs text-muted">
-            Member since {formatDate(user.created_at)}
+            {t("memberSince", { date: format.date(user.created_at) })}
           </p>
         </div>
       </section>
 
       <section className="space-y-4 rounded-lg border border-line bg-surface p-6 shadow-sm">
-        <h2 className="text-lg font-semibold">Account details</h2>
+        <h2 className="text-lg font-semibold">{t("details")}</h2>
         {error ? <FormAlert>{error.message}</FormAlert> : null}
-        {saved ? <FormAlert tone="success">Profile updated.</FormAlert> : null}
+        {saved ? <FormAlert tone="success">{t("updated")}</FormAlert> : null}
         <form className="space-y-4" onSubmit={handleSubmit}>
           <Field
             autoComplete="username"
             id="username"
-            label="Username"
+            label={t("username")}
             maxLength={50}
             onChange={(e) => update("username")(e.target.value)}
             value={form.username}
@@ -108,14 +113,14 @@ function Profile({ user }: { user: SessionUser }) {
             <Field
               autoComplete="given-name"
               id="first_name"
-              label="First name"
+              label={t("firstName")}
               onChange={(e) => update("first_name")(e.target.value)}
               value={form.first_name}
             />
             <Field
               autoComplete="family-name"
               id="last_name"
-              label="Last name"
+              label={t("lastName")}
               onChange={(e) => update("last_name")(e.target.value)}
               value={form.last_name}
             />
@@ -129,28 +134,36 @@ function Profile({ user }: { user: SessionUser }) {
               {mutation.isPending ? (
                 <LoaderCircle className="animate-spin" size={16} />
               ) : null}
-              Save changes
+              {t("save")}
             </button>
           </div>
         </form>
+      </section>
+
+      <section className="space-y-3 rounded-lg border border-line bg-surface p-6 shadow-sm">
+        <div>
+          <h2 className="text-lg font-semibold">{t("languageTitle")}</h2>
+          <p className="mt-1 text-sm text-muted">{t("languageHelp")}</p>
+        </div>
+        <LanguageSwitcher />
       </section>
 
       <SignInMethods user={user} />
 
       <section className="flex flex-wrap gap-2">
         <Link className={`${buttonStyles.secondary} sm:w-auto`} href="/billing">
-          Billing
+          {t("billing")}
         </Link>
         {user.is_seller ? (
           <a className={`${buttonStyles.primary} sm:w-auto`} href={CREATOR_URL}>
-            Open the creator app
+            {t("openCreator")}
           </a>
         ) : (
           <Link
             className={`${buttonStyles.primary} sm:w-auto`}
             href="/become-a-vendor"
           >
-            Become a seller
+            {t("becomeSeller")}
           </Link>
         )}
       </section>

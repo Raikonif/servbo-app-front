@@ -107,7 +107,8 @@ export type CreditEntryKind =
   | "monthly_fee"
   | "product_slots";
 
-// One line of the credit ledger: + for credits in, − for credits spent.
+// One line of the credit ledger: + for credits in, − for credits spent
+// (kind labels: messages `credits.kind.*`).
 // `amount` is the signed total, `free_amount` the part of it from or to the
 // free credits; `balance_after` is the paid balance after the entry.
 export type CreditEntry = {
@@ -122,18 +123,6 @@ export type CreditEntry = {
   product_name: string | null;
   record: string | null;
   created_at: string;
-};
-
-export const CREDIT_ENTRY_LABELS: Record<string, string> = {
-  purchase: "Pack purchase",
-  promotion: "Bonus code",
-  free_grant: "Free credits",
-  free_reset: "Free credits renewed",
-  publish: "Product published",
-  edit: "Product edited",
-  adjustment: "Adjustment",
-  monthly_fee: "Monthly access (old plan)",
-  product_slots: "Product slots (old plan)",
 };
 
 // What a code does for the signed-in user (openspec subscription-promotions):
@@ -228,18 +217,6 @@ export const checkPromotion = async (code: string) =>
 export const isExpired = (expiresAt: string | null, now = Date.now()) =>
   expiresAt !== null && new Date(expiresAt).getTime() <= now;
 
-export const plural = (count: number, one: string, many = `${one}s`) =>
-  `${count.toLocaleString("en-US")} ${count === 1 ? one : many}`;
-
-// What a pack buys at the current prices: "35 products to publish".
-export function packCoverage(credits: number, pricing: CreditPricing | null) {
-  if (!pricing || pricing.publish_cost <= 0) return null;
-  const products = Math.floor(credits / pricing.publish_cost);
-  return products > 0
-    ? `Publish up to ${plural(products, "product")}, or spend them on edits`
-    : null;
-}
-
 type ListPayload<T> =
   | T[]
   | { results?: T[]; data?: T[] | { results?: T[] } | null };
@@ -264,31 +241,3 @@ export const getCreditEntries = async (page = 1) =>
     `/api/billing/credit-entries/?page=${page}`,
     { raw: true },
   )) ?? { count: 0, next: null, previous: null, results: [] };
-
-// Bolivianos read as "Bs 13" / "Bs 4.33"; Intl would print "BOB 13.00".
-export const formatMoney = (minor: number, currency: string) => {
-  if (currency.toUpperCase() === "BOB") {
-    const whole = Number.isInteger(minor / 100);
-    return `Bs ${new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: whole ? 0 : 2,
-      maximumFractionDigits: 2,
-    }).format(minor / 100)}`;
-  }
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency.toUpperCase(),
-    }).format(minor / 100);
-  } catch {
-    return `${(minor / 100).toFixed(2)} ${currency}`;
-  }
-};
-
-export const formatDate = (value: string | null | undefined) =>
-  value
-    ? new Intl.DateTimeFormat("en", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }).format(new Date(value))
-    : "—";

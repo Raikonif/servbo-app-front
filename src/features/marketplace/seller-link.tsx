@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { useSession } from "@/hooks/use-session";
+import { Link } from "@/i18n/navigation";
 import { loginHref } from "@/lib/auth/redirect";
 import { sellerHref } from "@/lib/catalog";
 
@@ -18,6 +19,7 @@ export function SellerLink({
   className?: string;
   showHint?: boolean;
 }) {
+  const t = useTranslations("catalog.sellerLink");
   const { data: session } = useSession();
   const href = sellerHref(sellerId);
   const isAnonymous = session ? !session.authenticated : false;
@@ -28,9 +30,7 @@ export function SellerLink({
         {children}
       </Link>
       {showHint && isAnonymous ? (
-        <span className="text-xs text-muted">
-          Sign in to see the seller profile
-        </span>
+        <span className="text-xs text-muted">{t("hint")}</span>
       ) : null}
     </span>
   );

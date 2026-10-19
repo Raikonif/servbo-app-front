@@ -101,9 +101,15 @@ export const cacheTags = {
 };
 
 // Null on 404; any other failure throws so the page can show an error state.
-async function serverGet<T>(path: string, tags: string[]): Promise<T | null> {
+// `locale` is the page language: the API translates category names, and the
+// header is part of the fetch cache key, so each language is cached apart.
+async function serverGet<T>(
+  path: string,
+  tags: string[],
+  locale: string,
+): Promise<T | null> {
   const response = await fetch(new URL(path, serverApiUrl()), {
-    headers: { Accept: "application/json" },
+    headers: { Accept: "application/json", "Accept-Language": locale },
     next: { revalidate: REVALIDATE_SECONDS, tags },
   });
   if (response.status === 404) return null;
@@ -114,31 +120,38 @@ async function serverGet<T>(path: string, tags: string[]): Promise<T | null> {
 // Search, filters, sort and page come from the address (catalog-query.ts);
 // the API does the filtering. Each combination is its own cached fetch, all
 // under the `products` tag, so a product change refreshes every one.
-export async function getProducts(query: CatalogQuery): Promise<Page<Product>> {
+export async function getProducts(
+  query: CatalogQuery,
+  locale: string,
+): Promise<Page<Product>> {
   const params = toApiParams(query);
   return toPage(
     await serverGet<Page<Product> | Product[]>(
       `/api/products/${params.size ? `?${params}` : ""}`,
       [cacheTags.products],
+      locale,
     ),
   );
 }
 
-export const getProduct = (id: string) =>
-  serverGet<Product>(`/api/products/${encodeURIComponent(id)}/`, [
-    cacheTags.products,
-    cacheTags.product(id),
-  ]);
+export const getProduct = (id: string, locale: string) =>
+  serverGet<Product>(
+    `/api/products/${encodeURIComponent(id)}/`,
+    [cacheTags.products, cacheTags.product(id)],
+    locale,
+  );
 
 // Categories are paginated (20 per page); follow `next` for the full list.
-export async function getCategories(): Promise<Category[]> {
+export async function getCategories(locale: string): Promise<Category[]> {
   const categories: Category[] = [];
   let path: string | null = "/api/categories/";
   for (let i = 0; path && i < 10; i++) {
     const data: Page<Category> = toPage(
-      await serverGet<Page<Category> | Category[]>(path, [
-        cacheTags.categories,
-      ]),
+      await serverGet<Page<Category> | Category[]>(
+        path,
+        [cacheTags.categories],
+        locale,
+      ),
     );
     categories.push(...data.results);
     path = data.next
@@ -149,11 +162,12 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 // Product counts change with products, so the directory shares that tag.
-export const getSellers = async () =>
-  (await serverGet<Seller[]>("/api/sellers/", [
-    cacheTags.products,
-    cacheTags.sellers,
-  ])) ?? [];
+export const getSellers = async (locale: string) =>
+  (await serverGet<Seller[]>(
+    "/api/sellers/",
+    [cacheTags.products, cacheTags.sellers],
+    locale,
+  )) ?? [];
 
 // ---------- Browser (signed-in data, cookies + CSRF) ----------
 
@@ -195,48 +209,20 @@ export const removeFavorite = (productId: string) =>
 
 export const updateProfile = (
   userId: string,
-  body: { username: string; first_name: string; last_name: string },
+  body: Partial<{
+    username: string;
+    first_name: string;
+    last_name: string;
+    language: string;
+  }>,
 ) =>
   request<SessionUser>(`/api/users/${encodeURIComponent(userId)}/`, {
     method: "PUT",
     body,
   });
 
-// ---------- Formatting ----------
-
-export const formatPrice = (price: string, currency: string) => {
-  const amount = Number(price);
-  if (!Number.isFinite(amount)) return `${price} ${currency}`;
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency.toUpperCase(),
-    }).format(amount);
-  } catch {
-    return `${amount.toFixed(2)} ${currency}`;
-  }
-};
-
-// Fixed locale and UTC: identical on server and client, so timestamps are in
-// the cached HTML and never cause a hydration mismatch (design D12).
-const dateFormat = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeZone: "UTC",
-});
-// dateStyle/timeStyle cannot be combined with timeZoneName.
-const dateTimeFormat = new Intl.DateTimeFormat("en-US", {
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-  timeZone: "UTC",
-  timeZoneName: "short",
-});
-
-export const formatDate = (iso: string) => dateFormat.format(new Date(iso));
-export const formatDateTime = (iso: string) =>
-  dateTimeFormat.format(new Date(iso));
+// ---------- Helpers ----------
+// Prices and dates: useFormat / formatters in src/i18n/format.ts.
 
 // "Modified" only when the product changed after upload, not the same save.
 export const wasModified = (

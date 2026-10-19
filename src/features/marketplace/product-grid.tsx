@@ -1,15 +1,11 @@
 import { ArrowUpRight, ImageIcon, Package } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { RatingSummary } from "@/features/reviews/stars";
-import {
-  formatDate,
-  formatPrice,
-  type Product,
-  productHref,
-  wasModified,
-} from "@/lib/catalog";
+import { useFormat } from "@/i18n/format";
+import { Link } from "@/i18n/navigation";
+import { type Product, productHref, wasModified } from "@/lib/catalog";
 import { ratingNumber } from "@/lib/reviews";
 import { ClampedText } from "./clamped-text";
 import { FavoriteButton } from "./favorite-button";
@@ -34,12 +30,13 @@ export function ProductGrid({
   // full-window detail directly.
   selectHref?: (id: string) => string;
 }) {
+  const t = useTranslations("catalog.grid");
   if (!products.length) {
     if (emptyState) return emptyState;
     return (
       <div className="rounded-3xl border border-dashed border-line-strong p-12 text-center text-sm text-muted">
         <Package className="mx-auto mb-3 text-subtle" size={24} />
-        No products to show yet.
+        {t("empty")}
       </div>
     );
   }
@@ -76,6 +73,8 @@ function ProductCard({
   selected: boolean;
   eager: boolean;
 }) {
+  const t = useTranslations("catalog.grid");
+  const format = useFormat();
   const modified = wasModified(product);
   const stamp = modified ? product.updated_at : product.created_at;
 
@@ -104,7 +103,7 @@ function ProductCard({
             ) : (
               <div className="flex size-full flex-col items-center justify-center gap-2 text-subtle">
                 <ImageIcon size={30} strokeWidth={1.5} />
-                <span className="text-xs">No photo yet</span>
+                <span className="text-xs">{t("noPhoto")}</span>
               </div>
             )}
           </div>
@@ -116,7 +115,7 @@ function ProductCard({
         />
         {selected ? (
           <span className="absolute top-3 left-3 z-10 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-fg">
-            Selected
+            {t("selected")}
           </span>
         ) : null}
 
@@ -135,7 +134,7 @@ function ProductCard({
               </Link>
             </h3>
             <p className="shrink-0 text-[17px] font-semibold tracking-tight tabular-nums">
-              {formatPrice(product.price, product.currency)}
+              {format.price(product.price, product.currency)}
             </p>
           </div>
 
@@ -174,9 +173,13 @@ function ProductCard({
           ) : null}
 
           <div className="mt-auto flex items-center justify-between gap-3 pt-2 text-xs text-muted">
-            <span className="truncate">{product.seller_name || "Seller"}</span>
+            <span className="truncate">
+              {product.seller_name || t("sellerFallback")}
+            </span>
             <time className="shrink-0 tabular-nums" dateTime={stamp}>
-              {modified ? "Modified" : "Uploaded"} {formatDate(stamp)}
+              {t(modified ? "modified" : "uploaded", {
+                date: format.date(stamp),
+              })}
             </time>
           </div>
         </div>
@@ -190,12 +193,13 @@ function ProductCard({
 export function SeeMoreLink({
   productId,
   className = "",
-  children = "See more",
+  children,
 }: {
   productId: string;
   className?: string;
   children?: React.ReactNode;
 }) {
+  const t = useTranslations("catalog");
   return (
     <Link
       className={`relative z-10 inline-flex items-center justify-center gap-1.5 ${className}`}
@@ -203,7 +207,7 @@ export function SeeMoreLink({
       href={productHref(productId)}
       scroll={false}
     >
-      {children}
+      {children ?? t("seeMore")}
       <ArrowUpRight aria-hidden size={16} />
     </Link>
   );

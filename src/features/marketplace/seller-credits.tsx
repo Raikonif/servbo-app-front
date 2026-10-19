@@ -1,12 +1,12 @@
 "use client";
 
 import { ArrowRight, BadgeCheck, Coins, Rocket, Store } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useActivateSeller } from "@/hooks/use-billing";
+import { useFormat } from "@/i18n/format";
 import {
   CREATOR_URL,
   type CreditPricing,
-  formatDate,
-  plural,
   type SellerSubscriptionState,
 } from "@/lib/billing";
 
@@ -23,18 +23,25 @@ export const payHref = (paymentId: string) =>
   `/become-a-vendor/pay?payment=${encodeURIComponent(paymentId)}`;
 
 export function BalanceBadge({ balance }: { balance: number }) {
+  const t = useTranslations("credits");
   return (
     <p className="inline-flex items-center gap-2 rounded-md bg-accent-soft px-2 py-1 text-xs font-semibold uppercase text-accent-text">
       <Coins size={14} />
-      {plural(balance, "credit")}
+      {t("count", { count: balance })}
     </p>
   );
 }
 
-// "Publishing a product costs 1 credit and saving changes to a published
-// product costs 1 credit. Drafts are free."
-export const costsText = (pricing: CreditPricing) =>
-  `Publishing a product costs ${plural(pricing.publish_cost, "credit")} and saving changes to a published product costs ${plural(pricing.edit_cost, "credit")}. Drafts are free.`;
+// How many products a pack publishes at the current prices, for the
+// `credits.packCoverage` message ("Publish up to 35 products…").
+export function coveredProducts(
+  credits: number,
+  pricing: CreditPricing | null,
+) {
+  if (!pricing || pricing.publish_cost <= 0) return null;
+  const products = Math.floor(credits / pricing.publish_cost);
+  return products > 0 ? products : null;
+}
 
 const row =
   "flex items-center justify-between gap-3 rounded-lg border border-line p-3";
@@ -43,60 +50,75 @@ const row =
 // their reset date, the paid ones, and the way to the creator app.
 export function SellerCreditsCard({
   state,
-  title = "You're a seller",
+  title,
 }: {
   state: SellerSubscriptionState;
   title?: string;
 }) {
+  const t = useTranslations("credits");
+  const format = useFormat();
   const { credits, pricing, products } = state;
   return (
     <section className={card}>
       <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent-soft text-accent-text">
         <BadgeCheck size={24} />
       </span>
-      <h2 className="mt-4 text-2xl font-semibold text-fg">{title}</h2>
+      <h2 className="mt-4 text-2xl font-semibold text-fg">
+        {title ?? t("sellerCard.title")}
+      </h2>
       <dl className="mt-4 space-y-2 text-sm">
         <div className={row}>
-          <dt className="text-muted">Free credits</dt>
+          <dt className="text-muted">{t("free")}</dt>
           <dd className="text-right font-medium text-fg">
-            {plural(credits.free, "credit")}
+            {t("count", { count: credits.free })}
             {credits.free_resets_at ? (
               <span className="block text-xs font-normal text-muted">
                 {pricing
-                  ? `Back to ${pricing.free_credits} on ${formatDate(credits.free_resets_at)}`
-                  : `Reset on ${formatDate(credits.free_resets_at)}`}
+                  ? t("resetsTo", {
+                      count: pricing.free_credits,
+                      date: format.date(credits.free_resets_at),
+                    })
+                  : t("resetsOn", {
+                      date: format.date(credits.free_resets_at),
+                    })}
               </span>
             ) : null}
           </dd>
         </div>
         <div className={row}>
-          <dt className="text-muted">Paid credits</dt>
+          <dt className="text-muted">{t("paid")}</dt>
           <dd className="text-right font-medium text-fg">
-            {plural(credits.paid, "credit")}
+            {t("count", { count: credits.paid })}
             <span className="block text-xs font-normal text-muted">
-              Never expire
+              {t("neverExpire")}
             </span>
           </dd>
         </div>
         <div className={row}>
-          <dt className="text-muted">Products</dt>
+          <dt className="text-muted">{t("sellerCard.products")}</dt>
           <dd className="text-right font-medium text-fg">
-            {products.published} published · {plural(products.drafts, "draft")}
+            {t("sellerCard.productsValue", {
+              published: products.published,
+              drafts: products.drafts,
+            })}
           </dd>
         </div>
       </dl>
       {pricing ? (
         <p className="mt-4 text-sm leading-6 text-muted">
-          {costsText(pricing)} Free credits are spent first.
+          {t("sellerCard.costs", {
+            publish: pricing.publish_cost,
+            edit: pricing.edit_cost,
+          })}
         </p>
       ) : null}
       <div className="mt-5 flex flex-wrap gap-3">
         <a className={primaryButton} href={CREATOR_URL}>
-          Open the creator dashboard
+          {t("openCreator")}
           <ArrowRight size={17} />
         </a>
         <a className={secondaryButton} href={CREATOR_BILLING_URL}>
-          Credit history
+          {t("history")}
         </a>
       </div>
     </section>
@@ -107,11 +129,12 @@ export function SellerCreditsCard({
 // place (no reload) with the link to the creator dashboard.
 export function BecomeSellerCard({
   state,
-  title = "Start selling for free",
+  title,
 }: {
   state: SellerSubscriptionState;
   title?: string;
 }) {
+  const t = useTranslations("credits.becomeSellerCard");
   const activate = useActivateSeller();
   const { pricing, credits } = state;
   return (
@@ -119,13 +142,18 @@ export function BecomeSellerCard({
       <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent-soft text-accent-text">
         <Store size={24} />
       </span>
-      <h2 className="mt-4 text-2xl font-semibold text-fg">{title}</h2>
+      <h2 className="mt-4 text-2xl font-semibold text-fg">
+        {title ?? t("title")}
+      </h2>
       <p className="mt-2 text-sm leading-6 text-muted">
         {pricing
-          ? `Open your store at no cost and get ${plural(pricing.free_credits, "free credit")} every ${pricing.period_days} days.`
-          : "Open your store at no cost and get free credits every month."}
+          ? t("intro", {
+              count: pricing.free_credits,
+              days: pricing.period_days,
+            })
+          : t("introDefault")}
         {credits.paid > 0
-          ? ` Your ${plural(credits.paid, "paid credit")} will be waiting for you.`
+          ? ` ${t("paidWaiting", { count: credits.paid })}`
           : ""}
       </p>
       {activate.error ? (
@@ -140,7 +168,7 @@ export function BecomeSellerCard({
         type="button"
       >
         <Rocket size={17} />
-        {activate.isPending ? "Activating…" : "Become a seller for free"}
+        {activate.isPending ? t("activating") : t("cta")}
       </button>
     </section>
   );

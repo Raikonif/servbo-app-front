@@ -1,8 +1,9 @@
 "use client";
 
 import { ArrowUpRight } from "lucide-react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { Link } from "@/i18n/navigation";
 
 // Text is cut by CSS only (the full text stays in the HTML for crawlers);
 // when something was actually cut, "See more" opens the full-window detail.
@@ -19,6 +20,7 @@ export function ClampedText({
   productId: string;
   className?: string;
 }) {
+  const t = useTranslations("catalog");
   const ref = useRef<HTMLParagraphElement>(null);
   const [clamped, setClamped] = useState(false);
 
@@ -48,7 +50,7 @@ export function ClampedText({
           href={href}
           scroll={false}
         >
-          See more
+          {t("seeMore")}
           <ArrowUpRight aria-hidden size={14} />
         </Link>
       ) : null}

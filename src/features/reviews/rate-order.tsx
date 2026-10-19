@@ -1,6 +1,7 @@
 "use client";
 
 import { LoaderCircle, Pencil, Store, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 import {
   useCreateReview,
@@ -8,7 +9,7 @@ import {
   useOrderReviews,
   useUpdateReview,
 } from "@/hooks/use-reviews";
-import { formatDate } from "@/lib/catalog";
+import { useFormat } from "@/i18n/format";
 import type { OrderDetail } from "@/lib/orders";
 import { MAX_COMMENT, type Review } from "@/lib/reviews";
 import { ReviewItem } from "./review-list";
@@ -19,6 +20,7 @@ import { StarsInput } from "./stars";
 // buyer's own reviews with edit/delete while the 30-day window is open.
 export function RateOrder({ order }: { order: OrderDetail }) {
   // Only mounted for delivered orders; earlier ones have nothing to rate.
+  const t = useTranslations("reviews.rate");
   const state = useOrderReviews(order.id);
   const create = useCreateReview(order.id, order.seller.id);
 
@@ -28,13 +30,13 @@ export function RateOrder({ order }: { order: OrderDetail }) {
   if (state.isError) {
     return (
       <p className="mt-6 text-sm text-danger">
-        We could not load your reviews.{" "}
+        {t("loadError")}{" "}
         <button
           className="font-medium underline"
           onClick={() => void state.refetch()}
           type="button"
         >
-          Try again
+          {t("tryAgain")}
         </button>
       </p>
     );
@@ -50,12 +52,9 @@ export function RateOrder({ order }: { order: OrderDetail }) {
     >
       <div>
         <h2 className="font-semibold" id="rate-order">
-          Rate your purchase
+          {t("title")}
         </h2>
-        <p className="mt-1 text-sm text-muted">
-          Reviews are public and show your name. You can change them for 30
-          days.
-        </p>
+        <p className="mt-1 text-sm text-muted">{t("hint")}</p>
       </div>
 
       {products.map((item) => (
@@ -69,7 +68,7 @@ export function RateOrder({ order }: { order: OrderDetail }) {
               comment,
             })
           }
-          submitLabel="Post review"
+          submitLabel={t("post")}
           title={item.name}
         />
       ))}
@@ -79,14 +78,14 @@ export function RateOrder({ order }: { order: OrderDetail }) {
           onSubmit={(rating, comment) =>
             create.mutateAsync({ kind: "seller", rating, comment })
           }
-          submitLabel="Rate seller"
-          title={`The seller: ${order.seller.name}`}
+          submitLabel={t("rateSeller")}
+          title={t("sellerTitle", { name: order.seller.name })}
         />
       ) : null}
 
       {reviews.length ? (
         <div className="space-y-3 border-t border-line pt-4">
-          <h3 className="text-sm font-medium text-muted">Your reviews</h3>
+          <h3 className="text-sm font-medium text-muted">{t("yours")}</h3>
           <ul className="space-y-3">
             {reviews.map((review) => (
               <li key={review.id}>
@@ -101,12 +100,16 @@ export function RateOrder({ order }: { order: OrderDetail }) {
 }
 
 function MyReview({ review, sellerId }: { review: Review; sellerId: string }) {
+  const t = useTranslations("reviews.rate");
+  const format = useFormat();
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const update = useUpdateReview(sellerId);
   const remove = useDeleteReview(sellerId);
   const subject =
-    review.kind === "seller" ? "Seller" : (review.product?.name ?? "Product");
+    review.kind === "seller"
+      ? t("seller")
+      : (review.product?.name ?? t("product"));
 
   if (editing) {
     return (
@@ -118,7 +121,7 @@ function MyReview({ review, sellerId }: { review: Review; sellerId: string }) {
           await update.mutateAsync({ id: review.id, rating, comment });
           setEditing(false);
         }}
-        submitLabel="Save changes"
+        submitLabel={t("save")}
         title={subject}
       />
     );
@@ -131,25 +134,25 @@ function MyReview({ review, sellerId }: { review: Review; sellerId: string }) {
       {review.can_edit ? (
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <span className="text-xs text-muted">
-            You can edit until {formatDate(review.editable_until)}
+            {t("editUntil", { date: format.date(review.editable_until) })}
           </span>
           {confirming ? (
             <span className="flex flex-wrap items-center gap-3">
-              <span>Delete this review?</span>
+              <span>{t("deleteQuestion")}</span>
               <button
                 className="rounded-full bg-danger px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
                 disabled={remove.isPending}
                 onClick={() => remove.mutate(review.id)}
                 type="button"
               >
-                Yes, delete
+                {t("deleteConfirm")}
               </button>
               <button
                 className="text-xs font-medium text-muted"
                 onClick={() => setConfirming(false)}
                 type="button"
               >
-                Keep it
+                {t("keep")}
               </button>
             </span>
           ) : (
@@ -159,14 +162,14 @@ function MyReview({ review, sellerId }: { review: Review; sellerId: string }) {
                 onClick={() => setEditing(true)}
                 type="button"
               >
-                <Pencil aria-hidden size={13} /> Edit
+                <Pencil aria-hidden size={13} /> {t("edit")}
               </button>
               <button
                 className="inline-flex items-center gap-1 font-medium text-danger"
                 onClick={() => setConfirming(true)}
                 type="button"
               >
-                <Trash2 aria-hidden size={13} /> Delete
+                <Trash2 aria-hidden size={13} /> {t("delete")}
               </button>
             </span>
           )}
@@ -200,6 +203,7 @@ function ReviewForm({
   initialRating?: number;
   initialComment?: string;
 }) {
+  const t = useTranslations("reviews.rate");
   const [rating, setRating] = useState(initialRating);
   const [comment, setComment] = useState(initialComment);
   const [pending, setPending] = useState(false);
@@ -212,7 +216,7 @@ function ReviewForm({
       onSubmit={async (event) => {
         event.preventDefault();
         if (!rating) {
-          setError("Choose from 1 to 5 stars.");
+          setError(t("chooseStars"));
           return;
         }
         setPending(true);
@@ -232,7 +236,7 @@ function ReviewForm({
       </p>
       <StarsInput
         disabled={pending}
-        label={`Your rating for ${title}`}
+        label={t("ratingFor", { title })}
         onChange={(value) => {
           setRating(value);
           setError(null);
@@ -241,7 +245,7 @@ function ReviewForm({
       />
       <div>
         <label className="text-xs text-muted" htmlFor={commentId}>
-          Comment (optional)
+          {t("comment")}
         </label>
         <textarea
           className="mt-1 block w-full rounded-xl border border-line bg-surface p-2.5 text-sm outline-none focus:border-accent disabled:opacity-60"
@@ -272,7 +276,7 @@ function ReviewForm({
             onClick={onCancel}
             type="button"
           >
-            Cancel
+            {t("cancel")}
           </button>
         ) : null}
       </div>

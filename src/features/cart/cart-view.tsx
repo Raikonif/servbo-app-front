@@ -9,14 +9,16 @@ import {
   Trash2,
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   useCart,
   useRemoveFromCart,
   useSetCartQuantity,
 } from "@/hooks/use-cart";
+import { useFormat } from "@/i18n/format";
+import { Link } from "@/i18n/navigation";
 import type { CartGroup, CartItem } from "@/lib/cart";
-import { formatPrice, productHref } from "@/lib/catalog";
+import { productHref } from "@/lib/catalog";
 
 export const checkoutHref = (sellerId?: string) =>
   sellerId ? `/checkout?seller=${encodeURIComponent(sellerId)}` : "/checkout";
@@ -24,12 +26,13 @@ export const checkoutHref = (sellerId?: string) =>
 // The cart grouped by seller (openspec cart-and-checkout, shopping-cart
 // spec). Rendered inside RequireSession.
 export function CartView() {
+  const t = useTranslations("cart");
   const { cart, isPending, isError, error, refetch } = useCart();
 
   return (
     <main className="mx-auto max-w-4xl px-4 pt-10 pb-24 sm:px-6">
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-        Your cart
+        {t("title")}
       </h1>
 
       {isPending ? (
@@ -42,26 +45,23 @@ export function CartView() {
             onClick={() => refetch()}
             type="button"
           >
-            Try again
+            {t("tryAgain")}
           </button>
         </div>
       ) : !cart.groups.length ? (
         <div className="mt-8 rounded-3xl border border-dashed border-line-strong p-12 text-center">
           <ShoppingBag className="mx-auto mb-3 text-subtle" size={24} />
-          <p className="font-medium">Your cart is empty</p>
+          <p className="font-medium">{t("empty")}</p>
           <Link
             className="mt-4 inline-flex min-h-10 items-center rounded-full bg-fg px-5 text-sm font-semibold text-bg"
             href="/"
           >
-            Browse the catalog
+            {t("browse")}
           </Link>
         </div>
       ) : (
         <>
-          <p className="mt-2 text-muted">
-            Each seller ships and gets paid separately: you will place one order
-            per seller.
-          </p>
+          <p className="mt-2 text-muted">{t("perSeller")}</p>
           <div className="mt-8 flex flex-col gap-6">
             {cart.groups.map((group) => (
               <SellerGroup group={group} key={group.seller.id} />
@@ -74,7 +74,7 @@ export function CartView() {
                 className="inline-flex min-h-12 items-center rounded-full bg-accent px-6 text-sm font-semibold text-accent-fg transition hover:bg-accent-hover"
                 href={checkoutHref()}
               >
-                Check out all {cart.groups.length} sellers
+                {t("checkoutAll", { count: cart.groups.length })}
               </Link>
             </div>
           ) : null}
@@ -85,6 +85,8 @@ export function CartView() {
 }
 
 function SellerGroup({ group }: { group: CartGroup }) {
+  const t = useTranslations("cart");
+  const format = useFormat();
   return (
     <section
       aria-labelledby={`seller-${group.seller.id}`}
@@ -95,10 +97,10 @@ function SellerGroup({ group }: { group: CartGroup }) {
           {group.seller.name}
         </h2>
         <p className="text-xs text-muted">
-          {[group.accepts_qr ? "QR" : null, "Cash"]
-            .filter(Boolean)
-            .join(" or ")}{" "}
-          · {group.pickup ? "Delivery or pickup" : "Delivery"}
+          {t("options", {
+            payment: group.accepts_qr ? "qrOrCash" : "cash",
+            delivery: group.pickup ? "both" : "delivery",
+          })}
         </p>
       </header>
 
@@ -110,16 +112,16 @@ function SellerGroup({ group }: { group: CartGroup }) {
 
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-surface-2/50 px-5 py-4">
         <p className="text-sm">
-          <span className="text-muted">Subtotal </span>
+          <span className="text-muted">{t("subtotal")} </span>
           <span className="font-semibold tabular-nums">
             {group.subtotals.length
               ? group.subtotals
-                  .map((s) => formatPrice(s.amount, s.currency))
+                  .map((s) => format.price(s.amount, s.currency))
                   .join(" + ")
               : "—"}
           </span>
           <span className="block text-xs text-muted">
-            Shipping is agreed with the seller.
+            {t("shippingAgreed")}
           </span>
         </p>
         {group.can_checkout ? (
@@ -127,12 +129,12 @@ function SellerGroup({ group }: { group: CartGroup }) {
             className="inline-flex min-h-11 items-center rounded-full bg-fg px-5 text-sm font-semibold text-bg transition hover:opacity-90"
             href={checkoutHref(group.seller.id)}
           >
-            Check out this seller
+            {t("checkoutSeller")}
           </Link>
         ) : (
           <p className="inline-flex items-center gap-1.5 text-sm text-warning">
             <AlertTriangle size={15} />
-            Fix the marked items to check out
+            {t("fixItems")}
           </p>
         )}
       </footer>
@@ -141,6 +143,8 @@ function SellerGroup({ group }: { group: CartGroup }) {
 }
 
 function CartLine({ item }: { item: CartItem }) {
+  const t = useTranslations("cart");
+  const format = useFormat();
   const setQuantity = useSetCartQuantity();
   const remove = useRemoveFromCart();
   const busy = setQuantity.isPending || remove.isPending;
@@ -178,31 +182,29 @@ function CartLine({ item }: { item: CartItem }) {
             {item.name}
           </Link>
           <p className="shrink-0 font-semibold tabular-nums">
-            {formatPrice(item.subtotal, item.currency)}
+            {format.price(item.subtotal, item.currency)}
           </p>
         </div>
         <p className="text-xs text-muted tabular-nums">
-          {formatPrice(item.unit_price, item.currency)} each
+          {t("each", { price: format.price(item.unit_price, item.currency) })}
         </p>
 
         {item.unavailable ? (
-          <p className="text-sm font-medium text-danger">
-            No longer available — remove it to continue.
-          </p>
+          <p className="text-sm font-medium text-danger">{t("unavailable")}</p>
         ) : item.over_stock ? (
           <p className="text-sm font-medium text-warning">
-            Only {item.stock} left — lower the quantity.
+            {t("overStock", { count: item.stock })}
           </p>
         ) : null}
 
         <div className="flex items-center gap-3">
           {!item.unavailable ? (
             <fieldset
-              aria-label={`Quantity of ${item.name}`}
+              aria-label={t("quantityOf", { name: item.name })}
               className="inline-flex items-center rounded-full border border-line"
             >
               <button
-                aria-label="Decrease quantity"
+                aria-label={t("decrease")}
                 className="inline-flex size-9 items-center justify-center rounded-full transition hover:bg-surface-2 disabled:opacity-40"
                 disabled={busy || item.quantity <= 1}
                 onClick={() =>
@@ -219,7 +221,7 @@ function CartLine({ item }: { item: CartItem }) {
                 {item.quantity}
               </span>
               <button
-                aria-label="Increase quantity"
+                aria-label={t("increase")}
                 className="inline-flex size-9 items-center justify-center rounded-full transition hover:bg-surface-2 disabled:opacity-40"
                 disabled={busy || item.quantity >= item.stock}
                 onClick={() =>
@@ -241,7 +243,7 @@ function CartLine({ item }: { item: CartItem }) {
             type="button"
           >
             <Trash2 size={15} />
-            Remove
+            {t("remove")}
           </button>
         </div>
         {error ? <p className="text-sm text-danger">{error.message}</p> : null}

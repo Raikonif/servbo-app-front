@@ -1,21 +1,17 @@
 "use client";
 
 import { LoaderCircle } from "lucide-react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
+import { Link, useRouter } from "@/i18n/navigation";
 import { resetPassword } from "@/lib/auth/client";
 import { AuthError, authMessage, PASSWORD_REGEX } from "@/lib/auth/errors";
 import { AuthShell } from "./auth-shell";
 import { buttonStyles, Field, FormAlert } from "./form-controls";
 
-const requestNewLink = (
-  <Link className="font-medium underline" href="/forgot-password">
-    Request a new link
-  </Link>
-);
-
 export function ResetPasswordForm() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const token = useSearchParams().get("token");
   const [password, setPassword] = useState("");
@@ -23,9 +19,15 @@ export function ResetPasswordForm() {
   const [error, setError] = useState<AuthError | null>(null);
   const [isPending, setIsPending] = useState(false);
 
+  const requestNewLink = (
+    <Link className="font-medium underline" href="/forgot-password">
+      {t("reset.requestNewLink")}
+    </Link>
+  );
+
   if (!token) {
     return (
-      <AuthShell title="Incomplete link">
+      <AuthShell title={t("reset.incompleteTitle")}>
         <FormAlert action={requestNewLink}>
           {authMessage("INVALID_TOKEN")}
         </FormAlert>
@@ -55,7 +57,7 @@ export function ResetPasswordForm() {
   };
 
   return (
-    <AuthShell title="Choose a new password">
+    <AuthShell title={t("reset.title")}>
       {error ? (
         <FormAlert
           action={error.code === "INVALID_TOKEN" ? requestNewLink : null}
@@ -67,7 +69,7 @@ export function ResetPasswordForm() {
         <Field
           autoComplete="new-password"
           id="password"
-          label="New password"
+          label={t("reset.newPassword")}
           minLength={8}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -77,17 +79,14 @@ export function ResetPasswordForm() {
         <Field
           autoComplete="new-password"
           id="confirmation"
-          label="Confirm new password"
+          label={t("reset.confirmNewPassword")}
           minLength={8}
           onChange={(e) => setConfirmation(e.target.value)}
           required
           type="password"
           value={confirmation}
         />
-        <p className="text-xs text-muted">
-          At least 8 characters, with an uppercase letter, a lowercase letter
-          and a number.
-        </p>
+        <p className="text-xs text-muted">{t("passwordHint")}</p>
         <button
           className={buttonStyles.primary}
           disabled={isPending}
@@ -96,7 +95,7 @@ export function ResetPasswordForm() {
           {isPending ? (
             <LoaderCircle className="animate-spin" size={16} />
           ) : null}
-          Update password
+          {t("reset.submit")}
         </button>
       </form>
     </AuthShell>

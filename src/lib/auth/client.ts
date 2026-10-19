@@ -31,6 +31,8 @@ export type SessionUser = {
   // Sign-in methods (openspec account-sign-in-methods).
   has_password: boolean;
   google: { linked: boolean; email: string | null };
+  // "" follows the browser (openspec i18n-api).
+  language: "es" | "en" | "";
   created_at: string;
 };
 
@@ -69,6 +71,13 @@ const refreshSession = () => {
   return refreshing;
 };
 
+// The page language, sent as Accept-Language so the API answers in it
+// (category names, error details). Set by the language provider.
+let apiLanguage: string | null = null;
+export const setApiLanguage = (locale: string) => {
+  apiLanguage = locale;
+};
+
 const readCookie = (name: string) =>
   document.cookie
     .split("; ")
@@ -85,6 +94,7 @@ async function send(path: string, method: string, body?: unknown) {
       credentials: "include",
       headers: {
         Accept: "application/json",
+        ...(apiLanguage ? { "Accept-Language": apiLanguage } : {}),
         ...(body && !multipart ? { "Content-Type": "application/json" } : {}),
         ...(method !== "GET" && csrf
           ? { "X-CSRFToken": decodeURIComponent(csrf) }
@@ -214,20 +224,21 @@ export const setPassword = (payload: {
 // Links Google to the signed-in account. The backend reads the access cookie
 // when Google returns, so it is renewed first (it lasts 15 minutes). Comes
 // back to /profile?google=linked or /profile?auth_error=<code>.
-export async function startGoogleLink() {
+export async function startGoogleLink(locale: string) {
   await getSession();
-  await submitGoogleForm("1");
+  await submitGoogleForm("1", locale);
 }
 
 // The Google login view is POST-only and CSRF-protected, and must be a real
 // browser navigation (it answers with a 302 to Google), hence a hidden form.
-// Failures come back as /login?auth_error=<code>.
-export async function startGoogleSignIn(next: string) {
+// Failures come back as /<locale>/login?auth_error=<code>; `locale` brings the
+// visitor back in the language they started in.
+export async function startGoogleSignIn(next: string, locale: string) {
   rememberNext(next);
-  await submitGoogleForm("0");
+  await submitGoogleForm("0", locale);
 }
 
-async function submitGoogleForm(link: "0" | "1") {
+async function submitGoogleForm(link: "0" | "1", locale: string) {
   if (!readCookie("csrftoken")) {
     try {
       await fetch(new URL("/api/auth/csrf/", apiBase()), {
@@ -249,6 +260,7 @@ async function submitGoogleForm(link: "0" | "1") {
     ["frontend", "store"],
     // Always sent, so an abandoned link never turns a sign-in into a link.
     ["link", link],
+    ["locale", locale],
   ]) {
     const input = document.createElement("input");
     input.type = "hidden";

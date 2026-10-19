@@ -1,8 +1,9 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { type ReactNode, useEffect, useRef, ViewTransition } from "react";
+import { useRouter } from "@/i18n/navigation";
 import { productHref, productTransitionName } from "@/lib/catalog";
 
 // Full-window product detail on a native <dialog> (openspec D7, D16): top
@@ -21,6 +22,7 @@ export function ProductModal({
   labelledBy: string;
   children: ReactNode;
 }) {
+  const t = useTranslations("catalog.modal");
   const router = useRouter();
   const dialog = useRef<HTMLDialogElement>(null);
   const closing = useRef(false);
@@ -44,7 +46,8 @@ export function ProductModal({
             `main [data-see-more="${productId}"]`,
           ) ??
           document.querySelector<HTMLElement>(
-            `main a[href*="product=${productId}"], main a[href="${productHref(productId)}"]`,
+            // Rendered hrefs carry the locale prefix ("/es/products/<id>").
+            `main a[href*="product=${productId}"], main a[href$="${productHref(productId)}"]`,
           );
         trigger?.focus({ preventScroll: true });
       });
@@ -78,15 +81,15 @@ export function ProductModal({
               {title}
             </p>
             <button
-              aria-label="Close"
+              aria-label={t("close")}
               className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-3 text-sm font-medium text-muted transition hover:border-line-strong hover:text-fg"
               onClick={close}
               type="button"
             >
               <X aria-hidden size={16} />
-              <span className="hidden sm:inline">Close</span>
+              <span className="hidden sm:inline">{t("close")}</span>
               <kbd className="hidden rounded border border-line px-1 text-[10px] text-subtle md:inline">
-                Esc
+                {t("escKey")}
               </kbd>
             </button>
           </header>

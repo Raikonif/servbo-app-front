@@ -1,9 +1,10 @@
 "use client";
 
 import { LoaderCircle } from "lucide-react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
+import { Link, useRouter } from "@/i18n/navigation";
 import { sendEmailVerification, signUp } from "@/lib/auth/client";
 import { AuthError, PASSWORD_REGEX } from "@/lib/auth/errors";
 import { loginHref, safeNext } from "@/lib/auth/redirect";
@@ -11,6 +12,7 @@ import { AuthShell } from "./auth-shell";
 import { buttonStyles, Field, FormAlert } from "./form-controls";
 
 export function RegisterForm() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const next = safeNext(useSearchParams().get("next"));
   const [form, setForm] = useState({
@@ -64,23 +66,22 @@ export function RegisterForm() {
 
   return (
     <AuthShell
-      footer={
-        <>
-          Already have an account?{" "}
+      footer={t.rich("register.haveAccount", {
+        link: (chunks) => (
           <Link className="font-medium text-accent-text" href={loginHref(next)}>
-            Sign in
+            {chunks}
           </Link>
-        </>
-      }
-      subtitle="Sign up to save products and manage your purchases."
-      title="Create your account"
+        ),
+      })}
+      subtitle={t("register.subtitle")}
+      title={t("register.title")}
     >
       {error ? (
         <FormAlert
           action={
             error.code === "EMAIL_ALREADY_EXISTS" ? (
               <Link className="font-medium underline" href={loginHref(next)}>
-                Go to sign in
+                {t("register.goToSignIn")}
               </Link>
             ) : null
           }
@@ -92,7 +93,7 @@ export function RegisterForm() {
         <Field
           autoComplete="email"
           id="email"
-          label="Email"
+          label={t("email")}
           onChange={(e) => update("email")(e.target.value)}
           required
           type="email"
@@ -101,7 +102,7 @@ export function RegisterForm() {
         <Field
           autoComplete="username"
           id="username"
-          label="Username"
+          label={t("register.username")}
           maxLength={50}
           onChange={(e) => update("username")(e.target.value)}
           required
@@ -110,7 +111,7 @@ export function RegisterForm() {
         <Field
           autoComplete="new-password"
           id="password"
-          label="Password"
+          label={t("password")}
           onChange={(e) => update("password")(e.target.value)}
           required
           type="password"
@@ -119,16 +120,13 @@ export function RegisterForm() {
         <Field
           autoComplete="new-password"
           id="confirmation"
-          label="Confirm password"
+          label={t("register.confirmPassword")}
           onChange={(e) => update("confirmation")(e.target.value)}
           required
           type="password"
           value={form.confirmation}
         />
-        <p className="text-xs text-muted">
-          At least 8 characters, with an uppercase letter, a lowercase letter
-          and a number.
-        </p>
+        <p className="text-xs text-muted">{t("passwordHint")}</p>
         <button
           className={buttonStyles.primary}
           disabled={isPending}
@@ -137,7 +135,7 @@ export function RegisterForm() {
           {isPending ? (
             <LoaderCircle className="animate-spin" size={16} />
           ) : null}
-          Create account
+          {t("register.submit")}
         </button>
       </form>
     </AuthShell>

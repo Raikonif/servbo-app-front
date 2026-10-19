@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import type { Category } from "@/lib/catalog";
 import {
   type CatalogQuery,
@@ -7,16 +8,9 @@ import {
   isFiltered,
   isPriceSort,
   refineHref,
-  SORTS,
 } from "@/lib/catalog-query";
 
 type Chip = { label: string; href: string };
-
-const priceLabel = ({ min, max, currency }: CatalogQuery) => {
-  if (min && max) return `${min}–${max} ${currency}`;
-  if (min) return `From ${min} ${currency}`;
-  return `Up to ${max} ${currency}`;
-};
 
 // Result count plus one removable chip per active filter (openspec
 // catalog-search-and-filters, "Active filters and result count").
@@ -29,10 +23,18 @@ export function ActiveFilters({
   count: number;
   categories: Category[];
 }) {
+  const t = useTranslations("catalog");
+  const priceLabel = ({ min = "", max = "", currency }: CatalogQuery) => {
+    const values = { min, max, currency: currency ?? "" };
+    if (min && max) return t("active.priceRange", values);
+    if (min) return t("active.priceFrom", values);
+    return t("active.priceTo", values);
+  };
+
   const chips: Chip[] = [];
   if (query.q) {
     chips.push({
-      label: `“${query.q}”`,
+      label: t("active.query", { q: query.q }),
       href: refineHref(query, { q: undefined }),
     });
   }
@@ -53,15 +55,20 @@ export function ActiveFilters({
   }
   if (query.inStock) {
     chips.push({
-      label: "In stock",
+      label: t("active.inStock"),
       href: refineHref(query, { inStock: false }),
     });
   }
   if (query.sort !== DEFAULT_SORT) {
     // A price sort compares one currency, so say which.
-    const suffix = isPriceSort(query.sort) ? ` (${query.currency})` : "";
+    const sort = t(`sort.${query.sort}`);
     chips.push({
-      label: `${SORTS[query.sort].label}${suffix}`,
+      label: isPriceSort(query.sort)
+        ? t("active.sortWithCurrency", {
+            sort,
+            currency: query.currency ?? "",
+          })
+        : sort,
       href: refineHref(query, { sort: DEFAULT_SORT }),
     });
   }
@@ -69,7 +76,7 @@ export function ActiveFilters({
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
       <p aria-live="polite" className="mr-1 text-muted tabular-nums">
-        {count} {count === 1 ? "product" : "products"}
+        {t("active.count", { count })}
       </p>
       {chips.map((chip) => (
         <Link
@@ -80,7 +87,7 @@ export function ActiveFilters({
         >
           {chip.label}
           <X aria-hidden size={14} />
-          <span className="sr-only">(remove filter)</span>
+          <span className="sr-only">{t("active.remove")}</span>
         </Link>
       ))}
       {isFiltered(query) ? (
@@ -89,7 +96,7 @@ export function ActiveFilters({
           href="/"
           scroll={false}
         >
-          Clear all
+          {t("active.clearAll")}
         </Link>
       ) : null}
     </div>

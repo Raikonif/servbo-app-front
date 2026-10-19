@@ -1,0 +1,822 @@
+{
+  "meta": {
+    "siteName": "Servbo Store",
+    "titleTemplate": "%s | Servbo Store",
+    "description": "Browse products and sellers on Servbo."
+  },
+  "language": {
+    "label": "Language",
+    "es": "Español",
+    "en": "English",
+    "switchTo": "Switch language"
+  },
+  "errors": {
+    "INVALID_CREDENTIALS": "Incorrect email or password.",
+    "PASSWORD_NOT_SET": "This account was created with Google. Use “Continue with Google”.",
+    "EMAIL_NOT_VERIFIED": "Your email is not verified yet. Check your inbox or resend the link.",
+    "ACCOUNT_DISABLED": "Your account is disabled. Contact support.",
+    "EMAIL_ALREADY_EXISTS": "An account with this email already exists. Sign in or reset your password.",
+    "INVALID_PASSWORD_FORMAT": "Use at least 8 characters with an uppercase letter, a lowercase letter and a number.",
+    "PASSWORD_MISMATCH": "Passwords do not match.",
+    "WEAK_PASSWORD": "This password is too weak. Choose a stronger one.",
+    "VALIDATION_ERROR": "Some fields are invalid. Check them and try again.",
+    "SESSION_EXPIRED": "Your session has expired. Sign in again.",
+    "INVALID_TOKEN": "This link is invalid or has expired. Request a new one.",
+    "NOT_FOUND": "We could not find an account with that email.",
+    "ALREADY_VERIFIED": "Your email is already verified. You can sign in.",
+    "EMAIL_SENDING_FAILED": "We could not send the email. Try again in a few minutes.",
+    "google_canceled": "Google sign-in was canceled.",
+    "google_failed": "We could not sign you in with Google. Please try again.",
+    "google_already_linked": "That Google account is already linked to another ServBo account.",
+    "INVALID_PACK": "Choose one of the available credit packs.",
+    "NO_CREDITS": "You don't have enough credits. Wait for your free credits to reset or buy a pack.",
+    "ALREADY_ACTIVE": "You're already a seller.",
+    "PAYMENT_PROVIDER_ERROR": "We couldn't create the payment QR right now. Try again in a minute.",
+    "NO_QR_AVAILABLE": "All payment QRs are in use right now. Try again in a few minutes.",
+    "PROMO_INVALID": "This code is not valid.",
+    "PROMO_EXHAUSTED": "This code has been used up.",
+    "PROMO_ALREADY_USED": "You already used this code.",
+    "PROMO_NOT_ELIGIBLE": "This code is only for new sellers.",
+    "PROMO_PLAN": "This code does not apply to that pack.",
+    "NETWORK_ERROR": "We could not reach the server. Check your connection and try again.",
+    "THROTTLED": "Too many attempts. Wait a minute and try again.",
+    "UNKNOWN": "Something went wrong. Please try again."
+  },
+  "fieldLabels": {
+    "email": "Email",
+    "username": "Username",
+    "first_name": "First name",
+    "last_name": "Last name",
+    "password": "Password",
+    "password_confirmation": "Password confirmation"
+  },
+  "auth": {
+    "loading": "Loading…",
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "At least 8 characters, with an uppercase letter, a lowercase letter and a number.",
+    "backToSignIn": "Back to sign in",
+    "signIn": "Sign in",
+    "callback": {
+      "title": "Signing you in…"
+    },
+    "checkEmail": {
+      "title": "Check your email",
+      "subtitle": "We sent a verification link to <b>{email}</b>. Open it to activate your account (check your spam folder too).",
+      "subtitleNoEmail": "We sent a verification link. Open it to activate your account (check your spam folder too).",
+      "sendFailed": "Your account was created, but we could not send the email. Resend it below.",
+      "resent": "If an account exists for that email, we sent a link to verify it.",
+      "resendLabel": "Didn’t get it? Resend to",
+      "resend": "Resend verification email"
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "subtitle": "We’ll email you a link to choose a new password.",
+      "sent": "If an account exists for that email, we sent a link to reset your password. It arrives in a few minutes.",
+      "submit": "Send reset link"
+    },
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Use the same account as Servbo Creator.",
+      "newHere": "New to Servbo? <link>Create an account</link>",
+      "passwordReset": "Password updated. Sign in with your new password.",
+      "resendVerification": "Resend verification email",
+      "forgot": "Forgot your password?",
+      "or": "OR",
+      "google": "Continue with Google"
+    },
+    "register": {
+      "title": "Create your account",
+      "subtitle": "Sign up to save products and manage your purchases.",
+      "haveAccount": "Already have an account? <link>Sign in</link>",
+      "goToSignIn": "Go to sign in",
+      "username": "Username",
+      "confirmPassword": "Confirm password",
+      "submit": "Create account"
+    },
+    "reset": {
+      "incompleteTitle": "Incomplete link",
+      "requestNewLink": "Request a new link",
+      "title": "Choose a new password",
+      "newPassword": "New password",
+      "confirmNewPassword": "Confirm new password",
+      "submit": "Update password"
+    },
+    "requireSession": {
+      "redirecting": "Redirecting to sign in…",
+      "checking": "Checking your session…"
+    },
+    "unavailable": {
+      "title": "We can’t reach the server",
+      "body": "Check your connection. You are still signed in; try again in a few seconds.",
+      "retry": "Try again"
+    },
+    "userMenu": {
+      "signIn": "Sign in",
+      "signUp": "Sign up",
+      "createAccount": "Create account",
+      "signOut": "Sign out"
+    },
+    "verify": {
+      "verifying": "Verifying your email…",
+      "failedTitle": "We couldn’t verify your email",
+      "sendNewLink": "Send a new link",
+      "verifiedTitle": "Email verified",
+      "verifiedSubtitle": "Thanks for confirming your address. You can sign in now."
+    }
+  },
+  "profile": {
+    "roles": {
+      "staff": "Staff",
+      "seller": "Seller",
+      "buyer": "Buyer"
+    },
+    "emailNotVerified": "Email not verified",
+    "memberSince": "Member since {date}",
+    "details": "Account details",
+    "updated": "Profile updated.",
+    "username": "Username",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "save": "Save changes",
+    "languageTitle": "Language",
+    "languageHelp": "Used for this store, the Creator app and the emails we send you.",
+    "billing": "Billing",
+    "openCreator": "Open the Creator app",
+    "becomeSeller": "Become a seller"
+  },
+  "account": {
+    "title": "Sign-in methods",
+    "google": "Google",
+    "googleLinked": "Your Google account is now linked.",
+    "linked": "Linked",
+    "linkHelp": "Link a Google account to sign in with one click.",
+    "link": "Link Google account",
+    "password": "Password",
+    "currentIncorrect": "Your current password is incorrect.",
+    "changeHelp": "Change the password you use to sign in with your email.",
+    "addHelp": "Your account signs in with Google only. Add a password to also sign in with your email.",
+    "changed": "Password changed.",
+    "added": "Password added.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "passwordHint": "At least 8 characters, with an uppercase letter, a lowercase letter and a number.",
+    "change": "Change password",
+    "add": "Add a password"
+  },
+  "credits": {
+    "count": "{count, plural, one {# credit} other {# credits}}",
+    "freeCount": "{count, plural, one {# free credit} other {# free credits}}",
+    "paidCount": "{count, plural, one {# paid credit} other {# paid credits}}",
+    "packCoverage": "Publish up to {count, plural, one {# product} other {# products}}, or spend them on edits",
+    "packName": "{name} pack",
+    "free": "Free credits",
+    "paid": "Paid credits",
+    "neverExpire": "Never expire",
+    "resetsTo": "Back to {count} on {date}",
+    "resetsOn": "Reset on {date}",
+    "openCreator": "Open the creator dashboard",
+    "history": "Credit history",
+    "tryAgain": "Try again",
+    "packs": {
+      "loadError": "We could not load the credit packs.",
+      "emptyTitle": "No credit packs yet",
+      "emptyText": "You don't need one to start: your free credits are enough to publish your first products. Packs for extra credits are coming soon."
+    },
+    "kind": {
+      "purchase": "Pack purchase",
+      "promotion": "Bonus code",
+      "free_grant": "Free credits",
+      "free_reset": "Free credits renewed",
+      "publish": "Product published",
+      "edit": "Product edited",
+      "adjustment": "Adjustment",
+      "monthly_fee": "Monthly access (old plan)",
+      "product_slots": "Product slots (old plan)"
+    },
+    "sellerCard": {
+      "title": "You're a seller",
+      "products": "Products",
+      "productsValue": "{published, plural, one {# published} other {# published}} · {drafts, plural, one {# draft} other {# drafts}}",
+      "costs": "Publishing a product costs {publish, plural, one {# credit} other {# credits}} and saving changes to a published product costs {edit, plural, one {# credit} other {# credits}}. Drafts are free. Free credits are spent first."
+    },
+    "becomeSellerCard": {
+      "title": "Start selling for free",
+      "intro": "Open your store at no cost and get {count, plural, one {# free credit} other {# free credits}} every {days} days.",
+      "introDefault": "Open your store at no cost and get free credits every month.",
+      "paidWaiting": "{count, plural, one {Your # paid credit will be waiting for you.} other {Your # paid credits will be waiting for you.}}",
+      "activating": "Activating…",
+      "cta": "Become a seller for free"
+    }
+  },
+  "pricing": {
+    "eyebrow": "Pricing",
+    "title": "Sell on Servbo for free.",
+    "intro": "Becoming a seller costs nothing: every {days} days you get {free, plural, one {# free credit} other {# free credits}}. Publishing a product costs {publish, plural, one {# credit} other {# credits}} and saving changes to a published product costs {edit, plural, one {# credit} other {# credits}}. Drafts are free. Need more? Buy a credit pack by scanning a QR code: paid credits never expire and are spent after the free ones.",
+    "introDefault": "Becoming a seller costs nothing: every {days} days you get free credits. Publishing a product costs a credit and saving changes to a published product costs a credit. Drafts are free. Need more? Buy a credit pack by scanning a QR code: paid credits never expire and are spent after the free ones.",
+    "openCreator": "Open the creator app",
+    "cta": "Become a seller for free",
+    "includedTitle": "Every seller gets",
+    "included": {
+      "account": "Free seller account and profile",
+      "freeCredits": "Free credits every cycle to publish and update products",
+      "drafts": "Drafts are always free",
+      "messages": "Buyer message routing",
+      "paidCredits": "Paid credits never expire · pay by QR"
+    },
+    "bestValue": "Best value",
+    "buyCredits": "Buy credits"
+  },
+  "billing": {
+    "eyebrow": "Billing",
+    "title": "Credits and payments",
+    "intro": "Your credits, how they were spent and the receipts of your QR payments.",
+    "costs": "Publishing a product costs {publish, plural, one {# credit} other {# credits}}, saving changes to a published product {edit, plural, one {# credit} other {# credits}}; drafts are free.",
+    "credits": "Credits",
+    "split": "{free} free · {paid} paid",
+    "freeToJoin": "Becoming a seller is free",
+    "buyMore": "Buy more credits",
+    "openStore": "Open your store for free",
+    "account": "Account",
+    "seller": "Seller",
+    "buyer": "Buyer",
+    "sellerAccount": "Seller account",
+    "buyerAccount": "Buyer account",
+    "freeHelper": "Given to every seller each cycle",
+    "pendingPayment": "Pending payment {reference}",
+    "recordsError": "We could not load your payment history.",
+    "recordsEmpty": "No payments yet.",
+    "paymentHistory": "Payment history",
+    "freeWithCode": "Free (code {code})",
+    "footnote": "Credit packs are paid by QR only. These entries are payment receipts: no tax invoice (factura) is issued yet.",
+    "historyError": "We could not load your credit history.",
+    "historyEmpty": "No credit activity yet.",
+    "newer": "Newer",
+    "older": "Older",
+    "page": "Page {page}",
+    "columns": {
+      "date": "Date",
+      "reference": "Reference",
+      "pack": "Pack",
+      "method": "Method",
+      "amount": "Amount",
+      "status": "Status",
+      "activity": "Activity",
+      "credits": "Credits",
+      "free": "Free",
+      "paid": "Paid"
+    },
+    "status": {
+      "active": "Active",
+      "incomplete": "Incomplete",
+      "past_due": "Past due",
+      "canceled": "Canceled",
+      "unpaid": "Unpaid",
+      "trialing": "Trialing",
+      "pending": "Pending",
+      "requires_action": "Requires action",
+      "paid": "Paid",
+      "failed": "Failed",
+      "refunded": "Refunded"
+    },
+    "method": {
+      "qr": "QR payment",
+      "bank_transfer": "Bank transfer",
+      "promotion": "Promotion code",
+      "stripe": "Card (Stripe)"
+    }
+  },
+  "becomeSeller": {
+    "eyebrow": "Become a seller",
+    "title": "Open your store on Servbo for free.",
+    "intro": "Becoming a seller costs nothing. Every {days} days you get <b>{count, plural, one {# free credit} other {# free credits}}</b> to publish and update your products: they reset each cycle and don't carry over. When you need more, credit packs add paid credits that never expire and add up. Free credits are always spent first. You manage your products from the creator app.",
+    "introDefault": "Becoming a seller costs nothing. Every month you get free credits to publish and update your products: they reset each cycle and don't carry over. When you need more, credit packs add paid credits that never expire and add up. Free credits are always spent first. You manage your products from the creator app.",
+    "steps": {
+      "free": "Become a seller for free: you get {count, plural, one {# free credit} other {# free credits}} every {days} days",
+      "costs": "Publish a product for {publish, plural, one {# credit} other {# credits}}, save changes to a published one for {edit, plural, one {# credit} other {# credits}}. Drafts are free",
+      "freeDefault": "Become a seller for free and get free credits every month",
+      "costsDefault": "Spend credits to publish and update products. Drafts are free",
+      "more": "Need more? Buy a credit pack by QR: paid credits never expire"
+    },
+    "footnote": "Credit packs are paid by QR only · you get a payment receipt, no tax invoice (factura) yet.",
+    "billingLink": "View credits and billing history",
+    "statusError": "We could not load your seller status.",
+    "replaceNote": "Choosing another pack, or another code, replaces your pending payment.",
+    "buyCredits": "Buy credits",
+    "buyMore": "Buy more credits",
+    "claimed": "{count, plural, one {# credit added} other {# credits added}} · you now have {paid, plural, one {# paid credit} other {# paid credits}}",
+    "preparing": "Preparing payment…",
+    "continue": "Continue to payment",
+    "qrExpired": "QR expired",
+    "pending": "Payment pending",
+    "yourPayment": "Your payment",
+    "summary": "{amount} · code <mono>{reference}</mono>",
+    "summaryExpired": "{amount} · code <mono>{reference}</mono> · get a new QR on the payment page",
+    "cancelling": "Cancelling…",
+    "cancel": "Cancel payment",
+    "promo": {
+      "applied": "Code {code} applied",
+      "remove": "Remove code {code}",
+      "haveCode": "Have a code?",
+      "label": "Promotion code",
+      "checking": "Checking…",
+      "apply": "Apply"
+    },
+    "bonus": {
+      "plus": "+{count, plural, one {# credit} other {# credits}}",
+      "text": "Code <mono>{code}</mono> adds {count, plural, one {# paid credit that never expires} other {# paid credits that never expire}}. No pack or QR needed.",
+      "claiming": "Claiming…",
+      "claim": "Claim"
+    },
+    "pay": {
+      "back": "Back to credit packs",
+      "confirmed": "Payment confirmed",
+      "title": "Pay your credit pack",
+      "loadError": "We could not load your payment.",
+      "footnote": "Payment by QR only · you get a payment receipt, no tax invoice (factura) yet.",
+      "added": "{count, plural, one {# credit added} other {# credits added}}",
+      "creditPack": "Credit pack",
+      "purchased": "{pack} · paid {date}. Paid credits never expire.",
+      "purchasedNoDate": "{pack}. Paid credits never expire.",
+      "total": "Total",
+      "openStoreTitle": "Now open your store",
+      "waiting": "Waiting for payment",
+      "expiredText": "This QR can no longer be paid. Get a new one to continue.",
+      "waitingText": "Your credits are added as soon as the payment is confirmed. This page updates on its own.",
+      "preparingQr": "Preparing QR…",
+      "newQr": "QR expired — get a new one",
+      "qrAlt": "QR code to pay {amount}, reference {reference}",
+      "pack": "Pack",
+      "amount": "Amount",
+      "code": "Code",
+      "was": "was {amount}",
+      "received": "Received",
+      "receivedValue": "{paid} of {due}",
+      "expiresIn": "Expires in",
+      "relayLabel": "QR code — pay this exact QR without changing the amount or the note (glosa)",
+      "referenceLabel": "Reference — write it in the payment note",
+      "copied": "Copied",
+      "copy": "Copy",
+      "refresh": "Refresh status"
+    }
+  },
+  "catalog": {
+    "sort": {
+      "newest": "Newest",
+      "price_asc": "Price: low to high",
+      "price_desc": "Price: high to low",
+      "name": "Name"
+    },
+    "active": {
+      "count": "{count, plural, one {# product} other {# products}}",
+      "query": "“{q}”",
+      "priceRange": "{min}–{max} {currency}",
+      "priceFrom": "From {min} {currency}",
+      "priceTo": "Up to {max} {currency}",
+      "inStock": "In stock",
+      "sortWithCurrency": "{sort} ({currency})",
+      "remove": "(remove filter)",
+      "clearAll": "Clear all"
+    },
+    "filters": {
+      "button": "Filters",
+      "activeCount": "{count} active",
+      "title": "Filters",
+      "close": "Close filters",
+      "price": "Price",
+      "minPrice": "Minimum price",
+      "maxPrice": "Maximum price",
+      "min": "Min",
+      "max": "Max",
+      "currency": "Currency",
+      "inStockOnly": "In stock only",
+      "sortBy": "Sort by",
+      "applyPrice": "Apply price",
+      "apply": "Apply"
+    },
+    "search": {
+      "label": "Search products",
+      "placeholder": "Search products, brands…",
+      "clear": "Clear search",
+      "searching": "Searching…"
+    },
+    "seeMore": "See more",
+    "favorite": {
+      "add": "Add to favorites",
+      "remove": "Remove from favorites",
+      "error": "Couldn’t update favorites. Try again."
+    },
+    "gallery": {
+      "noPhotos": "No photos yet",
+      "label": "{name} photos",
+      "photoAlt": "{name} — photo {index} of {total}",
+      "previous": "Previous photo",
+      "next": "Next photo",
+      "show": "Show photo {index}"
+    },
+    "grid": {
+      "empty": "No products to show yet.",
+      "noPhoto": "No photo yet",
+      "selected": "Selected",
+      "sellerFallback": "Seller",
+      "modified": "Modified {date}",
+      "uploaded": "Uploaded {date}"
+    },
+    "detail": {
+      "stock": "Stock",
+      "available": "{count} available",
+      "outOfStock": "Out of stock",
+      "seller": "Seller",
+      "viewSeller": "View seller",
+      "uploaded": "Uploaded",
+      "lastModified": "Last modified",
+      "notModified": "Not modified",
+      "sellerFallback": "Seller"
+    },
+    "panel": {
+      "product": "Product",
+      "close": "Close details",
+      "photoCount": "{count, plural, one {# photo} other {# photos}}",
+      "seller": "Seller",
+      "stock": "Stock",
+      "available": "{count} available",
+      "soldOut": "Sold out",
+      "modified": "Modified",
+      "uploaded": "Uploaded",
+      "photos": "Photos",
+      "none": "None"
+    },
+    "modal": {
+      "close": "Close",
+      "escKey": "Esc"
+    },
+    "sellerLink": {
+      "hint": "Sign in to see the seller profile"
+    },
+    "seller": {
+      "notFoundTitle": "Seller not found",
+      "notFoundBody": "This account is not a seller or no longer exists.",
+      "seeAll": "See all sellers",
+      "allSellers": "All sellers",
+      "productCount": "{count, plural, one {# product} other {# products}}",
+      "joined": "Joined {date}",
+      "reviews": "Seller reviews",
+      "products": "Products",
+      "loadError": "We could not load this seller’s products.",
+      "tryAgain": "Try again",
+      "pagination": "Pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page}"
+    }
+  },
+  "header": {
+    "nav": "Primary navigation",
+    "catalog": "Catalog",
+    "sellers": "Sellers",
+    "orders": "Orders",
+    "profile": "Profile",
+    "billing": "Billing",
+    "creator": "Creator app",
+    "becomeSeller": "Become a seller"
+  },
+  "theme": {
+    "legend": "Theme",
+    "light": "Light theme",
+    "dark": "Dark theme",
+    "system": "Match system theme",
+    "cycle": "{current}. Switch to {next, select, light {light theme} dark {dark theme} other {system theme}}"
+  },
+  "cart": {
+    "title": "Your cart",
+    "linkLabel": "Cart",
+    "linkLabelCount": "Cart, {count, plural, one {# item} other {# items}}",
+    "soldOut": "Sold out",
+    "quantity": "Quantity",
+    "quantityOf": "Quantity of {name}",
+    "decrease": "Decrease quantity",
+    "increase": "Increase quantity",
+    "add": "Add to cart",
+    "adding": "Adding…",
+    "allInCart": "All units in your cart",
+    "added": "Added. <link>View cart</link>",
+    "inCart": "{count} in your cart · <link>View cart</link>",
+    "tryAgain": "Try again",
+    "empty": "Your cart is empty",
+    "browse": "Browse the catalog",
+    "perSeller": "Each seller ships and gets paid separately: you will place one order per seller.",
+    "checkoutAll": "Check out all {count} sellers",
+    "options": "{payment, select, qrOrCash {QR or cash} other {Cash}} · {delivery, select, both {Delivery or pickup} other {Delivery}}",
+    "subtotal": "Subtotal",
+    "shippingAgreed": "Shipping is agreed with the seller.",
+    "checkoutSeller": "Check out this seller",
+    "fixItems": "Fix the marked items to check out",
+    "each": "{price} each",
+    "unavailable": "No longer available — remove it to continue.",
+    "overStock": "Only {count} left — lower the quantity.",
+    "remove": "Remove"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "nothingReady": "There is nothing ready to check out. <link>Back to your cart</link>",
+    "items": "{count, plural, one {# item} other {# items}}",
+    "line": "{quantity} × {name}",
+    "payment": "Payment",
+    "delivery": "Delivery",
+    "method": {
+      "qr": "QR to the seller",
+      "cash": "Cash",
+      "delivery": "Delivery",
+      "pickup": "Pickup"
+    },
+    "qrHint": "Pay the seller's QR and attach the receipt.",
+    "qrUnavailable": "This seller has not set up QR yet.",
+    "cashHint": "Pay in cash on delivery or at pickup.",
+    "deliveryHint": "Shipping cost is agreed with the seller.",
+    "pickupUnavailable": "This seller does not offer pickup.",
+    "note": "Note for the seller (optional)",
+    "details": {
+      "title": "Delivery details",
+      "hint": "Shared with the sellers you chose delivery for.",
+      "recipient": "Recipient name",
+      "phone": "Phone",
+      "address": "Address",
+      "reference": "Reference (optional)",
+      "referencePlaceholder": "Near the market, blue door…"
+    },
+    "errors": {
+      "changed": "Some items changed since you opened checkout.",
+      "fields": "Check the highlighted fields."
+    },
+    "cartUpdated": "Your cart now shows the current prices and stock. <link>Review your cart</link>",
+    "backToCart": "Back to cart",
+    "place": "{count, plural, one {Place order} other {Place # orders}}"
+  },
+  "orders": {
+    "title": "My orders",
+    "status": {
+      "pending_payment": "Awaiting payment",
+      "confirmed": "Confirmed",
+      "shipped": "Shipped",
+      "ready_for_pickup": "Ready for pickup",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "payment": {
+      "qr": "QR to the seller",
+      "cash": "Cash"
+    },
+    "delivery": {
+      "delivery": "Delivery",
+      "pickup": "Pickup"
+    },
+    "placed": {
+      "title": "{count, plural, one {Order placed} other {# orders placed}}: {codes}",
+      "hint": "Open each order to see how to pay. QR orders: pay the seller's QR and attach your receipt; the seller confirms once they get the payment. Cash orders are confirmed: pay on delivery or pickup."
+    },
+    "tryAgain": "Try again",
+    "empty": "No orders yet",
+    "browse": "Browse the catalog",
+    "summary": "{seller} · {units, plural, one {# item} other {# items}} · {payment} · {delivery} · {date}",
+    "pagination": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "detail": {
+      "notFound": "We could not find this order.",
+      "placedBy": "Placed {date} · Seller {seller}",
+      "cancelled": "{by, select, system {Expired: payment not received in time} seller {Cancelled by the seller} other {Cancelled by you}}.",
+      "cancelledOn": "{by, select, system {Expired: payment not received in time} seller {Cancelled by the seller} other {Cancelled by you}} on {date}.",
+      "reason": "Reason: {reason}",
+      "confirmedCash": "Confirmed. Pay <b>{total}</b> in cash {pickup, select, yes {when you pick it up. The seller lets you know when it is ready for pickup.} other {on delivery. The seller ships it next.}}",
+      "confirmedQr": "The seller confirmed your payment. {pickup, select, yes {They get it ready for pickup next.} other {They ship it next.}}",
+      "confirmedQrOn": "The seller confirmed your payment on {date}. {pickup, select, yes {They get it ready for pickup next.} other {They ship it next.}}",
+      "shipped": "Your order is on its way.",
+      "readyAt": "Ready for pickup at {address}.",
+      "ready": "Ready for pickup at the seller's address.",
+      "payCashOnArrival": "Pay <b>{total}</b> in cash when you get it.",
+      "delivered": "Delivered.",
+      "deliveredOn": "Delivered on {date}.",
+      "autoDelivered": "Marked automatically 7 days after the seller {pickup, select, yes {had it ready} other {shipped it}}.",
+      "sellerNote": "Note from the seller",
+      "line": "{quantity} × {name}",
+      "each": "{price} each",
+      "total": "Total (shipping agreed with the seller)",
+      "payment": "Payment",
+      "yourNote": "Your note"
+    },
+    "qr": {
+      "alt": "Payment QR of {seller}",
+      "title": "Pay with QR",
+      "instructions": "Scan the seller's QR with your banking app and pay exactly <b>{total}</b>. Add <b>{code}</b> as the payment reference.",
+      "direct": "You pay the seller directly; ServBo does not hold the money.",
+      "receiptAttached": "Receipt attached — view",
+      "tooLarge": "The image must be 5 MB or smaller.",
+      "replace": "Replace receipt",
+      "attach": "Attach receipt"
+    },
+    "timeline": {
+      "label": "Order progress",
+      "placed": "Placed",
+      "paid": "Paid",
+      "ready": "Ready for pickup",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "{by, select, system {Expired: payment not received in time} seller {Cancelled by the seller} other {Cancelled by you}}",
+      "next": "Next"
+    },
+    "deadline": {
+      "notice": "Pay and attach your receipt before <b>{date}</b> or the order is cancelled automatically.",
+      "leftDays": "{days} d {hours} h left",
+      "leftHours": "{hours} h {minutes} min left",
+      "leftMinutes": "{minutes} min left",
+      "timeUp": "Time is up; the order will be cancelled shortly."
+    },
+    "received": {
+      "question": "Did you get everything? The seller sees it as delivered.",
+      "confirm": "Yes, I received it",
+      "notYet": "Not yet",
+      "button": "I received it"
+    },
+    "cancel": {
+      "question": "Cancel this order? The items go back to the seller's stock.",
+      "confirm": "Yes, cancel",
+      "keep": "Keep it",
+      "button": "Cancel order"
+    }
+  },
+  "reviews": {
+    "title": "Reviews",
+    "none": "No reviews yet",
+    "noneYet": "No reviews yet.",
+    "count": "{count, plural, one {# review} other {# reviews}}",
+    "countWord": "{count, plural, one {review} other {reviews}}",
+    "emptyProduct": "Buyers can review this product once their order is delivered.",
+    "emptySeller": "Buyers can rate this seller once their order is delivered.",
+    "loadError": "We could not load the reviews.",
+    "tryAgain": "Try again",
+    "loadMore": "Load more reviews",
+    "hidden": "Hidden by moderators",
+    "sellerReply": "Reply from the seller",
+    "stars": {
+      "outOf": "{value} out of 5",
+      "count": "{count, plural, one {# star} other {# stars}}"
+    },
+    "report": {
+      "button": "Report",
+      "thanks": "Thanks, we will look at it.",
+      "reason": "Why should moderators look at this review?",
+      "send": "Send report",
+      "cancel": "Cancel"
+    },
+    "rate": {
+      "loadError": "We could not load your reviews.",
+      "tryAgain": "Try again",
+      "title": "Rate your purchase",
+      "hint": "Reviews are public and show your name. You can change them for 30 days.",
+      "post": "Post review",
+      "rateSeller": "Rate seller",
+      "sellerTitle": "The seller: {name}",
+      "yours": "Your reviews",
+      "seller": "Seller",
+      "product": "Product",
+      "save": "Save changes",
+      "editUntil": "You can edit until {date}",
+      "deleteQuestion": "Delete this review?",
+      "deleteConfirm": "Yes, delete",
+      "keep": "Keep it",
+      "edit": "Edit",
+      "delete": "Delete",
+      "chooseStars": "Choose from 1 to 5 stars.",
+      "ratingFor": "Your rating for {title}",
+      "comment": "Comment (optional)",
+      "cancel": "Cancel"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "labelUnread": "Notifications, {count} unread",
+    "markAll": "Mark all as read",
+    "loadError": "Could not load notifications.",
+    "empty": "No notifications yet",
+    "emptyHint": "Order updates from sellers show up here.",
+    "unread": "(unread)",
+    "when": {
+      "now": "now",
+      "minutes": "{count} min",
+      "hours": "{count} h",
+      "days": "{count} d"
+    }
+  },
+  "pages": {
+    "home": {
+      "title": "Catalog",
+      "eyebrow": "Marketplace",
+      "subtitle": "Products from independent sellers",
+      "categoriesLabel": "Categories",
+      "allCategories": "All",
+      "paginationLabel": "Pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page}",
+      "noMatchesQuery": "No products match “{q}”",
+      "noMatchesFilters": "No products match these filters",
+      "noMatchesHint": "Try another word, fewer categories or a wider price range.",
+      "clearFilters": "Clear filters"
+    },
+    "product": {
+      "title": "Product",
+      "byBrand": "{name} by {brand}",
+      "backToCatalog": "Back to catalog"
+    },
+    "sellers": {
+      "title": "Sellers",
+      "count": "{count, plural, one {# seller} other {# sellers}} on Servbo",
+      "productCount": "{count, plural, one {# product} other {# products}}",
+      "empty": "No sellers yet."
+    },
+    "seller": {
+      "title": "Seller"
+    },
+    "pricing": {
+      "title": "Pricing"
+    },
+    "authCallback": {
+      "title": "Signing in"
+    },
+    "becomeVendor": {
+      "title": "Become a seller"
+    },
+    "becomeVendorPay": {
+      "title": "Pay your credit pack"
+    },
+    "billing": {
+      "title": "Billing"
+    },
+    "cart": {
+      "title": "Cart"
+    },
+    "checkEmail": {
+      "title": "Check your email"
+    },
+    "checkout": {
+      "title": "Checkout"
+    },
+    "emailVerified": {
+      "title": "Verify email"
+    },
+    "forgotPassword": {
+      "title": "Forgot password"
+    },
+    "login": {
+      "title": "Sign in"
+    },
+    "orders": {
+      "title": "My orders"
+    },
+    "order": {
+      "title": "Order"
+    },
+    "profile": {
+      "title": "Profile"
+    },
+    "register": {
+      "title": "Create account"
+    },
+    "resetPassword": {
+      "title": "Reset password"
+    }
+  },
+  "status": {
+    "tryAgain": "Try again",
+    "notFound": {
+      "title": "Page not found",
+      "description": "The link you opened does not exist or was moved.",
+      "browseCatalog": "Browse the catalog",
+      "seeSellers": "See sellers"
+    },
+    "error": {
+      "title": "Something went wrong",
+      "description": "This page could not load, usually because the server is briefly unavailable. Try again, or keep browsing.",
+      "home": "Go to the marketplace"
+    },
+    "catalogUnavailable": {
+      "title": "We can’t reach the catalog",
+      "description": "The catalog is unavailable right now. Try again in a few seconds."
+    },
+    "sellersUnavailable": {
+      "title": "We can’t reach the server",
+      "description": "The seller directory is unavailable right now. Try again in a few seconds."
+    },
+    "productNotFound": {
+      "title": "Product not available",
+      "description": "This product was removed or the link is wrong.",
+      "back": "Back to marketplace"
+    }
+  },
+  "seo": {
+    "homeDescription": "Browse and buy products from independent sellers in Bolivia, all in one place.",
+    "sellersDescription": "Meet Servbo's independent sellers and their products.",
+    "pricingDescription": "Selling on Servbo is free: get free credits every cycle to publish, and buy credit packs that never expire."
+  }
+}

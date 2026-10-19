@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle2, KeyRound, LoaderCircle } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useEffect, useState } from "react";
 import { buttonStyles, Field, FormAlert } from "@/features/auth/form-controls";
 import { useSetSession } from "@/hooks/use-session";
@@ -33,6 +34,8 @@ function useLinkResult() {
 
 // How the account signs in (openspec account-sign-in-methods): Google and a password.
 export function SignInMethods({ user }: { user: SessionUser }) {
+  const t = useTranslations("account");
+  const locale = useLocale();
   const linkResult = useLinkResult();
   const [linking, setLinking] = useState(false);
   const [linkError, setLinkError] = useState<AuthError | null>(null);
@@ -42,7 +45,7 @@ export function SignInMethods({ user }: { user: SessionUser }) {
     setLinking(true);
     try {
       // On success the browser leaves for Google, so the spinner stays up.
-      await startGoogleLink();
+      await startGoogleLink(locale);
     } catch (err) {
       setLinkError(asAuthError(err));
       setLinking(false);
@@ -54,21 +57,19 @@ export function SignInMethods({ user }: { user: SessionUser }) {
 
   return (
     <section className="space-y-5 rounded-lg border border-line bg-surface p-6 shadow-sm">
-      <h2 className="text-lg font-semibold">Sign-in methods</h2>
+      <h2 className="text-lg font-semibold">{t("title")}</h2>
 
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold">Google</h3>
+        <h3 className="text-sm font-semibold">{t("google")}</h3>
         {linkResult === "linked" ? (
-          <FormAlert tone="success">
-            Your Google account is now linked.
-          </FormAlert>
+          <FormAlert tone="success">{t("googleLinked")}</FormAlert>
         ) : null}
         {googleError ? <FormAlert>{googleError.message}</FormAlert> : null}
         {user.google.linked ? (
           <p className="flex items-center gap-2 text-sm">
             <CheckCircle2 className="text-accent-text" size={16} />
             <span>
-              Linked
+              {t("linked")}
               {user.google.email ? (
                 <span className="text-muted"> · {user.google.email}</span>
               ) : null}
@@ -76,9 +77,7 @@ export function SignInMethods({ user }: { user: SessionUser }) {
           </p>
         ) : (
           <div className="space-y-2">
-            <p className="text-sm text-muted">
-              Link a Google account to sign in with one click.
-            </p>
+            <p className="text-sm text-muted">{t("linkHelp")}</p>
             <div className="sm:w-60">
               <button
                 className={buttonStyles.secondary}
@@ -89,7 +88,7 @@ export function SignInMethods({ user }: { user: SessionUser }) {
                 {linking ? (
                   <LoaderCircle className="animate-spin" size={16} />
                 ) : null}
-                Link Google account
+                {t("link")}
               </button>
             </div>
           </div>
@@ -99,7 +98,7 @@ export function SignInMethods({ user }: { user: SessionUser }) {
       <div className="space-y-3 border-t border-line pt-5">
         <h3 className="flex items-center gap-2 text-sm font-semibold">
           <KeyRound size={16} />
-          Password
+          {t("password")}
         </h3>
         <PasswordForm
           hasPassword={user.has_password}
@@ -113,6 +112,7 @@ export function SignInMethods({ user }: { user: SessionUser }) {
 const EMPTY = { current: "", next: "", confirmation: "" };
 
 function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
+  const t = useTranslations("account");
   const setSession = useSetSession();
   const [form, setForm] = useState(EMPTY);
   const [pending, setPending] = useState(false);
@@ -142,10 +142,7 @@ function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
       const authError = asAuthError(err);
       setError(
         authError.code === "INVALID_CREDENTIALS"
-          ? new AuthError(
-              "INVALID_CREDENTIALS",
-              "Your current password is incorrect.",
-            )
+          ? new AuthError("INVALID_CREDENTIALS", t("currentIncorrect"))
           : authError,
       );
     } finally {
@@ -156,21 +153,19 @@ function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <p className="text-sm text-muted">
-        {hasPassword
-          ? "Change the password you use to sign in with your email."
-          : "Your account signs in with Google only. Add a password to also sign in with your email."}
+        {hasPassword ? t("changeHelp") : t("addHelp")}
       </p>
       {error ? <FormAlert>{error.message}</FormAlert> : null}
       {saved ? (
         <FormAlert tone="success">
-          {hasPassword ? "Password changed." : "Password added."}
+          {hasPassword ? t("changed") : t("added")}
         </FormAlert>
       ) : null}
       {hasPassword ? (
         <Field
           autoComplete="current-password"
           id="current_password"
-          label="Current password"
+          label={t("currentPassword")}
           onChange={(e) => update("current")(e.target.value)}
           required
           type="password"
@@ -181,7 +176,7 @@ function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
         <Field
           autoComplete="new-password"
           id="new_password"
-          label="New password"
+          label={t("newPassword")}
           minLength={8}
           onChange={(e) => update("next")(e.target.value)}
           required
@@ -191,7 +186,7 @@ function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
         <Field
           autoComplete="new-password"
           id="new_password_confirmation"
-          label="Confirm new password"
+          label={t("confirmNewPassword")}
           minLength={8}
           onChange={(e) => update("confirmation")(e.target.value)}
           required
@@ -199,10 +194,7 @@ function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
           value={form.confirmation}
         />
       </div>
-      <p className="text-xs text-muted">
-        At least 8 characters, with an uppercase letter, a lowercase letter and
-        a number.
-      </p>
+      <p className="text-xs text-muted">{t("passwordHint")}</p>
       <div className="sm:w-48">
         <button
           className={buttonStyles.primary}
@@ -210,7 +202,7 @@ function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
           type="submit"
         >
           {pending ? <LoaderCircle className="animate-spin" size={16} /> : null}
-          {hasPassword ? "Change password" : "Add a password"}
+          {hasPassword ? t("change") : t("add")}
         </button>
       </div>
     </form>

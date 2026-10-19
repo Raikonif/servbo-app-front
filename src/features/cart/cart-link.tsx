@@ -1,18 +1,20 @@
 "use client";
 
 import { ShoppingBag } from "lucide-react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useCart } from "@/hooks/use-cart";
+import { Link } from "@/i18n/navigation";
 import { cartHref } from "@/lib/cart";
 
 // Header cart with the number of units (openspec cart-and-checkout D6).
 export function CartLink() {
+  const t = useTranslations("cart");
   const { cart } = useCart();
   const units = cart.total_units;
   return (
     <Link
       aria-label={
-        units ? `Cart, ${units} ${units === 1 ? "item" : "items"}` : "Cart"
+        units ? t("linkLabelCount", { count: units }) : t("linkLabel")
       }
       className="relative inline-flex size-10 items-center justify-center rounded-full text-muted transition hover:bg-surface-2 hover:text-fg"
       href={cartHref}

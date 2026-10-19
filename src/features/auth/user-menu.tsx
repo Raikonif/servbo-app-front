@@ -2,15 +2,16 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut, UserRound } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { displayName, useSession, useSetSession } from "@/hooks/use-session";
+import { Link, usePathname } from "@/i18n/navigation";
 import { signOut } from "@/lib/auth/client";
 import { AuthError } from "@/lib/auth/errors";
 import { loginHref, safeNext } from "@/lib/auth/redirect";
 
 export function UserMenu() {
+  const t = useTranslations("auth.userMenu");
   const { data: session, isPending } = useSession();
   const setSession = useSetSession();
   const queryClient = useQueryClient();
@@ -31,14 +32,14 @@ export function UserMenu() {
           className="hidden rounded-full px-3 py-1.5 text-sm font-medium text-muted transition hover:text-fg sm:inline-flex"
           href={loginHref(pathname)}
         >
-          Sign in
+          {t("signIn")}
         </Link>
         <Link
           className="rounded-full bg-accent px-3.5 py-1.5 text-sm font-semibold text-accent-fg transition hover:bg-accent-hover"
           href={`/register?next=${encodeURIComponent(safeNext(pathname))}`}
         >
-          <span className="sm:hidden">Sign up</span>
-          <span className="hidden sm:inline">Create account</span>
+          <span className="sm:hidden">{t("signUp")}</span>
+          <span className="hidden sm:inline">{t("createAccount")}</span>
         </Link>
       </div>
     );
@@ -84,7 +85,7 @@ export function UserMenu() {
         type="button"
       >
         <LogOut aria-hidden size={15} />
-        <span className="sr-only sm:not-sr-only">Sign out</span>
+        <span className="sr-only sm:not-sr-only">{t("signOut")}</span>
       </button>
       {error ? (
         <p className="max-w-56 text-xs text-danger" role="alert">

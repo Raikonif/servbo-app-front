@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 type AuthShellProps = {
@@ -32,8 +33,9 @@ export function AuthShell({
 }
 
 export function AuthShellFallback() {
+  const t = useTranslations("auth");
   return (
-    <AuthShell title="Loading…">
+    <AuthShell title={t("loading")}>
       <div className="h-40 animate-pulse rounded-md bg-surface-2" />
     </AuthShell>
   );

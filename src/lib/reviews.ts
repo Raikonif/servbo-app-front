@@ -109,6 +109,3 @@ export const ratingNumber = (avg: string | null | undefined) => {
   const value = Number(avg);
   return Number.isFinite(value) ? value : null;
 };
-
-export const reviewCountLabel = (count: number) =>
-  `${count} ${count === 1 ? "review" : "reviews"}`;

@@ -1,13 +1,15 @@
 "use client";
 
 import { Monitor, Moon, Sun } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { applyTheme, THEME_KEY, type ThemeChoice } from "@/lib/theme";
 
-const OPTIONS: { value: ThemeChoice; label: string; Icon: typeof Sun }[] = [
-  { value: "light", label: "Light theme", Icon: Sun },
-  { value: "dark", label: "Dark theme", Icon: Moon },
-  { value: "system", label: "Match system theme", Icon: Monitor },
+// Labels: messages theme.<value>.
+const OPTIONS: { value: ThemeChoice; Icon: typeof Sun }[] = [
+  { value: "light", Icon: Sun },
+  { value: "dark", Icon: Moon },
+  { value: "system", Icon: Monitor },
 ];
 
 const readChoice = (): ThemeChoice => {
@@ -22,6 +24,7 @@ const readChoice = (): ThemeChoice => {
 // Segmented light / dark / system control. The first paint is already
 // correct (inline script in layout); this only changes and remembers it.
 export function ThemeToggle() {
+  const t = useTranslations("theme");
   const [choice, setChoice] = useState<ThemeChoice | null>(null);
 
   useEffect(() => setChoice(readChoice()), []);
@@ -53,7 +56,7 @@ export function ThemeToggle() {
   return (
     <>
       <button
-        aria-label={`${current.label}. Switch to ${next.label.toLowerCase()}`}
+        aria-label={t("cycle", { current: t(current.value), next: next.value })}
         className="inline-flex size-8 items-center justify-center rounded-full border border-line bg-surface-2 text-fg sm:hidden"
         onClick={() => choose(next.value)}
         type="button"
@@ -61,10 +64,10 @@ export function ThemeToggle() {
         <current.Icon size={15} />
       </button>
       <fieldset className="hidden items-center gap-0.5 rounded-full border border-line bg-surface-2 p-0.5 sm:inline-flex">
-        <legend className="sr-only">Theme</legend>
-        {OPTIONS.map(({ value, label, Icon }) => (
+        <legend className="sr-only">{t("legend")}</legend>
+        {OPTIONS.map(({ value, Icon }) => (
           <button
-            aria-label={label}
+            aria-label={t(value)}
             aria-pressed={choice === value}
             className={`inline-flex size-7 items-center justify-center rounded-full transition ${
               choice === value
@@ -73,7 +76,7 @@ export function ThemeToggle() {
             }`}
             key={value}
             onClick={() => choose(value)}
-            title={label}
+            title={t(value)}
             type="button"
           >
             <Icon size={14} />

@@ -1,28 +1,31 @@
 "use client";
 
 import { ArrowRight, Check, Rocket, ShieldCheck, Sparkles } from "lucide-react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useCreditPacks, useSellerSubscription } from "@/hooks/use-billing";
 import { useSession } from "@/hooks/use-session";
+import { useFormat } from "@/i18n/format";
+import { Link } from "@/i18n/navigation";
 import { loginHref } from "@/lib/auth/redirect";
 import {
   CREATOR_URL,
   type CreditPack,
   type CreditPricing,
-  formatMoney,
-  packCoverage,
-  plural,
 } from "@/lib/billing";
+import { coveredProducts } from "./seller-credits";
 
+// Keys of `pricing.included.*`.
 const INCLUDED = [
-  "Free seller account and profile",
-  "Free credits every cycle to publish and update products",
-  "Drafts are always free",
-  "Buyer message routing",
-  "Paid credits never expire · pay by QR",
-];
+  "account",
+  "freeCredits",
+  "drafts",
+  "messages",
+  "paidCredits",
+] as const;
 
 export function PricingPage() {
+  const t = useTranslations("pricing");
+  const tc = useTranslations("credits");
   const { data: packs, isPending, isError, refetch } = useCreditPacks();
   const session = useSession().data;
   const signedIn = Boolean(session?.authenticated);
@@ -39,23 +42,20 @@ export function PricingPage() {
           <div>
             <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-normal text-accent-text">
               <Sparkles size={16} />
-              Pricing
+              {t("eyebrow")}
             </p>
             <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight text-fg sm:text-5xl">
-              Sell on Servbo for free.
+              {t("title")}
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-              Becoming a seller costs nothing: every{" "}
-              {pricing?.period_days ?? 30} days you get{" "}
               {pricing
-                ? plural(pricing.free_credits, "free credit")
-                : "free credits"}
-              . Publishing a product costs{" "}
-              {pricing ? plural(pricing.publish_cost, "credit") : "a credit"}{" "}
-              and saving changes to a published product costs{" "}
-              {pricing ? plural(pricing.edit_cost, "credit") : "a credit"}.
-              Drafts are free. Need more? Buy a credit pack by scanning a QR
-              code: paid credits never expire and are spent after the free ones.
+                ? t("intro", {
+                    days: pricing.period_days,
+                    free: pricing.free_credits,
+                    publish: pricing.publish_cost,
+                    edit: pricing.edit_cost,
+                  })
+                : t("introDefault", { days: 30 })}
             </p>
             {/* Becoming a seller never needs a pack, so this works with no packs at all. */}
             <div className="mt-6 sm:w-72">
@@ -64,7 +64,7 @@ export function PricingPage() {
                   className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-accent-fg hover:bg-accent-hover"
                   href={CREATOR_URL}
                 >
-                  Open the creator app
+                  {t("openCreator")}
                   <ArrowRight size={16} />
                 </a>
               ) : (
@@ -73,7 +73,7 @@ export function PricingPage() {
                   href={ctaHref}
                 >
                   <Rocket size={16} />
-                  Become a seller for free
+                  {t("cta")}
                 </Link>
               )}
             </div>
@@ -81,7 +81,7 @@ export function PricingPage() {
           <aside className="rounded-lg border border-line bg-surface p-5 shadow-sm">
             <div className="flex items-center gap-2 text-sm font-medium text-accent-text">
               <ShieldCheck size={17} />
-              Every seller gets
+              {t("includedTitle")}
             </div>
             <ul className="mt-4 space-y-3 text-sm text-muted">
               {INCLUDED.map((item) => (
@@ -90,7 +90,7 @@ export function PricingPage() {
                     className="mt-0.5 shrink-0 text-accent-text"
                     size={16}
                   />
-                  {item}
+                  {t(`included.${item}`)}
                 </li>
               ))}
             </ul>
@@ -109,26 +109,22 @@ export function PricingPage() {
             </div>
           ) : isError ? (
             <article className="max-w-xl rounded-lg border border-line bg-surface p-5 shadow-sm">
-              <p className="text-sm text-muted">
-                We could not load the credit packs.
-              </p>
+              <p className="text-sm text-muted">{tc("packs.loadError")}</p>
               <button
                 className="mt-4 inline-flex min-h-10 items-center justify-center rounded-md border border-line px-4 text-sm font-medium text-fg hover:border-accent hover:text-accent-text"
                 onClick={() => void refetch()}
                 type="button"
               >
-                Try again
+                {tc("tryAgain")}
               </button>
             </article>
           ) : !packs?.length ? (
             <article className="max-w-xl rounded-lg border border-line bg-surface p-5 shadow-sm">
               <h2 className="text-2xl font-semibold text-fg">
-                No credit packs yet
+                {tc("packs.emptyTitle")}
               </h2>
               <p className="mt-3 text-sm leading-6 text-muted">
-                You don't need one to start: your free credits are enough to
-                publish your first products. Packs for extra credits are coming
-                soon.
+                {tc("packs.emptyText")}
               </p>
             </article>
           ) : (
@@ -175,7 +171,10 @@ function PackCard({
   highlighted: boolean;
   ctaHref: string;
 }) {
-  const coverage = packCoverage(pack.credits, pricing);
+  const t = useTranslations("pricing");
+  const tc = useTranslations("credits");
+  const format = useFormat();
+  const covered = coveredProducts(pack.credits, pricing);
 
   return (
     <article
@@ -184,10 +183,10 @@ function PackCard({
       }`}
     >
       <p className="flex items-center justify-between gap-2 text-sm font-medium text-accent-text">
-        {plural(pack.credits, "credit")}
+        {tc("count", { count: pack.credits })}
         {highlighted ? (
           <span className="rounded-md bg-accent-soft px-2 py-0.5 text-xs font-semibold">
-            Best value
+            {t("bestValue")}
           </span>
         ) : null}
       </p>
@@ -196,14 +195,16 @@ function PackCard({
         <p className="mt-3 text-sm leading-6 text-muted">{pack.description}</p>
       ) : null}
       <p className="mt-5 text-4xl font-semibold text-fg">
-        {formatMoney(pack.price_amount, pack.currency)}
+        {format.money(pack.price_amount, pack.currency)}
       </p>
-      <p className="mt-1 min-h-5 flex-1 text-sm text-muted">{coverage}</p>
+      <p className="mt-1 min-h-5 flex-1 text-sm text-muted">
+        {covered ? tc("packCoverage", { count: covered }) : null}
+      </p>
       <Link
         className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-accent-fg hover:bg-accent-hover"
         href={ctaHref}
       >
-        Buy credits
+        {t("buyCredits")}
         <ArrowRight size={16} />
       </Link>
     </article>

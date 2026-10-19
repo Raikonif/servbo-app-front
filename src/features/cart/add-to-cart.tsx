@@ -1,9 +1,10 @@
 "use client";
 
 import { Check, Minus, Plus, ShoppingBag } from "lucide-react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useAddToCart, useCart } from "@/hooks/use-cart";
+import { Link } from "@/i18n/navigation";
 import { cartHref } from "@/lib/cart";
 
 const stepButton =
@@ -22,6 +23,7 @@ export function AddToCart({
   stock: number;
   className?: string;
 }) {
+  const t = useTranslations("cart");
   const { userId, cart } = useCart();
   const { add, isPending, isSuccess, error, reset } = useAddToCart();
   const [quantity, setQuantity] = useState(1);
@@ -35,7 +37,7 @@ export function AddToCart({
         disabled
         type="button"
       >
-        Sold out
+        {t("soldOut")}
       </button>
     );
   }
@@ -50,11 +52,11 @@ export function AddToCart({
     <div className={`flex flex-col gap-2 ${className}`}>
       <div className="flex items-center gap-2">
         <fieldset
-          aria-label="Quantity"
+          aria-label={t("quantity")}
           className="inline-flex shrink-0 items-center rounded-full border border-line"
         >
           <button
-            aria-label="Decrease quantity"
+            aria-label={t("decrease")}
             className={stepButton}
             disabled={quantity <= 1}
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -69,7 +71,7 @@ export function AddToCart({
             {quantity}
           </span>
           <button
-            aria-label="Increase quantity"
+            aria-label={t("increase")}
             className={stepButton}
             disabled={quantity >= max}
             onClick={() => setQuantity((q) => Math.min(max, q + 1))}
@@ -90,10 +92,10 @@ export function AddToCart({
         >
           <ShoppingBag size={16} />
           {inCart >= stock
-            ? "All units in your cart"
+            ? t("allInCart")
             : isPending
-              ? "Adding…"
-              : "Add to cart"}
+              ? t("adding")
+              : t("add")}
         </button>
       </div>
       <p aria-live="polite" className="min-h-5 text-sm">
@@ -102,23 +104,30 @@ export function AddToCart({
         ) : isSuccess ? (
           <span className="inline-flex items-center gap-1.5 text-accent-text">
             <Check size={14} />
-            Added.{" "}
-            <Link
-              className="font-medium underline underline-offset-4"
-              href={cartHref}
-            >
-              View cart
-            </Link>
+            {t.rich("added", {
+              link: (chunks) => (
+                <Link
+                  className="font-medium underline underline-offset-4"
+                  href={cartHref}
+                >
+                  {chunks}
+                </Link>
+              ),
+            })}
           </span>
         ) : inCart ? (
           <span className="text-muted">
-            {inCart} in your cart ·{" "}
-            <Link
-              className="font-medium text-fg underline-offset-4 hover:underline"
-              href={cartHref}
-            >
-              View cart
-            </Link>
+            {t.rich("inCart", {
+              count: inCart,
+              link: (chunks) => (
+                <Link
+                  className="font-medium text-fg underline-offset-4 hover:underline"
+                  href={cartHref}
+                >
+                  {chunks}
+                </Link>
+              ),
+            })}
           </span>
         ) : null}
       </p>

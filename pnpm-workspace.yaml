@@ -4,6 +4,8 @@
 allowBuilds:
   sharp: false
   '@tailwindcss/oxide': false
+  '@parcel/watcher': false
+  '@swc/core': false
 
 ignoredBuiltDependencies:
   - '@tailwindcss/oxide'

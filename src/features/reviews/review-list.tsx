@@ -1,13 +1,13 @@
 "use client";
 
 import { Flag, LoaderCircle, MessageSquareReply } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useReportReview, useReviewList } from "@/hooks/use-reviews";
 import { useSession } from "@/hooks/use-session";
+import { useFormat } from "@/i18n/format";
+import { Link, usePathname } from "@/i18n/navigation";
 import { loginHref } from "@/lib/auth/redirect";
-import { formatDate } from "@/lib/catalog";
 import { MAX_REPORT_REASON, type Review } from "@/lib/reviews";
 import { Stars } from "./stars";
 
@@ -17,12 +17,13 @@ import { Stars } from "./stars";
 export function ReviewList({
   kind,
   id,
-  emptyText = "No reviews yet.",
+  emptyText,
 }: {
   kind: "product" | "seller";
   id: string;
   emptyText?: string;
 }) {
+  const t = useTranslations("reviews");
   const reviews = useReviewList(kind, id);
 
   if (reviews.isPending) {
@@ -36,20 +37,21 @@ export function ReviewList({
   if (reviews.isError) {
     return (
       <p className="rounded-2xl border border-warning/30 bg-warning-soft p-4 text-sm text-warning">
-        We could not load the reviews.{" "}
+        {t("loadError")}{" "}
         <button
           className="font-medium underline"
           onClick={() => void reviews.refetch()}
           type="button"
         >
-          Try again
+          {t("tryAgain")}
         </button>
       </p>
     );
   }
 
   const items = reviews.data.pages.flatMap((page) => page.results);
-  if (!items.length) return <p className="text-sm text-muted">{emptyText}</p>;
+  if (!items.length)
+    return <p className="text-sm text-muted">{emptyText ?? t("noneYet")}</p>;
 
   return (
     <div className="space-y-4">
@@ -70,7 +72,7 @@ export function ReviewList({
           {reviews.isFetchingNextPage ? (
             <LoaderCircle className="animate-spin" size={15} />
           ) : null}
-          Load more reviews
+          {t("loadMore")}
         </button>
       ) : null}
     </div>
@@ -86,6 +88,8 @@ export function ReviewItem({
   showProduct?: boolean;
   canReport?: boolean;
 }) {
+  const t = useTranslations("reviews");
+  const format = useFormat();
   return (
     <article className="space-y-2 text-sm">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -95,11 +99,11 @@ export function ReviewItem({
           className="text-xs text-muted tabular-nums"
           dateTime={review.created_at}
         >
-          {formatDate(review.created_at)}
+          {format.date(review.created_at)}
         </time>
         {review.hidden ? (
           <span className="rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
-            Hidden by moderators
+            {t("hidden")}
           </span>
         ) : null}
       </header>
@@ -113,10 +117,10 @@ export function ReviewItem({
         <div className="rounded-2xl border border-line bg-surface-2/60 p-3">
           <p className="flex items-center gap-1.5 text-xs font-medium text-muted">
             <MessageSquareReply aria-hidden size={13} />
-            Reply from the seller
+            {t("sellerReply")}
             {review.replied_at ? (
               <time className="font-normal" dateTime={review.replied_at}>
-                · {formatDate(review.replied_at)}
+                · {format.date(review.replied_at)}
               </time>
             ) : null}
           </p>
@@ -131,6 +135,7 @@ export function ReviewItem({
 // Signed-in users other than the author report once, with a reason.
 // Anonymous visitors go to sign in and come back here.
 function ReportReview({ review }: { review: Review }) {
+  const t = useTranslations("reviews.report");
   const { data: session } = useSession();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -142,7 +147,7 @@ function ReportReview({ review }: { review: Review }) {
   if (report.isSuccess) {
     return (
       <p className="text-xs text-muted" role="status">
-        {report.data?.detail ?? "Thanks, we will look at it."}
+        {report.data?.detail ?? t("thanks")}
       </p>
     );
   }
@@ -158,14 +163,14 @@ function ReportReview({ review }: { review: Review }) {
             (typeof window === "undefined" ? "" : window.location.search),
         )}
       >
-        <Flag aria-hidden size={12} /> Report
+        <Flag aria-hidden size={12} /> {t("button")}
       </Link>
     );
   }
   if (!open) {
     return (
       <button className={trigger} onClick={() => setOpen(true)} type="button">
-        <Flag aria-hidden size={12} /> Report
+        <Flag aria-hidden size={12} /> {t("button")}
       </button>
     );
   }
@@ -180,7 +185,7 @@ function ReportReview({ review }: { review: Review }) {
       }}
     >
       <label className="block text-xs font-medium" htmlFor={fieldId}>
-        Why should moderators look at this review?
+        {t("reason")}
       </label>
       <textarea
         className="block w-full rounded-xl border border-line bg-surface p-2 text-sm outline-none focus:border-accent"
@@ -197,7 +202,7 @@ function ReportReview({ review }: { review: Review }) {
           disabled={report.isPending || !reason.trim()}
           type="submit"
         >
-          Send report
+          {t("send")}
         </button>
         <button
           className="text-xs font-medium text-muted"
@@ -207,7 +212,7 @@ function ReportReview({ review }: { review: Review }) {
           }}
           type="button"
         >
-          Cancel
+          {t("cancel")}
         </button>
       </div>
       {report.error ? (

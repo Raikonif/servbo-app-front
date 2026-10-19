@@ -1,8 +1,9 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { type ReactNode, useEffect } from "react";
 import { useSession } from "@/hooks/use-session";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { loginHref } from "@/lib/auth/redirect";
 import { ServiceUnavailable } from "./service-unavailable";
 
@@ -10,6 +11,7 @@ import { ServiceUnavailable } from "./service-unavailable";
 // the refresh cookie is scoped to the API's /api/auth/session/ path: only the
 // session endpoint can tell "expired access token" from "signed out".
 export function RequireSession({ children }: { children: ReactNode }) {
+  const t = useTranslations("auth.requireSession");
   const { data: session, isError, refetch } = useSession();
   const pathname = usePathname();
   const router = useRouter();
@@ -31,7 +33,7 @@ export function RequireSession({ children }: { children: ReactNode }) {
       className="mx-auto max-w-7xl space-y-4 px-4 py-8 sm:px-6 lg:px-8"
     >
       <p className="text-sm text-muted">
-        {isAnonymous ? "Redirecting to sign in…" : "Checking your session…"}
+        {isAnonymous ? t("redirecting") : t("checking")}
       </p>
       <div className="h-40 animate-pulse rounded-lg bg-surface-2" />
       <div className="h-64 animate-pulse rounded-lg bg-surface-2" />

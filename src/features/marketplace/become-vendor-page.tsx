@@ -12,8 +12,7 @@ import {
   TimerOff,
   X,
 } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { type FormEvent, type ReactNode, useState } from "react";
 import {
   useCreditPacks,
@@ -22,21 +21,21 @@ import {
   useShowBillingState,
 } from "@/hooks/use-billing";
 import { useNow } from "@/hooks/use-now";
+import { useFormat } from "@/i18n/format";
+import { Link, useRouter } from "@/i18n/navigation";
 import {
   type CreditPricing,
   cancelPayment,
   checkPromotion,
-  formatMoney,
   isExpired,
   type PendingPayment,
   type PromotionCheck,
-  packCoverage,
-  plural,
   startPackPayment,
 } from "@/lib/billing";
 import {
   BecomeSellerCard,
   card,
+  coveredProducts,
   payHref,
   primaryButton,
   SellerCreditsCard,
@@ -47,6 +46,8 @@ const isBonus = (promo: PromotionCheck | null) =>
   promo?.kind === "bonus_credits";
 
 export function BecomeVendorPage() {
+  const t = useTranslations("becomeSeller");
+  const tc = useTranslations("credits");
   const router = useRouter();
   const subscription = useSellerSubscription();
   const packs = useCreditPacks();
@@ -118,11 +119,7 @@ export function BecomeVendorPage() {
       discounts={promo?.packs ?? null}
       error={pay.error?.message ?? null}
       extra={codeBox}
-      note={
-        pending
-          ? "Choosing another pack, or another code, replaces your pending payment."
-          : null
-      }
+      note={pending ? t("replaceNote") : null}
       onRetry={() => void packs.refetch()}
       onSelect={setSelectedPackId}
       onSubmit={() => {
@@ -131,7 +128,7 @@ export function BecomeVendorPage() {
       packs={packs}
       pricing={pricing}
       selectedId={packId ?? null}
-      title={state?.credits.total ? "Buy more credits" : "Buy credits"}
+      title={state?.credits.total ? t("buyMore") : t("buyCredits")}
     />
   );
 
@@ -141,15 +138,13 @@ export function BecomeVendorPage() {
   } else if (subscription.isError || !state) {
     content = (
       <section className={card}>
-        <p className="text-sm text-muted">
-          We could not load your seller status.
-        </p>
+        <p className="text-sm text-muted">{t("statusError")}</p>
         <button
           className={`mt-4 ${secondaryButton}`}
           onClick={() => void subscription.refetch()}
           type="button"
         >
-          Try again
+          {tc("tryAgain")}
         </button>
       </section>
     );
@@ -170,8 +165,7 @@ export function BecomeVendorPage() {
             role="status"
           >
             <CircleCheck size={16} />
-            {plural(claimed, "credit")} added · you now have{" "}
-            {plural(state.credits.paid, "paid credit")}
+            {t("claimed", { count: claimed, paid: state.credits.paid })}
           </p>
         ) : null}
         {state.is_seller ? (
@@ -186,15 +180,17 @@ export function BecomeVendorPage() {
 
   const steps = pricing
     ? [
-        `Become a seller for free: you get ${plural(pricing.free_credits, "free credit")} every ${pricing.period_days} days`,
-        `Publish a product for ${plural(pricing.publish_cost, "credit")}, save changes to a published one for ${plural(pricing.edit_cost, "credit")}. Drafts are free`,
-        "Need more? Buy a credit pack by QR: paid credits never expire",
+        t("steps.free", {
+          count: pricing.free_credits,
+          days: pricing.period_days,
+        }),
+        t("steps.costs", {
+          publish: pricing.publish_cost,
+          edit: pricing.edit_cost,
+        }),
+        t("steps.more"),
       ]
-    : [
-        "Become a seller for free and get free credits every month",
-        "Spend credits to publish and update products. Drafts are free",
-        "Need more? Buy a credit pack by QR: paid credits never expire",
-      ];
+    : [t("steps.freeDefault"), t("steps.costsDefault"), t("steps.more")];
 
   return (
     <main>
@@ -202,28 +198,21 @@ export function BecomeVendorPage() {
         <div>
           <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-normal text-accent-text">
             <Store size={16} />
-            Become a seller
+            {t("eyebrow")}
           </p>
           <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight text-fg sm:text-5xl">
-            Open your store on Servbo for free.
+            {t("title")}
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-muted">
-            Becoming a seller costs nothing.{" "}
-            {pricing ? (
-              <>
-                Every {pricing.period_days} days you get{" "}
-                <span className="font-medium text-fg">
-                  {plural(pricing.free_credits, "free credit")}
-                </span>{" "}
-                to publish and update your products
-              </>
-            ) : (
-              "Every month you get free credits to publish and update your products"
-            )}
-            : they reset each cycle and don't carry over. When you need more,
-            credit packs add paid credits that never expire and add up. Free
-            credits are always spent first. You manage your products from the
-            creator app.
+            {pricing
+              ? t.rich("intro", {
+                  count: pricing.free_credits,
+                  days: pricing.period_days,
+                  b: (chunks) => (
+                    <span className="font-medium text-fg">{chunks}</span>
+                  ),
+                })
+              : t("introDefault")}
           </p>
           <ol className="mt-8 space-y-3 text-sm text-muted">
             {steps.map((step, index) => (
@@ -235,15 +224,12 @@ export function BecomeVendorPage() {
               </li>
             ))}
           </ol>
-          <p className="mt-6 text-xs text-muted">
-            Credit packs are paid by QR only · you get a payment receipt, no tax
-            invoice (factura) yet.
-          </p>
+          <p className="mt-6 text-xs text-muted">{t("footnote")}</p>
           <Link
             className="mt-4 inline-flex text-sm font-medium text-accent-text hover:text-accent-text"
             href="/billing"
           >
-            View credits and billing history
+            {t("billingLink")}
           </Link>
         </div>
         <div className="space-y-6">{content}</div>
@@ -282,6 +268,9 @@ function PackPicker({
   error: string | null;
   title: string;
 }) {
+  const t = useTranslations("becomeSeller");
+  const tc = useTranslations("credits");
+  const format = useFormat();
   if (packs.isPending) {
     return (
       <section className={card}>
@@ -292,15 +281,13 @@ function PackPicker({
   if (packs.isError) {
     return (
       <section className={card}>
-        <p className="text-sm text-muted">
-          We could not load the credit packs.
-        </p>
+        <p className="text-sm text-muted">{tc("packs.loadError")}</p>
         <button
           className={`mt-4 ${secondaryButton}`}
           onClick={onRetry}
           type="button"
         >
-          Try again
+          {tc("tryAgain")}
         </button>
       </section>
     );
@@ -308,10 +295,11 @@ function PackPicker({
   if (!packs.data.length) {
     return (
       <section className={card}>
-        <h2 className="text-2xl font-semibold text-fg">No credit packs yet</h2>
+        <h2 className="text-2xl font-semibold text-fg">
+          {tc("packs.emptyTitle")}
+        </h2>
         <p className="mt-2 text-sm leading-6 text-muted">
-          You don't need one to start: your free credits are enough to publish
-          your first products. Packs for extra credits are coming soon.
+          {tc("packs.emptyText")}
         </p>
       </section>
     );
@@ -332,7 +320,7 @@ function PackPicker({
               const discounted = discounts?.find(
                 (entry) => entry.id === pack.id,
               )?.discounted_amount;
-              const coverage = packCoverage(pack.credits, pricing);
+              const covered = coveredProducts(pack.credits, pricing);
               return (
                 <label
                   className="flex cursor-pointer items-start gap-3 rounded-lg border border-line p-4 hover:border-accent has-checked:border-accent has-checked:bg-accent-soft has-focus-visible:ring-2 has-focus-visible:ring-accent"
@@ -351,11 +339,11 @@ function PackPicker({
                       {pack.name}
                     </span>
                     <span className="block text-sm font-medium text-accent-text">
-                      {plural(pack.credits, "credit")}
+                      {tc("count", { count: pack.credits })}
                     </span>
-                    {coverage ? (
+                    {covered ? (
                       <span className="mt-0.5 block text-xs text-muted">
-                        {coverage}
+                        {tc("packCoverage", { count: covered })}
                       </span>
                     ) : null}
                   </span>
@@ -363,12 +351,12 @@ function PackPicker({
                     {discounted != null ? (
                       <>
                         <s className="mr-1.5 text-sm font-medium text-muted">
-                          {formatMoney(pack.price_amount, pack.currency)}
+                          {format.money(pack.price_amount, pack.currency)}
                         </s>
-                        {formatMoney(discounted, pack.currency)}
+                        {format.money(discounted, pack.currency)}
                       </>
                     ) : (
-                      formatMoney(pack.price_amount, pack.currency)
+                      format.money(pack.price_amount, pack.currency)
                     )}
                   </span>
                 </label>
@@ -389,7 +377,7 @@ function PackPicker({
           type="submit"
         >
           <QrCode size={17} />
-          {busy ? "Preparing payment…" : "Continue to payment"}
+          {busy ? t("preparing") : t("continue")}
         </button>
       </form>
     </section>
@@ -408,6 +396,9 @@ function ContinuePaymentCard({
   error: string | null;
   onCancel: () => void;
 }) {
+  const t = useTranslations("becomeSeller");
+  const tc = useTranslations("credits");
+  const format = useFormat();
   const now = useNow(30_000);
   const expired = now !== null && isExpired(payment.expires_at, now);
   return (
@@ -415,29 +406,33 @@ function ContinuePaymentCard({
       {expired ? (
         <p className="inline-flex items-center gap-2 rounded-md bg-danger-soft px-2 py-1 text-xs font-semibold uppercase text-danger">
           <TimerOff size={14} />
-          QR expired
+          {t("qrExpired")}
         </p>
       ) : (
         <p className="inline-flex items-center gap-2 rounded-md bg-warning-soft px-2 py-1 text-xs font-semibold uppercase text-warning">
           <Clock3 size={14} />
-          Payment pending
+          {t("pending")}
         </p>
       )}
       <h2 className="mt-3 text-xl font-semibold text-fg">
-        {payment.pack ? `${payment.pack.name} pack` : "Your payment"}
+        {payment.pack
+          ? tc("packName", { name: payment.pack.name })
+          : t("yourPayment")}
         {payment.credits ? (
           <span className="text-muted">
             {" "}
-            · {plural(payment.credits, "credit")}
+            · {tc("count", { count: payment.credits })}
           </span>
         ) : null}
       </h2>
       <p className="mt-1 text-sm text-muted">
-        {formatMoney(payment.amount_due, payment.currency)} · code{" "}
-        <span className="font-mono font-medium text-fg">
-          {payment.reference}
-        </span>
-        {expired ? " · get a new QR on the payment page" : null}
+        {t.rich(expired ? "summaryExpired" : "summary", {
+          amount: format.money(payment.amount_due, payment.currency),
+          reference: payment.reference,
+          mono: (chunks) => (
+            <span className="font-mono font-medium text-fg">{chunks}</span>
+          ),
+        })}
       </p>
       {error ? (
         <p className="mt-3 text-sm text-danger" role="alert">
@@ -446,7 +441,7 @@ function ContinuePaymentCard({
       ) : null}
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         <Link className={primaryButton} href={payHref(payment.id)}>
-          Continue to payment
+          {t("continue")}
           <ArrowRight size={17} />
         </Link>
         <button
@@ -456,7 +451,7 @@ function ContinuePaymentCard({
           type="button"
         >
           <X size={16} />
-          {busy ? "Cancelling…" : "Cancel payment"}
+          {busy ? t("cancelling") : t("cancel")}
         </button>
       </div>
     </section>
@@ -472,6 +467,7 @@ function PromoCodeField({
   applied: PromotionCheck | null;
   onApplied: (promo: PromotionCheck | null) => void;
 }) {
+  const t = useTranslations("becomeSeller.promo");
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
   const check = useMutation({
@@ -486,10 +482,10 @@ function PromoCodeField({
       <p className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-accent/40 bg-accent-soft p-3 text-sm text-accent-text">
         <span className="inline-flex items-center gap-2 font-medium">
           <Ticket size={16} />
-          Code {applied.code} applied
+          {t("applied", { code: applied.code })}
         </span>
         <button
-          aria-label={`Remove code ${applied.code}`}
+          aria-label={t("remove", { code: applied.code })}
           className="rounded-md p-1 hover:bg-surface"
           onClick={() => {
             onApplied(null);
@@ -510,7 +506,7 @@ function PromoCodeField({
         type="button"
       >
         <Ticket size={16} />
-        Have a code?
+        {t("haveCode")}
       </button>
     );
   }
@@ -520,7 +516,7 @@ function PromoCodeField({
   return (
     <div className="mt-4">
       <label className="text-sm font-medium text-fg" htmlFor="promo-code">
-        Promotion code
+        {t("label")}
       </label>
       <div className="mt-2 flex gap-2">
         <input
@@ -549,7 +545,7 @@ function PromoCodeField({
           onClick={apply}
           type="button"
         >
-          {check.isPending ? "Checking…" : "Apply"}
+          {check.isPending ? t("checking") : t("apply")}
         </button>
       </div>
       {check.error ? (
@@ -576,15 +572,17 @@ function BonusCode({
   onClaim: () => void;
   onDismiss: () => void;
 }) {
+  const t = useTranslations("becomeSeller");
   const credits = promo.bonus_credits ?? 0;
   return (
     <div className="mt-4 rounded-lg border border-accent/40 bg-accent-soft p-4">
       <div className="flex items-start justify-between gap-3">
         <p className="inline-flex items-center gap-2 text-lg font-semibold text-accent-text">
-          <Gift size={18} />+{plural(credits, "credit")}
+          <Gift size={18} />
+          {t("bonus.plus", { count: credits })}
         </p>
         <button
-          aria-label={`Remove code ${promo.code}`}
+          aria-label={t("promo.remove", { code: promo.code })}
           className="rounded-md p-1 text-accent-text hover:bg-surface"
           disabled={busy}
           onClick={onDismiss}
@@ -594,9 +592,13 @@ function BonusCode({
         </button>
       </div>
       <p className="mt-1 text-sm leading-6 text-muted">
-        Code <span className="font-mono font-medium text-fg">{promo.code}</span>{" "}
-        adds {plural(credits, "paid credit")} that never expire. No pack or QR
-        needed.
+        {t.rich("bonus.text", {
+          code: promo.code,
+          count: credits,
+          mono: (chunks) => (
+            <span className="font-mono font-medium text-fg">{chunks}</span>
+          ),
+        })}
       </p>
       {error ? (
         <p className="mt-2 text-sm text-danger" role="alert">
@@ -610,7 +612,7 @@ function BonusCode({
         type="button"
       >
         <Ticket size={17} />
-        {busy ? "Claiming…" : "Claim"}
+        {busy ? t("bonus.claiming") : t("bonus.claim")}
       </button>
     </div>
   );

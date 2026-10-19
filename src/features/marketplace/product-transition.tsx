@@ -1,7 +1,8 @@
 "use client";
 
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { type ReactNode, ViewTransition } from "react";
+import { usePathname } from "@/i18n/navigation";
 import { productHref, productTransitionName } from "@/lib/catalog";
 
 // Card → panel → full-window modal morph (openspec D17). Two mounted
@@ -25,6 +26,7 @@ export function Morph({
   owner: "card" | "panel";
   children: ReactNode;
 }) {
+  // Locale-aware: "/products/<id>" without the "/es" prefix.
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const modalOpen = pathname === productHref(id);

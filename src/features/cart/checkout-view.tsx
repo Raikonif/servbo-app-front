@@ -9,12 +9,13 @@ import {
   Store,
   Truck,
 } from "lucide-react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { useCart } from "@/hooks/use-cart";
+import { useFormat } from "@/i18n/format";
+import { Link, useRouter } from "@/i18n/navigation";
 import { type CartGroup, cartHref, cartKeys } from "@/lib/cart";
-import { formatPrice } from "@/lib/catalog";
 import {
   CheckoutError,
   type CheckoutGroup,
@@ -46,6 +47,8 @@ const input =
 // cart-and-checkout, checkout-and-orders spec). Placing creates one order per
 // seller; the API rejects everything if stock or prices changed.
 export function CheckoutView() {
+  const t = useTranslations("checkout");
+  const format = useFormat();
   const router = useRouter();
   const queryClient = useQueryClient();
   const onlySeller = useSearchParams().get("seller");
@@ -147,13 +150,16 @@ export function CheckoutView() {
     return (
       <Shell>
         <p className="mt-6 text-muted">
-          There is nothing ready to check out.{" "}
-          <Link
-            className="font-medium text-fg underline underline-offset-4"
-            href={cartHref}
-          >
-            Back to your cart
-          </Link>
+          {t.rich("nothingReady", {
+            link: (chunks) => (
+              <Link
+                className="font-medium text-fg underline underline-offset-4"
+                href={cartHref}
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
         </p>
       </Shell>
     );
@@ -179,11 +185,11 @@ export function CheckoutView() {
                   {group.seller.name}
                 </h2>
                 <p className="text-sm tabular-nums">
-                  {units(group)} {units(group) === 1 ? "item" : "items"}
+                  {t("items", { count: units(group) })}
                   {" · "}
                   <span className="font-semibold">
                     {group.subtotals
-                      .map((s) => formatPrice(s.amount, s.currency))
+                      .map((s) => format.price(s.amount, s.currency))
                       .join(" + ")}
                   </span>
                 </p>
@@ -191,24 +197,22 @@ export function CheckoutView() {
               <ul className="mt-2 text-sm text-muted">
                 {group.items.map((item) => (
                   <li key={item.product}>
-                    {item.quantity} × {item.name}
+                    {t("line", { quantity: item.quantity, name: item.name })}
                   </li>
                 ))}
               </ul>
 
               <fieldset className="mt-5">
-                <legend className="text-sm font-medium">Payment</legend>
+                <legend className="text-sm font-medium">{t("payment")}</legend>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
                   <Option
                     checked={choice.payment === "qr"}
                     description={
-                      group.accepts_qr
-                        ? "Pay the seller's QR and attach the receipt."
-                        : "This seller has not set up QR yet."
+                      group.accepts_qr ? t("qrHint") : t("qrUnavailable")
                     }
                     disabled={!group.accepts_qr}
                     icon={<QrCode size={18} />}
-                    label="QR to the seller"
+                    label={t("method.qr")}
                     name={`payment-${group.seller.id}`}
                     onChange={() =>
                       setChoice(group.seller.id, { payment: "qr" }, group)
@@ -216,9 +220,9 @@ export function CheckoutView() {
                   />
                   <Option
                     checked={choice.payment === "cash"}
-                    description="Pay in cash on delivery or at pickup."
+                    description={t("cashHint")}
                     icon={<Banknote size={18} />}
-                    label="Cash"
+                    label={t("method.cash")}
                     name={`payment-${group.seller.id}`}
                     onChange={() =>
                       setChoice(group.seller.id, { payment: "cash" }, group)
@@ -229,13 +233,13 @@ export function CheckoutView() {
               </fieldset>
 
               <fieldset className="mt-5">
-                <legend className="text-sm font-medium">Delivery</legend>
+                <legend className="text-sm font-medium">{t("delivery")}</legend>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
                   <Option
                     checked={choice.delivery === "delivery"}
-                    description="Shipping cost is agreed with the seller."
+                    description={t("deliveryHint")}
                     icon={<Truck size={18} />}
-                    label="Delivery"
+                    label={t("method.delivery")}
                     name={`delivery-${group.seller.id}`}
                     onChange={() =>
                       setChoice(
@@ -250,11 +254,11 @@ export function CheckoutView() {
                     description={
                       group.pickup
                         ? `${group.pickup.address}${group.pickup.notes ? ` · ${group.pickup.notes}` : ""}`
-                        : "This seller does not offer pickup."
+                        : t("pickupUnavailable")
                     }
                     disabled={!group.pickup}
                     icon={<Store size={18} />}
-                    label="Pickup"
+                    label={t("method.pickup")}
                     name={`delivery-${group.seller.id}`}
                     onChange={() =>
                       setChoice(group.seller.id, { delivery: "pickup" }, group)
@@ -265,9 +269,7 @@ export function CheckoutView() {
               </fieldset>
 
               <label className="mt-5 block">
-                <span className="text-sm font-medium">
-                  Note for the seller (optional)
-                </span>
+                <span className="text-sm font-medium">{t("note")}</span>
                 <textarea
                   className={`${input} mt-1.5 min-h-20 py-2`}
                   maxLength={500}
@@ -287,15 +289,13 @@ export function CheckoutView() {
 
         {needsDelivery ? (
           <section className="rounded-3xl border border-line bg-surface p-5">
-            <h2 className="font-semibold">Delivery details</h2>
-            <p className="mt-1 text-sm text-muted">
-              Shared with the sellers you chose delivery for.
-            </p>
+            <h2 className="font-semibold">{t("details.title")}</h2>
+            <p className="mt-1 text-sm text-muted">{t("details.hint")}</p>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <TextField
                 autoComplete="name"
                 error={deliveryError("recipient_name")}
-                label="Recipient name"
+                label={t("details.recipient")}
                 onChange={(v) =>
                   setDelivery((d) => ({ ...d, recipient_name: v }))
                 }
@@ -305,7 +305,7 @@ export function CheckoutView() {
               <TextField
                 autoComplete="tel"
                 error={deliveryError("phone")}
-                label="Phone"
+                label={t("details.phone")}
                 onChange={(v) => setDelivery((d) => ({ ...d, phone: v }))}
                 required
                 type="tel"
@@ -315,16 +315,16 @@ export function CheckoutView() {
                 autoComplete="street-address"
                 className="sm:col-span-2"
                 error={deliveryError("address")}
-                label="Address"
+                label={t("details.address")}
                 onChange={(v) => setDelivery((d) => ({ ...d, address: v }))}
                 required
                 value={delivery.address}
               />
               <TextField
                 className="sm:col-span-2"
-                label="Reference (optional)"
+                label={t("details.reference")}
                 onChange={(v) => setDelivery((d) => ({ ...d, reference: v }))}
-                placeholder="Near the market, blue door…"
+                placeholder={t("details.referencePlaceholder")}
                 value={delivery.reference}
               />
             </div>
@@ -338,7 +338,11 @@ export function CheckoutView() {
           >
             <p className="flex items-center gap-2 font-medium">
               <AlertTriangle size={16} />
-              {place.error.message}
+              {checkoutError?.kind === "changed"
+                ? t("errors.changed")
+                : checkoutError?.kind === "fields"
+                  ? t("errors.fields")
+                  : place.error.message}
             </p>
             {checkoutError?.problems.length ? (
               <ul className="mt-2 list-disc pl-6">
@@ -351,10 +355,13 @@ export function CheckoutView() {
             ) : null}
             {checkoutError?.problems.length ? (
               <p className="mt-2">
-                Your cart now shows the current prices and stock.{" "}
-                <Link className="font-medium underline" href={cartHref}>
-                  Review your cart
-                </Link>
+                {t.rich("cartUpdated", {
+                  link: (chunks) => (
+                    <Link className="font-medium underline" href={cartHref}>
+                      {chunks}
+                    </Link>
+                  ),
+                })}
               </p>
             ) : null}
           </div>
@@ -365,7 +372,7 @@ export function CheckoutView() {
             className="text-center text-sm font-medium text-muted hover:text-fg"
             href={cartHref}
           >
-            Back to cart
+            {t("backToCart")}
           </Link>
           <button
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-accent px-6 text-sm font-semibold text-accent-fg transition hover:bg-accent-hover disabled:opacity-60"
@@ -375,7 +382,7 @@ export function CheckoutView() {
             {place.isPending ? (
               <LoaderCircle className="animate-spin" size={16} />
             ) : null}
-            Place {groups.length === 1 ? "order" : `${groups.length} orders`}
+            {t("place", { count: groups.length })}
           </button>
         </div>
       </form>
@@ -387,10 +394,11 @@ const units = (group: CartGroup) =>
   group.items.reduce((n, item) => n + item.quantity, 0);
 
 function Shell({ children }: { children: ReactNode }) {
+  const t = useTranslations("checkout");
   return (
     <main className="mx-auto max-w-3xl px-4 pt-10 pb-24 sm:px-6">
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-        Checkout
+        {t("title")}
       </h1>
       {children}
     </main>

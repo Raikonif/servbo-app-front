@@ -7,14 +7,15 @@ import {
   Store,
   UserX,
 } from "lucide-react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { ServiceUnavailable } from "@/features/auth/service-unavailable";
 import { StatusPage, statusLinkStyles } from "@/features/errors/status-page";
 import { ReviewsSection } from "@/features/reviews/reviews-section";
 import { RatingSummary } from "@/features/reviews/stars";
 import { useSeller, useSellerProducts } from "@/hooks/use-catalog";
-import { formatDate } from "@/lib/billing";
+import { useFormat } from "@/i18n/format";
+import { Link } from "@/i18n/navigation";
 import { ratingNumber } from "@/lib/reviews";
 import { ProductGrid } from "./product-grid";
 
@@ -22,6 +23,8 @@ const isNotFound = (error: unknown) =>
   (error as { status?: number } | null)?.status === 404;
 
 export function SellerProfilePage({ sellerId }: { sellerId: string }) {
+  const t = useTranslations("catalog.seller");
+  const format = useFormat();
   const [page, setPage] = useState(1);
   const seller = useSeller(sellerId);
   const products = useSellerProducts(sellerId, page);
@@ -42,12 +45,12 @@ export function SellerProfilePage({ sellerId }: { sellerId: string }) {
     if (isNotFound(seller.error) || !seller.data) {
       return (
         <StatusPage
-          description="This account is not a seller or no longer exists."
+          description={t("notFoundBody")}
           icon={<UserX size={22} />}
-          title="Seller not found"
+          title={t("notFoundTitle")}
         >
           <Link className={statusLinkStyles.primary} href="/sellers">
-            See all sellers
+            {t("seeAll")}
           </Link>
         </StatusPage>
       );
@@ -65,7 +68,7 @@ export function SellerProfilePage({ sellerId }: { sellerId: string }) {
         href="/sellers"
       >
         <ArrowLeft size={16} />
-        All sellers
+        {t("allSellers")}
       </Link>
 
       <section className="flex items-center gap-4 rounded-lg border border-line bg-surface p-6 shadow-sm">
@@ -76,9 +79,10 @@ export function SellerProfilePage({ sellerId }: { sellerId: string }) {
           <h1 className="text-2xl font-semibold">{profile.display_name}</h1>
           <p className="text-sm text-muted">
             {profile.username ? `@${profile.username} · ` : ""}
-            {profile.product_count}{" "}
-            {profile.product_count === 1 ? "product" : "products"}
-            {profile.joined ? ` · Joined ${formatDate(profile.joined)}` : ""}
+            {t("productCount", { count: profile.product_count })}
+            {profile.joined
+              ? ` · ${t("joined", { date: format.date(profile.joined) })}`
+              : ""}
           </p>
           <RatingSummary
             avg={ratingNumber(profile.rating_avg)}
@@ -95,23 +99,23 @@ export function SellerProfilePage({ sellerId }: { sellerId: string }) {
           kind="seller"
           ratingAvg={profile.rating_avg}
           ratingCount={profile.rating_count ?? 0}
-          title="Seller reviews"
+          title={t("reviews")}
         />
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">Products</h2>
+        <h2 className="text-xl font-semibold">{t("products")}</h2>
         {products.isPending ? (
           <div className="h-40 animate-pulse rounded-lg bg-surface-2" />
         ) : products.isError ? (
           <p className="rounded-lg border border-warning/30 bg-warning-soft p-4 text-sm text-warning">
-            We could not load this seller’s products.{" "}
+            {t("loadError")}{" "}
             <button
               className="font-medium underline"
               onClick={() => void products.refetch()}
               type="button"
             >
-              Try again
+              {t("tryAgain")}
             </button>
           </p>
         ) : (
@@ -120,7 +124,7 @@ export function SellerProfilePage({ sellerId }: { sellerId: string }) {
 
         {data && (data.next || data.previous) ? (
           <nav
-            aria-label="Pagination"
+            aria-label={t("pagination")}
             className="flex items-center justify-between gap-3 text-sm"
           >
             <button
@@ -130,16 +134,16 @@ export function SellerProfilePage({ sellerId }: { sellerId: string }) {
               type="button"
             >
               <ChevronLeft size={16} />
-              Previous
+              {t("previous")}
             </button>
-            <span className="text-muted">Page {page}</span>
+            <span className="text-muted">{t("page", { page })}</span>
             <button
               className={`${statusLinkStyles.secondary} disabled:opacity-50`}
               disabled={!data.next}
               onClick={() => setPage((p) => p + 1)}
               type="button"
             >
-              Next
+              {t("next")}
               <ChevronRight size={16} />
             </button>
           </nav>

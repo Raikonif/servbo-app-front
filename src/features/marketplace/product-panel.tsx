@@ -1,15 +1,12 @@
 import { ImageIcon, Images, X } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { AddToCart } from "@/features/cart/add-to-cart";
 import { ReviewsSection } from "@/features/reviews/reviews-section";
 import { RatingSummary } from "@/features/reviews/stars";
-import {
-  formatDate,
-  formatPrice,
-  type Product,
-  wasModified,
-} from "@/lib/catalog";
+import { useFormat } from "@/i18n/format";
+import { Link } from "@/i18n/navigation";
+import { type Product, wasModified } from "@/lib/catalog";
 import { ratingNumber } from "@/lib/reviews";
 import { FavoriteButton } from "./favorite-button";
 import { PanelKeys } from "./panel-keys";
@@ -29,6 +26,8 @@ export function ProductPanel({
   product: Product;
   closeHref: string;
 }) {
+  const t = useTranslations("catalog.panel");
+  const format = useFormat();
   const modified = wasModified(product);
   const photos = product.images.length;
 
@@ -47,10 +46,10 @@ export function ProductPanel({
           />
           <div className="flex items-center justify-between gap-3 px-5 pt-3 pb-2 lg:pt-4">
             <span className="text-xs font-semibold tracking-wide text-muted uppercase">
-              Product
+              {t("product")}
             </span>
             <Link
-              aria-label="Close details"
+              aria-label={t("close")}
               className="inline-flex size-9 items-center justify-center rounded-full text-muted transition hover:bg-surface-2 hover:text-fg"
               href={closeHref}
               scroll={false}
@@ -81,7 +80,7 @@ export function ProductPanel({
                 {photos > 1 ? (
                   <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-surface/85 px-2.5 py-1 text-xs font-medium backdrop-blur">
                     <Images aria-hidden size={13} />
-                    {photos} photos
+                    {t("photoCount", { count: photos })}
                   </span>
                 ) : null}
               </div>
@@ -107,7 +106,7 @@ export function ProductPanel({
             </div>
 
             <p className="mt-3 text-2xl font-semibold tracking-tight tabular-nums">
-              {formatPrice(product.price, product.currency)}
+              {format.price(product.price, product.currency)}
             </p>
             <RatingSummary
               avg={ratingNumber(product.rating_avg)}
@@ -135,30 +134,35 @@ export function ProductPanel({
             ) : null}
 
             <dl className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line text-sm">
-              <PanelFact label="Seller" value={product.seller_name || "—"} />
               <PanelFact
-                label="Stock"
+                label={t("seller")}
+                value={product.seller_name || "—"}
+              />
+              <PanelFact
+                label={t("stock")}
                 value={
-                  product.stock > 0 ? `${product.stock} available` : "Sold out"
+                  product.stock > 0
+                    ? t("available", { count: product.stock })
+                    : t("soldOut")
                 }
               />
               <PanelFact
-                label={modified ? "Modified" : "Uploaded"}
+                label={modified ? t("modified") : t("uploaded")}
                 value={
                   <time
                     dateTime={
                       modified ? product.updated_at : product.created_at
                     }
                   >
-                    {formatDate(
+                    {format.date(
                       modified ? product.updated_at : product.created_at,
                     )}
                   </time>
                 }
               />
               <PanelFact
-                label="Photos"
-                value={photos ? String(photos) : "None"}
+                label={t("photos")}
+                value={photos ? format.number(photos) : t("none")}
               />
             </dl>
 
@@ -182,9 +186,7 @@ export function ProductPanel({
             <SeeMoreLink
               className="h-11 w-full rounded-full border border-line text-sm font-semibold text-fg transition hover:border-line-strong hover:bg-surface-2"
               productId={product.id}
-            >
-              See more
-            </SeeMoreLink>
+            />
           </div>
         </aside>
       </Morph>

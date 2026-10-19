@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   // Emit `.next/standalone` — a self-contained server.js with only the
@@ -26,10 +29,16 @@ const nextConfig: NextConfig = {
       .filter(Boolean)
       .map((origin) => new URL(origin.trim())),
   },
-  // The catalog lives at the storefront home.
+  // The catalog lives at the storefront home of each language.
   async redirects() {
-    return [{ source: "/products", destination: "/", permanent: true }];
+    return [
+      {
+        source: "/:locale(es|en)/products",
+        destination: "/:locale",
+        permanent: true,
+      },
+    ];
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

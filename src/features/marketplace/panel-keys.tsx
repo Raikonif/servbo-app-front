@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useRouter } from "@/i18n/navigation";
 
 // Escape closes the side panel — unless a modal dialog is open, which
 // handles Escape itself.

@@ -1,10 +1,12 @@
 "use client";
 
 import { LoaderCircle } from "lucide-react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { type FormEvent, useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { type FormEvent, useEffect, useRef, useState } from "react";
+import { applyAccountLanguage } from "@/features/i18n/language";
 import { useSession, useSetSession } from "@/hooks/use-session";
+import { Link } from "@/i18n/navigation";
 import { signIn, startGoogleSignIn } from "@/lib/auth/client";
 import { AuthError } from "@/lib/auth/errors";
 import { leaveAuthPage, safeNext } from "@/lib/auth/redirect";
@@ -15,6 +17,8 @@ const asAuthError = (error: unknown) =>
   error instanceof AuthError ? error : new AuthError("UNKNOWN");
 
 export function LoginForm() {
+  const t = useTranslations("auth");
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const next = safeNext(searchParams.get("next"));
   // Set by the backend when the Google round-trip fails (canceled, denied...).
@@ -30,18 +34,26 @@ export function LoginForm() {
     redirectError ? new AuthError(redirectError) : null,
   );
 
+  // Set once this form signed the user in: it picks the language to land in,
+  // so the "already signed in" effect below must not navigate as well.
+  const signingIn = useRef(false);
+
   // Already signed in (e.g. back button, or another tab signed in).
   useEffect(() => {
-    if (session?.authenticated) leaveAuthPage(next);
-  }, [session?.authenticated, next]);
+    if (session?.authenticated && !signingIn.current) {
+      leaveAuthPage(next, locale);
+    }
+  }, [session?.authenticated, next, locale]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
     setPending("password");
     try {
-      setSession(await signIn(email, password));
-      leaveAuthPage(next);
+      const user = await signIn(email, password);
+      signingIn.current = true;
+      setSession(user);
+      leaveAuthPage(next, await applyAccountLanguage(user, locale));
     } catch (err) {
       setError(asAuthError(err));
       setPending(null);
@@ -53,7 +65,7 @@ export function LoginForm() {
     setPending("google");
     try {
       // On success the browser leaves the page, so the spinner stays up.
-      await startGoogleSignIn(next);
+      await startGoogleSignIn(next, locale);
     } catch (err) {
       setError(asAuthError(err));
       setPending(null);
@@ -62,24 +74,21 @@ export function LoginForm() {
 
   return (
     <AuthShell
-      footer={
-        <>
-          New to Servbo?{" "}
+      footer={t.rich("login.newHere", {
+        link: (chunks) => (
           <Link
             className="font-medium text-accent-text"
             href={`/register?next=${encodeURIComponent(next)}`}
           >
-            Create an account
+            {chunks}
           </Link>
-        </>
-      }
-      subtitle="Use the same account as Servbo Creator."
-      title="Sign in"
+        ),
+      })}
+      subtitle={t("login.subtitle")}
+      title={t("login.title")}
     >
       {passwordWasReset && !error ? (
-        <FormAlert tone="success">
-          Password updated. Sign in with your new password.
-        </FormAlert>
+        <FormAlert tone="success">{t("login.passwordReset")}</FormAlert>
       ) : null}
       {error ? (
         <FormAlert
@@ -89,7 +98,7 @@ export function LoginForm() {
                 className="font-medium underline"
                 href={`/check-email?email=${encodeURIComponent(email)}`}
               >
-                Resend verification email
+                {t("login.resendVerification")}
               </Link>
             ) : null
           }
@@ -102,7 +111,7 @@ export function LoginForm() {
         <Field
           autoComplete="email"
           id="email"
-          label="Email"
+          label={t("email")}
           onChange={(e) => setEmail(e.target.value)}
           required
           type="email"
@@ -111,7 +120,7 @@ export function LoginForm() {
         <Field
           autoComplete="current-password"
           id="password"
-          label="Password"
+          label={t("password")}
           onChange={(e) => setPassword(e.target.value)}
           required
           type="password"
@@ -122,7 +131,7 @@ export function LoginForm() {
             className="text-sm font-medium text-accent-text"
             href={`/forgot-password?next=${encodeURIComponent(next)}`}
           >
-            Forgot your password?
+            {t("login.forgot")}
           </Link>
         </div>
         <button
@@ -133,13 +142,13 @@ export function LoginForm() {
           {pending === "password" ? (
             <LoaderCircle className="animate-spin" size={16} />
           ) : null}
-          Sign in
+          {t("signIn")}
         </button>
       </form>
 
       <div className="flex items-center gap-3 text-xs text-subtle">
         <span className="h-px flex-1 bg-line" />
-        OR
+        {t("login.or")}
         <span className="h-px flex-1 bg-line" />
       </div>
 
@@ -152,7 +161,7 @@ export function LoginForm() {
         {pending === "google" ? (
           <LoaderCircle className="animate-spin" size={16} />
         ) : null}
-        Continue with Google
+        {t("login.google")}
       </button>
     </AuthShell>
   );

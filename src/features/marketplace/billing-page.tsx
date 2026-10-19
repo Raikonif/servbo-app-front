@@ -8,19 +8,15 @@ import {
   Gift,
   Store,
 } from "lucide-react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import {
   useBillingRecords,
   useCreditEntries,
   useSellerSubscription,
 } from "@/hooks/use-billing";
-import {
-  CREDIT_ENTRY_LABELS,
-  formatDate,
-  formatMoney,
-  plural,
-} from "@/lib/billing";
+import { useFormat } from "@/i18n/format";
+import { Link } from "@/i18n/navigation";
 import { EntityTable } from "./entity-table";
 import { StatCard } from "./stat-card";
 
@@ -33,18 +29,23 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 function StatusBadge({ status }: { status: string }) {
+  const t = useTranslations("billing.status");
   return (
     <span
       className={`rounded-md px-2 py-1 text-xs font-semibold uppercase ${
         STATUS_STYLES[status] ?? "bg-surface-2 text-muted"
       }`}
     >
-      {status.replace("_", " ")}
+      {/* Statuses and methods come from the API; unknown ones show raw. */}
+      {t.has(status as "paid") ? t(status as "paid") : status.replace("_", " ")}
     </span>
   );
 }
 
 export function BillingPage() {
+  const t = useTranslations("billing");
+  const tc = useTranslations("credits");
+  const format = useFormat();
   const subscriptionQuery = useSellerSubscription();
   const recordsQuery = useBillingRecords();
   const state = subscriptionQuery.data;
@@ -58,16 +59,18 @@ export function BillingPage() {
         <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end">
           <div>
             <p className="text-sm font-semibold uppercase tracking-normal text-accent-text">
-              Billing
+              {t("eyebrow")}
             </p>
             <h1 className="mt-2 text-4xl font-semibold leading-tight text-fg">
-              Credits and payments
+              {t("title")}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
-              Your credits, how they were spent and the receipts of your QR
-              payments.
+              {t("intro")}
               {pricing
-                ? ` Publishing a product costs ${plural(pricing.publish_cost, "credit")}, saving changes to a published product ${plural(pricing.edit_cost, "credit")}; drafts are free.`
+                ? ` ${t("costs", {
+                    publish: pricing.publish_cost,
+                    edit: pricing.edit_cost,
+                  })}`
                 : ""}
             </p>
           </div>
@@ -79,26 +82,27 @@ export function BillingPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium text-accent-text">
-                      Credits
+                      {t("credits")}
                     </p>
                     <p className="mt-1 text-2xl font-semibold text-fg">
-                      {plural(credits?.total ?? 0, "credit")}
+                      {tc("count", { count: credits?.total ?? 0 })}
                     </p>
                   </div>
                   {state?.is_seller ? <StatusBadge status="active" /> : null}
                 </div>
                 <p className="mt-3 text-sm text-accent-text">
                   {state?.is_seller
-                    ? `${credits?.free ?? 0} free · ${credits?.paid ?? 0} paid`
-                    : "Becoming a seller is free"}
+                    ? t("split", {
+                        free: credits?.free ?? 0,
+                        paid: credits?.paid ?? 0,
+                      })
+                    : t("freeToJoin")}
                 </p>
                 <Link
                   className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-accent-text hover:text-accent-text"
                   href="/become-a-vendor"
                 >
-                  {state?.is_seller
-                    ? "Buy more credits"
-                    : "Open your store for free"}
+                  {state?.is_seller ? t("buyMore") : t("openStore")}
                   <ArrowRight size={16} />
                 </Link>
               </>
@@ -108,30 +112,39 @@ export function BillingPage() {
 
         <section className="grid gap-4 md:grid-cols-3">
           <StatCard
-            helper={state?.is_seller ? "Seller account" : "Buyer account"}
+            helper={state?.is_seller ? t("sellerAccount") : t("buyerAccount")}
             icon={Store}
-            label="Account"
-            value={state?.is_seller ? "Seller" : "Buyer"}
+            label={t("account")}
+            value={state?.is_seller ? t("seller") : t("buyer")}
           />
           <StatCard
             helper={
               state?.is_seller && credits?.free_resets_at
-                ? `Back to ${pricing?.free_credits ?? "full"} on ${formatDate(credits.free_resets_at)}`
-                : "Given to every seller each cycle"
+                ? pricing
+                  ? tc("resetsTo", {
+                      count: pricing.free_credits,
+                      date: format.date(credits.free_resets_at),
+                    })
+                  : tc("resetsOn", {
+                      date: format.date(credits.free_resets_at),
+                    })
+                : t("freeHelper")
             }
             icon={Gift}
-            label="Free credits"
-            value={(credits?.free ?? 0).toLocaleString("en-US")}
+            label={tc("free")}
+            value={format.number(credits?.free ?? 0)}
           />
           <StatCard
             helper={
               state?.pending_payment
-                ? `Pending payment ${state.pending_payment.reference}`
-                : "Never expire"
+                ? t("pendingPayment", {
+                    reference: state.pending_payment.reference,
+                  })
+                : tc("neverExpire")
             }
             icon={Coins}
-            label="Paid credits"
-            value={(credits?.paid ?? 0).toLocaleString("en-US")}
+            label={tc("paid")}
+            value={format.number(credits?.paid ?? 0)}
           />
         </section>
 
@@ -139,28 +152,28 @@ export function BillingPage() {
           <div className="h-64 animate-pulse rounded-lg bg-surface-2" />
         ) : recordsQuery.isError ? (
           <section className="rounded-lg border border-line bg-surface p-5 text-sm text-muted shadow-sm">
-            We could not load your payment history.
+            {t("recordsError")}
           </section>
         ) : records.length === 0 ? (
           <section className="rounded-lg border border-line bg-surface p-5 text-sm text-muted shadow-sm">
-            No payments yet.
+            {t("recordsEmpty")}
           </section>
         ) : (
           <EntityTable
             columns={[
-              "Date",
-              "Reference",
-              "Pack",
-              "Method",
-              "Amount",
-              "Status",
+              t("columns.date"),
+              t("columns.reference"),
+              t("columns.pack"),
+              t("columns.method"),
+              t("columns.amount"),
+              t("columns.status"),
             ]}
             getRowKey={(record) => record.id}
             items={records}
             renderRow={(record) => (
               <>
                 <td className="px-5 py-4 text-muted">
-                  {formatDate(record.paid_at ?? record.created_at)}
+                  {format.date(record.paid_at ?? record.created_at)}
                 </td>
                 <td className="px-5 py-4 font-mono font-medium text-fg">
                   {record.bank_transfer_reference || "—"}
@@ -171,7 +184,7 @@ export function BillingPage() {
                       {record.pack_name}
                       {record.credits ? (
                         <span className="block text-xs text-muted">
-                          {plural(record.credits, "credit")}
+                          {tc("count", { count: record.credits })}
                         </span>
                       ) : null}
                     </>
@@ -180,21 +193,26 @@ export function BillingPage() {
                   )}
                 </td>
                 <td className="px-5 py-4 text-muted">
-                  {record.payment_method.replaceAll("_", " ")}
+                  {t.has(`method.${record.payment_method}` as "method.qr")
+                    ? t(`method.${record.payment_method}` as "method.qr")
+                    : record.payment_method.replaceAll("_", " ")}
                 </td>
                 <td className="px-5 py-4 font-medium text-fg">
                   {record.payment_method === "promotion" &&
                   record.amount_due === 0 ? (
-                    `Free (code ${record.promotion_code ?? "—"})`
+                    t("freeWithCode", { code: record.promotion_code ?? "—" })
                   ) : (
                     <>
                       {record.original_amount &&
                       record.original_amount > record.amount_due ? (
                         <s className="mr-1.5 font-normal text-muted">
-                          {formatMoney(record.original_amount, record.currency)}
+                          {format.money(
+                            record.original_amount,
+                            record.currency,
+                          )}
                         </s>
                       ) : null}
-                      {formatMoney(
+                      {format.money(
                         record.status === "paid"
                           ? record.amount_paid
                           : record.amount_due,
@@ -213,20 +231,20 @@ export function BillingPage() {
                 </td>
               </>
             )}
-            title="Payment history"
+            title={t("paymentHistory")}
           />
         )}
         <CreditHistory />
-        <p className="text-xs leading-5 text-muted">
-          Credit packs are paid by QR only. These entries are payment receipts:
-          no tax invoice (factura) is issued yet.
-        </p>
+        <p className="text-xs leading-5 text-muted">{t("footnote")}</p>
       </section>
     </main>
   );
 }
 
 function CreditHistory() {
+  const t = useTranslations("billing");
+  const tc = useTranslations("credits");
+  const format = useFormat();
   const [page, setPage] = useState(1);
   const query = useCreditEntries(page);
   const data = query.data;
@@ -237,31 +255,39 @@ function CreditHistory() {
   if (query.isError || !data) {
     return (
       <section className="rounded-lg border border-line bg-surface p-5 text-sm text-muted shadow-sm">
-        We could not load your credit history.
+        {t("historyError")}
       </section>
     );
   }
   if (!data.results.length) {
     return (
       <section className="rounded-lg border border-line bg-surface p-5 text-sm text-muted shadow-sm">
-        No credit activity yet.
+        {t("historyEmpty")}
       </section>
     );
   }
   return (
     <div className="space-y-3">
       <EntityTable
-        columns={["Date", "Activity", "Credits", "Free", "Paid"]}
+        columns={[
+          t("columns.date"),
+          t("columns.activity"),
+          t("columns.credits"),
+          t("columns.free"),
+          t("columns.paid"),
+        ]}
         getRowKey={(entry) => entry.id}
         items={data.results}
         renderRow={(entry) => (
           <>
             <td className="px-5 py-4 text-muted">
-              {formatDate(entry.created_at)}
+              {format.date(entry.created_at)}
             </td>
             <td className="px-5 py-4 text-fg">
               <span className="font-medium">
-                {CREDIT_ENTRY_LABELS[entry.kind] ?? entry.kind}
+                {tc.has(`kind.${entry.kind}` as "kind.publish")
+                  ? tc(`kind.${entry.kind}` as "kind.publish")
+                  : entry.kind}
               </span>
               {entry.product_name || entry.description ? (
                 <span className="block text-xs text-muted">
@@ -275,17 +301,17 @@ function CreditHistory() {
               }`}
             >
               {entry.amount > 0 ? "+" : entry.amount < 0 ? "−" : ""}
-              {Math.abs(entry.amount).toLocaleString("en-US")}
+              {format.number(Math.abs(entry.amount))}
             </td>
             <td className="px-5 py-4 text-muted">
-              {(entry.free_balance_after ?? 0).toLocaleString("en-US")}
+              {format.number(entry.free_balance_after ?? 0)}
             </td>
             <td className="px-5 py-4 text-muted">
-              {entry.balance_after.toLocaleString("en-US")}
+              {format.number(entry.balance_after)}
             </td>
           </>
         )}
-        title="Credit history"
+        title={tc("history")}
       />
       {data.next || data.previous ? (
         <div className="flex items-center justify-end gap-2 text-sm">
@@ -296,16 +322,16 @@ function CreditHistory() {
             type="button"
           >
             <ChevronLeft size={15} />
-            Newer
+            {t("newer")}
           </button>
-          <span className="text-muted">Page {page}</span>
+          <span className="text-muted">{t("page", { page })}</span>
           <button
             className="inline-flex min-h-9 items-center gap-1 rounded-md border border-line px-3 text-fg hover:border-accent disabled:opacity-40"
             disabled={!data.next || query.isFetching}
             onClick={() => setPage((current) => current + 1)}
             type="button"
           >
-            Older
+            {t("older")}
             <ChevronRight size={15} />
           </button>
         </div>

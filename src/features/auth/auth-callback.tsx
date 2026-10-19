@@ -2,9 +2,11 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
+import { applyAccountLanguage } from "@/features/i18n/language";
 import { sessionQueryKey } from "@/hooks/use-session";
+import { useRouter } from "@/i18n/navigation";
 import { getSession } from "@/lib/auth/client";
 import { consumeNext, leaveAuthPage } from "@/lib/auth/redirect";
 import { AuthShell } from "./auth-shell";
@@ -13,6 +15,8 @@ import { AuthShell } from "./auth-shell";
 // Confirm the session, then continue where the user was headed; on any
 // failure fall back to the login with a visible reason.
 export function AuthCallback() {
+  const t = useTranslations("auth");
+  const locale = useLocale();
   const router = useRouter();
   const queryClient = useQueryClient();
   const hasRun = useRef(false);
@@ -29,16 +33,19 @@ export function AuthCallback() {
         staleTime: 0,
       })
       .then(
-        (session) =>
-          session.authenticated
-            ? leaveAuthPage(next)
-            : router.replace("/login?auth_error=google_failed"),
+        async (session) => {
+          if (!session.authenticated || !session.user) {
+            router.replace("/login?auth_error=google_failed");
+            return;
+          }
+          leaveAuthPage(next, await applyAccountLanguage(session.user, locale));
+        },
         () => router.replace("/login?auth_error=NETWORK_ERROR"),
       );
-  }, [queryClient, router]);
+  }, [queryClient, router, locale]);
 
   return (
-    <AuthShell title="Signing you in…">
+    <AuthShell title={t("callback.title")}>
       <LoaderCircle className="animate-spin text-accent-text" size={32} />
     </AuthShell>
   );

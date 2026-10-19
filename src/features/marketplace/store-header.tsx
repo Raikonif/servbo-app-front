@@ -1,32 +1,35 @@
 "use client";
 
 import { Store } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { UserMenu } from "@/features/auth/user-menu";
 import { CartLink } from "@/features/cart/cart-link";
+import { LanguageSwitcher } from "@/features/i18n/language-switcher";
 import { NotificationBell } from "@/features/notifications/notification-bell";
 import { useSession } from "@/hooks/use-session";
+import { Link, usePathname } from "@/i18n/navigation";
 import { CREATOR_URL } from "@/lib/billing";
 import { ThemeToggle } from "./theme-toggle";
 
 type NavItem = { href: string; label: string; external?: boolean };
 
 export function StoreHeader() {
+  const t = useTranslations("header");
+  // Locale-aware: unprefixed ("/", "/products/…"), so matching stays simple.
   const pathname = usePathname();
   const user = useSession().data?.user;
 
   const navItems: NavItem[] = [
-    { href: "/", label: "Catalog" },
-    { href: "/sellers", label: "Sellers" },
+    { href: "/", label: t("catalog") },
+    { href: "/sellers", label: t("sellers") },
     ...(user
       ? [
-          { href: "/orders", label: "Orders" },
-          { href: "/profile", label: "Profile" },
-          { href: "/billing", label: "Billing" },
+          { href: "/orders", label: t("orders") },
+          { href: "/profile", label: t("profile") },
+          { href: "/billing", label: t("billing") },
           user.is_seller
-            ? { href: CREATOR_URL, label: "Creator app", external: true }
-            : { href: "/become-a-vendor", label: "Become a seller" },
+            ? { href: CREATOR_URL, label: t("creator"), external: true }
+            : { href: "/become-a-vendor", label: t("becomeSeller") },
         ]
       : []),
   ];
@@ -52,7 +55,7 @@ export function StoreHeader() {
           </span>
         </Link>
         <nav
-          aria-label="Primary navigation"
+          aria-label={t("nav")}
           className="-mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1 [scrollbar-width:none]"
         >
           {navItems.map((item) => {
@@ -81,7 +84,14 @@ export function StoreHeader() {
             );
           })}
         </nav>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          {/* Two letters only on phones, so the header fits at 375 px. */}
+          <span className="flex sm:hidden">
+            <LanguageSwitcher compact />
+          </span>
+          <span className="hidden sm:flex">
+            <LanguageSwitcher />
+          </span>
           <ThemeToggle />
           <NotificationBell />
           <CartLink />

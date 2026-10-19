@@ -1,8 +1,9 @@
 "use client";
 
 import { Search, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { getPathname, useRouter } from "@/i18n/navigation";
 import { type CatalogQuery, refineHref } from "@/lib/catalog-query";
 
 const TYPING_PAUSE_MS = 350;
@@ -12,6 +13,8 @@ const TYPING_PAUSE_MS = 350;
 // pause (replacing history, not adding an entry per keystroke) and Enter
 // pushes a history entry.
 export function CatalogSearch({ query }: { query: CatalogQuery }) {
+  const t = useTranslations("catalog.search");
+  const locale = useLocale();
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -38,7 +41,7 @@ export function CatalogSearch({ query }: { query: CatalogQuery }) {
   return (
     <search className="w-full max-w-xl">
       <form
-        action="/"
+        action={getPathname({ href: "/", locale })}
         className="relative"
         onSubmit={(event) => {
           event.preventDefault();
@@ -46,7 +49,7 @@ export function CatalogSearch({ query }: { query: CatalogQuery }) {
         }}
       >
         <label className="sr-only" htmlFor="catalog-search">
-          Search products
+          {t("label")}
         </label>
         <Search
           aria-hidden
@@ -69,7 +72,7 @@ export function CatalogSearch({ query }: { query: CatalogQuery }) {
               TYPING_PAUSE_MS,
             );
           }}
-          placeholder="Search products, brands…"
+          placeholder={t("placeholder")}
           ref={input}
           type="search"
           value={value}
@@ -100,7 +103,7 @@ export function CatalogSearch({ query }: { query: CatalogQuery }) {
         ) : null}
         {value ? (
           <button
-            aria-label="Clear search"
+            aria-label={t("clear")}
             className="absolute top-1/2 right-2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-muted transition hover:bg-surface-2 hover:text-fg"
             onClick={() => {
               setValue("");
@@ -113,7 +116,7 @@ export function CatalogSearch({ query }: { query: CatalogQuery }) {
           </button>
         ) : null}
         <span aria-live="polite" className="sr-only">
-          {pending ? "Searching…" : ""}
+          {pending ? t("searching") : ""}
         </span>
       </form>
     </search>

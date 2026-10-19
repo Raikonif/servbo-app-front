@@ -88,11 +88,14 @@ export type CheckoutProblem = {
 // 400: a choice is not possible, per seller and field.
 export type CheckoutFieldErrors = Record<string, Record<string, string[]>>;
 
+// kind "changed" / "fields" carry no API text: the view shows its own
+// translated message; "other" shows the API's (already localized) message.
 export class CheckoutError extends Error {
   constructor(
     message: string,
     readonly problems: CheckoutProblem[] = [],
     readonly fieldErrors: CheckoutFieldErrors = {},
+    readonly kind: "changed" | "fields" | "other" = "other",
   ) {
     super(message);
     this.name = "CheckoutError";
@@ -122,15 +125,17 @@ export async function placeOrders(groups: CheckoutGroup[]) {
     };
     if (error.status === 409 && payload.problems) {
       throw new CheckoutError(
-        "Some items changed since you opened checkout.",
+        "checkout_changed",
         payload.problems,
+        {},
+        "changed",
       );
     }
     if (error.status === 400 && payload.groups) {
       const groups = payload.groups;
       throw Array.isArray(groups)
         ? new CheckoutError(groups[0] ?? error.message)
-        : new CheckoutError("Check the highlighted fields.", [], groups);
+        : new CheckoutError("checkout_fields", [], groups, "fields");
     }
     throw error;
   }
@@ -174,21 +179,5 @@ export const markReceived = (id: string) =>
 
 export const orderHref = (id: string) => `/orders/${encodeURIComponent(id)}`;
 
-export const STATUS_LABELS: Record<OrderStatus, string> = {
-  pending_payment: "Awaiting payment",
-  confirmed: "Confirmed",
-  shipped: "Shipped",
-  ready_for_pickup: "Ready for pickup",
-  delivered: "Delivered",
-  cancelled: "Cancelled",
-};
-
-export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
-  qr: "QR to the seller",
-  cash: "Cash",
-};
-
-export const DELIVERY_LABELS: Record<DeliveryMethod, string> = {
-  delivery: "Delivery",
-  pickup: "Pickup",
-};
+// Status, payment and delivery labels live in messages (orders.status.*,
+// orders.payment.*, orders.delivery.*).

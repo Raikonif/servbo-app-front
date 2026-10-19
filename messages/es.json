@@ -1,0 +1,822 @@
+{
+  "meta": {
+    "siteName": "Servbo Store",
+    "titleTemplate": "%s | Servbo Store",
+    "description": "Explora productos y vendedores en Servbo."
+  },
+  "language": {
+    "label": "Idioma",
+    "es": "Español",
+    "en": "English",
+    "switchTo": "Cambiar idioma"
+  },
+  "errors": {
+    "INVALID_CREDENTIALS": "Correo o contraseña incorrectos.",
+    "PASSWORD_NOT_SET": "Esta cuenta se creó con Google. Usa “Continuar con Google”.",
+    "EMAIL_NOT_VERIFIED": "Tu correo aún no está verificado. Revisa tu bandeja de entrada o reenvía el enlace.",
+    "ACCOUNT_DISABLED": "Tu cuenta está desactivada. Contacta con soporte.",
+    "EMAIL_ALREADY_EXISTS": "Ya existe una cuenta con este correo. Inicia sesión o restablece tu contraseña.",
+    "INVALID_PASSWORD_FORMAT": "Usa al menos 8 caracteres con una mayúscula, una minúscula y un número.",
+    "PASSWORD_MISMATCH": "Las contraseñas no coinciden.",
+    "WEAK_PASSWORD": "Esta contraseña es demasiado débil. Elige una más segura.",
+    "VALIDATION_ERROR": "Algunos campos no son válidos. Revísalos e inténtalo de nuevo.",
+    "SESSION_EXPIRED": "Tu sesión expiró. Vuelve a iniciar sesión.",
+    "INVALID_TOKEN": "Este enlace no es válido o ya expiró. Solicita uno nuevo.",
+    "NOT_FOUND": "No encontramos una cuenta con ese correo.",
+    "ALREADY_VERIFIED": "Tu correo ya está verificado. Ya puedes iniciar sesión.",
+    "EMAIL_SENDING_FAILED": "No pudimos enviar el correo. Inténtalo de nuevo en unos minutos.",
+    "google_canceled": "Se canceló el inicio de sesión con Google.",
+    "google_failed": "No pudimos iniciar tu sesión con Google. Inténtalo de nuevo.",
+    "google_already_linked": "Esa cuenta de Google ya está vinculada a otra cuenta de ServBo.",
+    "INVALID_PACK": "Elige uno de los paquetes de créditos disponibles.",
+    "NO_CREDITS": "No tienes créditos suficientes. Espera a que se renueven tus créditos gratis o compra un paquete.",
+    "ALREADY_ACTIVE": "Ya eres vendedor.",
+    "PAYMENT_PROVIDER_ERROR": "No pudimos generar el QR de pago en este momento. Inténtalo de nuevo en un minuto.",
+    "NO_QR_AVAILABLE": "Todos los QR de pago están en uso. Inténtalo de nuevo en unos minutos.",
+    "PROMO_INVALID": "Este código no es válido.",
+    "PROMO_EXHAUSTED": "Este código ya se agotó.",
+    "PROMO_ALREADY_USED": "Ya usaste este código.",
+    "PROMO_NOT_ELIGIBLE": "Este código es solo para vendedores nuevos.",
+    "PROMO_PLAN": "Este código no aplica a ese paquete.",
+    "NETWORK_ERROR": "No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
+    "THROTTLED": "Demasiados intentos. Espera un minuto e inténtalo de nuevo.",
+    "UNKNOWN": "Algo salió mal. Inténtalo de nuevo."
+  },
+  "fieldLabels": {
+    "email": "Correo",
+    "username": "Usuario",
+    "first_name": "Nombre",
+    "last_name": "Apellido",
+    "password": "Contraseña",
+    "password_confirmation": "Confirmación de contraseña"
+  },
+  "auth": {
+    "loading": "Cargando…",
+    "email": "Correo",
+    "password": "Contraseña",
+    "passwordHint": "Al menos 8 caracteres, con una mayúscula, una minúscula y un número.",
+    "backToSignIn": "Volver a iniciar sesión",
+    "signIn": "Iniciar sesión",
+    "callback": {
+      "title": "Iniciando sesión…"
+    },
+    "checkEmail": {
+      "title": "Revisa tu correo",
+      "subtitle": "Te enviamos un enlace de verificación a <b>{email}</b>. Ábrelo para activar tu cuenta (revisa también tu carpeta de spam).",
+      "subtitleNoEmail": "Te enviamos un enlace de verificación. Ábrelo para activar tu cuenta (revisa también tu carpeta de spam).",
+      "sendFailed": "Tu cuenta se creó, pero no pudimos enviar el correo. Reenvíalo abajo.",
+      "resent": "Si existe una cuenta con ese correo, te enviamos un enlace para verificarla.",
+      "resendLabel": "¿No te llegó? Reenviar a",
+      "resend": "Reenviar correo de verificación"
+    },
+    "forgot": {
+      "title": "Restablece tu contraseña",
+      "subtitle": "Te enviaremos un enlace por correo para elegir una nueva contraseña.",
+      "sent": "Si existe una cuenta con ese correo, te enviamos un enlace para restablecer tu contraseña. Llega en unos minutos.",
+      "submit": "Enviar enlace"
+    },
+    "login": {
+      "title": "Iniciar sesión",
+      "subtitle": "Usa la misma cuenta que en Servbo Creator.",
+      "newHere": "¿Eres nuevo en Servbo? <link>Crea una cuenta</link>",
+      "passwordReset": "Contraseña actualizada. Inicia sesión con tu nueva contraseña.",
+      "resendVerification": "Reenviar correo de verificación",
+      "forgot": "¿Olvidaste tu contraseña?",
+      "or": "O",
+      "google": "Continuar con Google"
+    },
+    "register": {
+      "title": "Crea tu cuenta",
+      "subtitle": "Regístrate para guardar productos y gestionar tus compras.",
+      "haveAccount": "¿Ya tienes una cuenta? <link>Iniciar sesión</link>",
+      "goToSignIn": "Ir a iniciar sesión",
+      "username": "Nombre de usuario",
+      "confirmPassword": "Confirmar contraseña",
+      "submit": "Crear cuenta"
+    },
+    "reset": {
+      "incompleteTitle": "Enlace incompleto",
+      "requestNewLink": "Solicitar un nuevo enlace",
+      "title": "Elige una nueva contraseña",
+      "newPassword": "Nueva contraseña",
+      "confirmNewPassword": "Confirmar nueva contraseña",
+      "submit": "Actualizar contraseña"
+    },
+    "requireSession": {
+      "redirecting": "Redirigiendo para iniciar sesión…",
+      "checking": "Verificando tu sesión…"
+    },
+    "unavailable": {
+      "title": "No podemos conectar con el servidor",
+      "body": "Revisa tu conexión. Tu sesión sigue abierta; inténtalo de nuevo en unos segundos.",
+      "retry": "Inténtalo de nuevo"
+    },
+    "userMenu": {
+      "signIn": "Iniciar sesión",
+      "signUp": "Registrarse",
+      "createAccount": "Crear cuenta",
+      "signOut": "Cerrar sesión"
+    },
+    "verify": {
+      "verifying": "Verificando tu correo…",
+      "failedTitle": "No pudimos verificar tu correo",
+      "sendNewLink": "Enviar un nuevo enlace",
+      "verifiedTitle": "Correo verificado",
+      "verifiedSubtitle": "Gracias por confirmar tu dirección. Ya puedes iniciar sesión."
+    }
+  },
+  "profile": {
+    "roles": {
+      "staff": "Staff",
+      "seller": "Vendedor",
+      "buyer": "Comprador"
+    },
+    "emailNotVerified": "Correo no verificado",
+    "memberSince": "Miembro desde {date}",
+    "details": "Datos de la cuenta",
+    "updated": "Perfil actualizado.",
+    "username": "Nombre de usuario",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "save": "Guardar cambios",
+    "languageTitle": "Idioma",
+    "languageHelp": "Se usa en esta tienda, en la App Creator y en los correos que te enviamos.",
+    "billing": "Facturación",
+    "openCreator": "Abrir la App Creator",
+    "becomeSeller": "Hazte vendedor"
+  },
+  "account": {
+    "title": "Métodos de inicio de sesión",
+    "google": "Google",
+    "googleLinked": "Tu cuenta de Google ya está vinculada.",
+    "linked": "Vinculada",
+    "linkHelp": "Vincula una cuenta de Google para iniciar sesión con un clic.",
+    "link": "Vincular cuenta de Google",
+    "password": "Contraseña",
+    "currentIncorrect": "Tu contraseña actual es incorrecta.",
+    "changeHelp": "Cambia la contraseña que usas para iniciar sesión con tu correo.",
+    "addHelp": "Tu cuenta solo inicia sesión con Google. Agrega una contraseña para iniciar sesión también con tu correo.",
+    "changed": "Contraseña cambiada.",
+    "added": "Contraseña agregada.",
+    "currentPassword": "Contraseña actual",
+    "newPassword": "Nueva contraseña",
+    "confirmNewPassword": "Confirmar nueva contraseña",
+    "passwordHint": "Al menos 8 caracteres, con una mayúscula, una minúscula y un número.",
+    "change": "Cambiar contraseña",
+    "add": "Agregar una contraseña"
+  },
+  "credits": {
+    "count": "{count, plural, one {# crédito} other {# créditos}}",
+    "freeCount": "{count, plural, one {# crédito gratis} other {# créditos gratis}}",
+    "paidCount": "{count, plural, one {# crédito pagado} other {# créditos pagados}}",
+    "packCoverage": "Publica hasta {count, plural, one {# producto} other {# productos}} o úsalos en ediciones",
+    "packName": "Paquete {name}",
+    "free": "Créditos gratis",
+    "paid": "Créditos pagados",
+    "neverExpire": "No vencen",
+    "resetsTo": "Vuelven a {count} el {date}",
+    "resetsOn": "Se renuevan el {date}",
+    "openCreator": "Abrir el panel de App Creator",
+    "history": "Historial de créditos",
+    "tryAgain": "Inténtalo de nuevo",
+    "packs": {
+      "loadError": "No pudimos cargar los paquetes de créditos.",
+      "emptyTitle": "Aún no hay paquetes de créditos",
+      "emptyText": "No necesitas uno para empezar: tus créditos gratis alcanzan para publicar tus primeros productos. Pronto habrá paquetes con créditos extra."
+    },
+    "kind": {
+      "purchase": "Compra de paquete",
+      "promotion": "Código de bonificación",
+      "free_grant": "Créditos gratis",
+      "free_reset": "Créditos gratis renovados",
+      "publish": "Producto publicado",
+      "edit": "Producto editado",
+      "adjustment": "Ajuste",
+      "monthly_fee": "Acceso mensual (plan anterior)",
+      "product_slots": "Espacios para productos (plan anterior)"
+    },
+    "sellerCard": {
+      "title": "Ya eres vendedor",
+      "products": "Productos",
+      "productsValue": "{published, plural, one {# publicado} other {# publicados}} · {drafts, plural, one {# borrador} other {# borradores}}",
+      "costs": "Publicar un producto cuesta {publish, plural, one {# crédito} other {# créditos}} y guardar cambios en un producto publicado cuesta {edit, plural, one {# crédito} other {# créditos}}. Los borradores son gratis. Los créditos gratis se gastan primero."
+    },
+    "becomeSellerCard": {
+      "title": "Empieza a vender gratis",
+      "intro": "Abre tu tienda sin costo y recibe {count, plural, one {# crédito gratis} other {# créditos gratis}} cada {days} días.",
+      "introDefault": "Abre tu tienda sin costo y recibe créditos gratis cada mes.",
+      "paidWaiting": "{count, plural, one {Tu crédito pagado te estará esperando.} other {Tus # créditos pagados te estarán esperando.}}",
+      "activating": "Activando…",
+      "cta": "Hazte vendedor gratis"
+    }
+  },
+  "pricing": {
+    "eyebrow": "Precios",
+    "title": "Vende en Servbo gratis.",
+    "intro": "Hacerte vendedor no cuesta nada: cada {days} días recibes {free, plural, one {# crédito gratis} other {# créditos gratis}}. Publicar un producto cuesta {publish, plural, one {# crédito} other {# créditos}} y guardar cambios en un producto publicado cuesta {edit, plural, one {# crédito} other {# créditos}}. Los borradores son gratis. ¿Necesitas más? Compra un paquete de créditos escaneando un código QR: los créditos pagados no vencen y se gastan después de los gratis.",
+    "introDefault": "Hacerte vendedor no cuesta nada: cada {days} días recibes créditos gratis. Publicar un producto cuesta un crédito y guardar cambios en un producto publicado cuesta un crédito. Los borradores son gratis. ¿Necesitas más? Compra un paquete de créditos escaneando un código QR: los créditos pagados no vencen y se gastan después de los gratis.",
+    "openCreator": "Abrir App Creator",
+    "cta": "Hazte vendedor gratis",
+    "includedTitle": "Todo vendedor recibe",
+    "included": {
+      "account": "Cuenta y perfil de vendedor gratis",
+      "freeCredits": "Créditos gratis en cada ciclo para publicar y actualizar productos",
+      "drafts": "Los borradores siempre son gratis",
+      "messages": "Mensajes de compradores directo a ti",
+      "paidCredits": "Los créditos pagados no vencen · pago con QR"
+    },
+    "bestValue": "Mejor precio",
+    "buyCredits": "Comprar créditos"
+  },
+  "billing": {
+    "eyebrow": "Facturación",
+    "title": "Créditos y pagos",
+    "intro": "Tus créditos, en qué se gastaron y los comprobantes de tus pagos con QR.",
+    "costs": "Publicar un producto cuesta {publish, plural, one {# crédito} other {# créditos}} y guardar cambios en un producto publicado, {edit, plural, one {# crédito} other {# créditos}}; los borradores son gratis.",
+    "credits": "Créditos",
+    "split": "{free} gratis · {paid} pagados",
+    "freeToJoin": "Hacerte vendedor es gratis",
+    "buyMore": "Comprar más créditos",
+    "openStore": "Abre tu tienda gratis",
+    "account": "Cuenta",
+    "seller": "Vendedor",
+    "buyer": "Comprador",
+    "sellerAccount": "Cuenta de vendedor",
+    "buyerAccount": "Cuenta de comprador",
+    "freeHelper": "Se entregan a cada vendedor en cada ciclo",
+    "pendingPayment": "Pago pendiente {reference}",
+    "recordsError": "No pudimos cargar tu historial de pagos.",
+    "recordsEmpty": "Aún no tienes pagos.",
+    "paymentHistory": "Historial de pagos",
+    "freeWithCode": "Gratis (código {code})",
+    "footnote": "Los paquetes de créditos se pagan solo con QR. Estos registros son comprobantes de pago: aún no se emite factura.",
+    "historyError": "No pudimos cargar tu historial de créditos.",
+    "historyEmpty": "Aún no tienes movimientos de créditos.",
+    "newer": "Más recientes",
+    "older": "Anteriores",
+    "page": "Página {page}",
+    "columns": {
+      "date": "Fecha",
+      "reference": "Referencia",
+      "pack": "Paquete",
+      "method": "Método",
+      "amount": "Monto",
+      "status": "Estado",
+      "activity": "Actividad",
+      "credits": "Créditos",
+      "free": "Gratis",
+      "paid": "Pagados"
+    },
+    "status": {
+      "active": "Activo",
+      "incomplete": "Incompleto",
+      "past_due": "Vencido",
+      "canceled": "Cancelado",
+      "unpaid": "No pagado",
+      "trialing": "En prueba",
+      "pending": "Pendiente",
+      "requires_action": "Requiere acción",
+      "paid": "Pagado",
+      "failed": "Fallido",
+      "refunded": "Reembolsado"
+    },
+    "method": {
+      "qr": "Pago con QR",
+      "bank_transfer": "Transferencia bancaria",
+      "promotion": "Código de promoción",
+      "stripe": "Tarjeta (Stripe)"
+    }
+  },
+  "becomeSeller": {
+    "eyebrow": "Hazte vendedor",
+    "title": "Abre tu tienda en Servbo gratis.",
+    "intro": "Hacerte vendedor no cuesta nada. Cada {days} días recibes <b>{count, plural, one {# crédito gratis} other {# créditos gratis}}</b> para publicar y actualizar tus productos: se renuevan en cada ciclo y no se acumulan. Cuando necesites más, los paquetes de créditos añaden créditos pagados que no vencen y se suman. Los créditos gratis siempre se gastan primero. Gestionas tus productos desde App Creator.",
+    "introDefault": "Hacerte vendedor no cuesta nada. Cada mes recibes créditos gratis para publicar y actualizar tus productos: se renuevan en cada ciclo y no se acumulan. Cuando necesites más, los paquetes de créditos añaden créditos pagados que no vencen y se suman. Los créditos gratis siempre se gastan primero. Gestionas tus productos desde App Creator.",
+    "steps": {
+      "free": "Hazte vendedor gratis: recibes {count, plural, one {# crédito gratis} other {# créditos gratis}} cada {days} días",
+      "costs": "Publica un producto por {publish, plural, one {# crédito} other {# créditos}} y guarda cambios en uno publicado por {edit, plural, one {# crédito} other {# créditos}}. Los borradores son gratis",
+      "freeDefault": "Hazte vendedor gratis y recibe créditos gratis cada mes",
+      "costsDefault": "Usa créditos para publicar y actualizar productos. Los borradores son gratis",
+      "more": "¿Necesitas más? Compra un paquete de créditos con QR: los créditos pagados no vencen"
+    },
+    "footnote": "Los paquetes de créditos se pagan solo con QR · recibes un comprobante de pago, aún sin factura.",
+    "billingLink": "Ver créditos e historial de facturación",
+    "statusError": "No pudimos cargar tu estado de vendedor.",
+    "replaceNote": "Si eliges otro paquete u otro código, se reemplaza tu pago pendiente.",
+    "buyCredits": "Comprar créditos",
+    "buyMore": "Comprar más créditos",
+    "claimed": "{count, plural, one {# crédito añadido} other {# créditos añadidos}} · ahora tienes {paid, plural, one {# crédito pagado} other {# créditos pagados}}",
+    "preparing": "Preparando el pago…",
+    "continue": "Continuar al pago",
+    "qrExpired": "QR vencido",
+    "pending": "Pago pendiente",
+    "yourPayment": "Tu pago",
+    "summary": "{amount} · código <mono>{reference}</mono>",
+    "summaryExpired": "{amount} · código <mono>{reference}</mono> · genera un nuevo QR en la página de pago",
+    "cancelling": "Cancelando…",
+    "cancel": "Cancelar pago",
+    "promo": {
+      "applied": "Código {code} aplicado",
+      "remove": "Quitar el código {code}",
+      "haveCode": "¿Tienes un código?",
+      "label": "Código de promoción",
+      "checking": "Verificando…",
+      "apply": "Aplicar"
+    },
+    "bonus": {
+      "plus": "+{count, plural, one {# crédito} other {# créditos}}",
+      "text": "El código <mono>{code}</mono> añade {count, plural, one {# crédito pagado que no vence} other {# créditos pagados que no vencen}}. No necesitas paquete ni QR.",
+      "claiming": "Canjeando…",
+      "claim": "Canjear"
+    },
+    "pay": {
+      "back": "Volver a los paquetes de créditos",
+      "confirmed": "Pago confirmado",
+      "title": "Paga tu paquete de créditos",
+      "loadError": "No pudimos cargar tu pago.",
+      "footnote": "Pago solo con QR · recibes un comprobante de pago, aún sin factura.",
+      "added": "{count, plural, one {# crédito añadido} other {# créditos añadidos}}",
+      "creditPack": "Paquete de créditos",
+      "purchased": "{pack} · pagado el {date}. Los créditos pagados no vencen.",
+      "purchasedNoDate": "{pack}. Los créditos pagados no vencen.",
+      "total": "Total",
+      "openStoreTitle": "Ahora abre tu tienda",
+      "waiting": "Esperando el pago",
+      "expiredText": "Este QR ya no se puede pagar. Genera uno nuevo para continuar.",
+      "waitingText": "Tus créditos se añaden en cuanto se confirma el pago. Esta página se actualiza sola.",
+      "preparingQr": "Preparando el QR…",
+      "newQr": "QR vencido: genera uno nuevo",
+      "qrAlt": "Código QR para pagar {amount}, referencia {reference}",
+      "pack": "Paquete",
+      "amount": "Monto",
+      "code": "Código",
+      "was": "antes {amount}",
+      "received": "Recibido",
+      "receivedValue": "{paid} de {due}",
+      "expiresIn": "Vence en",
+      "relayLabel": "Código QR: paga este QR exacto sin cambiar el monto ni la glosa",
+      "referenceLabel": "Referencia: escríbela en la glosa del pago",
+      "copied": "Copiado",
+      "copy": "Copiar",
+      "refresh": "Actualizar estado"
+    }
+  },
+  "catalog": {
+    "sort": {
+      "newest": "Más recientes",
+      "price_asc": "Precio: de menor a mayor",
+      "price_desc": "Precio: de mayor a menor",
+      "name": "Nombre"
+    },
+    "active": {
+      "count": "{count, plural, one {# producto} other {# productos}}",
+      "query": "“{q}”",
+      "priceRange": "{min}–{max} {currency}",
+      "priceFrom": "Desde {min} {currency}",
+      "priceTo": "Hasta {max} {currency}",
+      "inStock": "Con stock",
+      "sortWithCurrency": "{sort} ({currency})",
+      "remove": "(quitar filtro)",
+      "clearAll": "Limpiar todo"
+    },
+    "filters": {
+      "button": "Filtros",
+      "activeCount": "{count, plural, one {# activo} other {# activos}}",
+      "title": "Filtros",
+      "close": "Cerrar filtros",
+      "price": "Precio",
+      "minPrice": "Precio mínimo",
+      "maxPrice": "Precio máximo",
+      "min": "Mín.",
+      "max": "Máx.",
+      "currency": "Moneda",
+      "inStockOnly": "Solo con stock",
+      "sortBy": "Ordenar por",
+      "applyPrice": "Aplicar precio",
+      "apply": "Aplicar"
+    },
+    "search": {
+      "label": "Buscar productos",
+      "placeholder": "Buscar productos, marcas…",
+      "clear": "Borrar búsqueda",
+      "searching": "Buscando…"
+    },
+    "seeMore": "Ver más",
+    "favorite": {
+      "add": "Agregar a favoritos",
+      "remove": "Quitar de favoritos",
+      "error": "No se pudieron actualizar tus favoritos. Inténtalo de nuevo."
+    },
+    "gallery": {
+      "noPhotos": "Aún no hay fotos",
+      "label": "Fotos de {name}",
+      "photoAlt": "{name} — foto {index} de {total}",
+      "previous": "Foto anterior",
+      "next": "Foto siguiente",
+      "show": "Ver foto {index}"
+    },
+    "grid": {
+      "empty": "Aún no hay productos para mostrar.",
+      "noPhoto": "Aún sin foto",
+      "selected": "Seleccionado",
+      "sellerFallback": "Vendedor",
+      "modified": "Modificado el {date}",
+      "uploaded": "Subido el {date}"
+    },
+    "detail": {
+      "stock": "Stock",
+      "available": "{count, plural, one {# disponible} other {# disponibles}}",
+      "outOfStock": "Sin stock",
+      "seller": "Vendedor",
+      "viewSeller": "Ver vendedor",
+      "uploaded": "Subido",
+      "lastModified": "Última modificación",
+      "notModified": "Sin modificaciones",
+      "sellerFallback": "Vendedor"
+    },
+    "panel": {
+      "product": "Producto",
+      "close": "Cerrar detalles",
+      "photoCount": "{count, plural, one {# foto} other {# fotos}}",
+      "seller": "Vendedor",
+      "stock": "Stock",
+      "available": "{count, plural, one {# disponible} other {# disponibles}}",
+      "soldOut": "Agotado",
+      "modified": "Modificado",
+      "uploaded": "Subido",
+      "photos": "Fotos",
+      "none": "Ninguna"
+    },
+    "modal": {
+      "close": "Cerrar",
+      "escKey": "Esc"
+    },
+    "sellerLink": {
+      "hint": "Inicia sesión para ver el perfil del vendedor"
+    },
+    "seller": {
+      "notFoundTitle": "Vendedor no encontrado",
+      "notFoundBody": "Esta cuenta no es de un vendedor o ya no existe.",
+      "seeAll": "Ver todos los vendedores",
+      "allSellers": "Todos los vendedores",
+      "productCount": "{count, plural, one {# producto} other {# productos}}",
+      "joined": "Se unió el {date}",
+      "reviews": "Reseñas del vendedor",
+      "products": "Productos",
+      "loadError": "No pudimos cargar los productos de este vendedor.",
+      "tryAgain": "Inténtalo de nuevo",
+      "pagination": "Paginación",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "page": "Página {page}"
+    }
+  },
+  "header": {
+    "nav": "Navegación principal",
+    "catalog": "Catálogo",
+    "sellers": "Vendedores",
+    "orders": "Pedidos",
+    "profile": "Perfil",
+    "billing": "Facturación",
+    "creator": "App Creator",
+    "becomeSeller": "Hazte vendedor"
+  },
+  "theme": {
+    "legend": "Tema",
+    "light": "Tema claro",
+    "dark": "Tema oscuro",
+    "system": "Usar el tema del sistema",
+    "cycle": "{current}. Cambiar a {next, select, light {tema claro} dark {tema oscuro} other {tema del sistema}}"
+  },
+  "cart": {
+    "title": "Tu carrito",
+    "linkLabel": "Carrito",
+    "linkLabelCount": "Carrito, {count, plural, one {# artículo} other {# artículos}}",
+    "soldOut": "Agotado",
+    "quantity": "Cantidad",
+    "quantityOf": "Cantidad de {name}",
+    "decrease": "Disminuir cantidad",
+    "increase": "Aumentar cantidad",
+    "add": "Agregar al carrito",
+    "adding": "Agregando…",
+    "allInCart": "Todas las unidades están en tu carrito",
+    "added": "Agregado. <link>Ver carrito</link>",
+    "inCart": "{count} en tu carrito · <link>Ver carrito</link>",
+    "tryAgain": "Inténtalo de nuevo",
+    "empty": "Tu carrito está vacío",
+    "browse": "Explorar el catálogo",
+    "perSeller": "Cada vendedor envía y cobra por separado: harás un pedido por vendedor.",
+    "checkoutAll": "Finalizar compra con los {count} vendedores",
+    "options": "{payment, select, qrOrCash {QR o efectivo} other {Efectivo}} · {delivery, select, both {Envío a domicilio o recojo} other {Envío a domicilio}}",
+    "subtotal": "Subtotal",
+    "shippingAgreed": "El envío se acuerda con el vendedor.",
+    "checkoutSeller": "Finalizar compra con este vendedor",
+    "fixItems": "Corrige los productos marcados para finalizar la compra",
+    "each": "{price} c/u",
+    "unavailable": "Ya no está disponible: quítalo para continuar.",
+    "overStock": "{count, plural, one {Solo queda #} other {Solo quedan #}}: reduce la cantidad.",
+    "remove": "Quitar"
+  },
+  "checkout": {
+    "title": "Finalizar compra",
+    "nothingReady": "No hay nada listo para finalizar la compra. <link>Volver a tu carrito</link>",
+    "items": "{count, plural, one {# artículo} other {# artículos}}",
+    "line": "{quantity} × {name}",
+    "payment": "Pago",
+    "delivery": "Entrega",
+    "method": {
+      "qr": "QR al vendedor",
+      "cash": "Efectivo",
+      "delivery": "Envío a domicilio",
+      "pickup": "Recojo"
+    },
+    "qrHint": "Paga con el QR del vendedor y adjunta el comprobante.",
+    "qrUnavailable": "Este vendedor aún no configuró su QR.",
+    "cashHint": "Paga en efectivo al recibir o al recoger.",
+    "deliveryHint": "El costo de envío se acuerda con el vendedor.",
+    "pickupUnavailable": "Este vendedor no ofrece recojo.",
+    "note": "Nota para el vendedor (opcional)",
+    "details": {
+      "title": "Datos de envío",
+      "hint": "Se comparten con los vendedores a los que elegiste envío a domicilio.",
+      "recipient": "Nombre de quien recibe",
+      "phone": "Teléfono",
+      "address": "Dirección",
+      "reference": "Referencia (opcional)",
+      "referencePlaceholder": "Cerca del mercado, puerta azul…"
+    },
+    "errors": {
+      "changed": "Algunos productos cambiaron desde que abriste la compra.",
+      "fields": "Revisa los campos marcados."
+    },
+    "cartUpdated": "Tu carrito ahora muestra los precios y el stock actuales. <link>Revisa tu carrito</link>",
+    "backToCart": "Volver al carrito",
+    "place": "{count, plural, one {Hacer pedido} other {Hacer # pedidos}}"
+  },
+  "orders": {
+    "title": "Mis pedidos",
+    "status": {
+      "pending_payment": "Pago pendiente",
+      "confirmed": "Confirmado",
+      "shipped": "Enviado",
+      "ready_for_pickup": "Listo para recoger",
+      "delivered": "Entregado",
+      "cancelled": "Cancelado"
+    },
+    "payment": {
+      "qr": "QR al vendedor",
+      "cash": "Efectivo"
+    },
+    "delivery": {
+      "delivery": "Envío a domicilio",
+      "pickup": "Recojo"
+    },
+    "placed": {
+      "title": "{count, plural, one {Pedido realizado} other {# pedidos realizados}}: {codes}",
+      "hint": "Abre cada pedido para ver cómo pagar. Pedidos con QR: paga con el QR del vendedor y adjunta tu comprobante; el vendedor confirma cuando recibe el pago. Los pedidos en efectivo ya están confirmados: paga al recibir o al recoger."
+    },
+    "tryAgain": "Inténtalo de nuevo",
+    "empty": "Aún no tienes pedidos",
+    "browse": "Explorar el catálogo",
+    "summary": "{seller} · {units, plural, one {# artículo} other {# artículos}} · {payment} · {delivery} · {date}",
+    "pagination": "Paginación",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "detail": {
+      "notFound": "No encontramos este pedido.",
+      "placedBy": "Realizado el {date} · Vendedor: {seller}",
+      "cancelled": "{by, select, system {Vencido: el pago no llegó a tiempo} seller {Cancelado por el vendedor} other {Cancelado por ti}}.",
+      "cancelledOn": "{by, select, system {Vencido: el pago no llegó a tiempo} seller {Cancelado por el vendedor} other {Cancelado por ti}} el {date}.",
+      "reason": "Motivo: {reason}",
+      "confirmedCash": "Confirmado. Paga <b>{total}</b> en efectivo {pickup, select, yes {al recogerlo. El vendedor te avisará cuando esté listo para recoger.} other {al recibirlo. El vendedor lo enviará a continuación.}}",
+      "confirmedQr": "El vendedor confirmó tu pago. {pickup, select, yes {Ahora lo preparará para que lo recojas.} other {Ahora lo enviará.}}",
+      "confirmedQrOn": "El vendedor confirmó tu pago el {date}. {pickup, select, yes {Ahora lo preparará para que lo recojas.} other {Ahora lo enviará.}}",
+      "shipped": "Tu pedido está en camino.",
+      "readyAt": "Listo para recoger en {address}.",
+      "ready": "Listo para recoger en la dirección del vendedor.",
+      "payCashOnArrival": "Paga <b>{total}</b> en efectivo cuando lo recibas.",
+      "delivered": "Entregado.",
+      "deliveredOn": "Entregado el {date}.",
+      "autoDelivered": "Marcado automáticamente 7 días después de que el vendedor {pickup, select, yes {lo tuvo listo} other {lo envió}}.",
+      "sellerNote": "Nota del vendedor",
+      "line": "{quantity} × {name}",
+      "each": "{price} c/u",
+      "total": "Total (envío acordado con el vendedor)",
+      "payment": "Pago",
+      "yourNote": "Tu nota"
+    },
+    "qr": {
+      "alt": "QR de pago de {seller}",
+      "title": "Pago con QR",
+      "instructions": "Escanea el QR del vendedor con tu app del banco y paga exactamente <b>{total}</b>. Pon <b>{code}</b> como referencia del pago.",
+      "direct": "Le pagas directamente al vendedor; ServBo no retiene el dinero.",
+      "receiptAttached": "Comprobante adjunto: ver",
+      "tooLarge": "La imagen debe pesar 5 MB o menos.",
+      "replace": "Reemplazar comprobante",
+      "attach": "Adjuntar comprobante"
+    },
+    "timeline": {
+      "label": "Progreso del pedido",
+      "placed": "Realizado",
+      "paid": "Pagado",
+      "ready": "Listo para recoger",
+      "shipped": "Enviado",
+      "delivered": "Entregado",
+      "cancelled": "{by, select, system {Vencido: el pago no llegó a tiempo} seller {Cancelado por el vendedor} other {Cancelado por ti}}",
+      "next": "Siguiente"
+    },
+    "deadline": {
+      "notice": "Paga y adjunta tu comprobante antes del <b>{date}</b> o el pedido se cancelará automáticamente.",
+      "leftDays": "Quedan {days} d {hours} h",
+      "leftHours": "Quedan {hours} h {minutes} min",
+      "leftMinutes": "Quedan {minutes} min",
+      "timeUp": "Se acabó el tiempo; el pedido se cancelará en breve."
+    },
+    "received": {
+      "question": "¿Recibiste todo? El vendedor lo verá como entregado.",
+      "confirm": "Sí, lo recibí",
+      "notYet": "Todavía no",
+      "button": "Lo recibí"
+    },
+    "cancel": {
+      "question": "¿Cancelar este pedido? Los productos vuelven al stock del vendedor.",
+      "confirm": "Sí, cancelar",
+      "keep": "Mantenerlo",
+      "button": "Cancelar pedido"
+    }
+  },
+  "reviews": {
+    "title": "Reseñas",
+    "none": "Aún no hay reseñas",
+    "noneYet": "Aún no hay reseñas.",
+    "count": "{count, plural, one {# reseña} other {# reseñas}}",
+    "countWord": "{count, plural, one {reseña} other {reseñas}}",
+    "emptyProduct": "Los compradores pueden reseñar este producto cuando reciben su pedido.",
+    "emptySeller": "Los compradores pueden calificar a este vendedor cuando reciben su pedido.",
+    "loadError": "No pudimos cargar las reseñas.",
+    "tryAgain": "Inténtalo de nuevo",
+    "loadMore": "Ver más reseñas",
+    "hidden": "Oculta por los moderadores",
+    "sellerReply": "Respuesta del vendedor",
+    "stars": {
+      "outOf": "{value} de 5",
+      "count": "{count, plural, one {# estrella} other {# estrellas}}"
+    },
+    "report": {
+      "button": "Reportar",
+      "thanks": "Gracias, lo revisaremos.",
+      "reason": "¿Por qué los moderadores deberían revisar esta reseña?",
+      "send": "Enviar reporte",
+      "cancel": "Cancelar"
+    },
+    "rate": {
+      "loadError": "No pudimos cargar tus reseñas.",
+      "tryAgain": "Inténtalo de nuevo",
+      "title": "Califica tu compra",
+      "hint": "Las reseñas son públicas y muestran tu nombre. Puedes cambiarlas durante 30 días.",
+      "post": "Publicar reseña",
+      "rateSeller": "Calificar al vendedor",
+      "sellerTitle": "El vendedor: {name}",
+      "yours": "Tus reseñas",
+      "seller": "Vendedor",
+      "product": "Producto",
+      "save": "Guardar cambios",
+      "editUntil": "Puedes editarla hasta el {date}",
+      "deleteQuestion": "¿Eliminar esta reseña?",
+      "deleteConfirm": "Sí, eliminar",
+      "keep": "Mantenerla",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "chooseStars": "Elige de 1 a 5 estrellas.",
+      "ratingFor": "Tu calificación para {title}",
+      "comment": "Comentario (opcional)",
+      "cancel": "Cancelar"
+    }
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "labelUnread": "Notificaciones, {count, plural, one {# sin leer} other {# sin leer}}",
+    "markAll": "Marcar todo como leído",
+    "loadError": "No se pudieron cargar las notificaciones.",
+    "empty": "Aún no tienes notificaciones",
+    "emptyHint": "Aquí aparecen las novedades de tus pedidos.",
+    "unread": "(sin leer)",
+    "when": {
+      "now": "ahora",
+      "minutes": "{count} min",
+      "hours": "{count} h",
+      "days": "{count} d"
+    }
+  },
+  "pages": {
+    "home": {
+      "title": "Catálogo",
+      "eyebrow": "Marketplace",
+      "subtitle": "Productos de vendedores independientes",
+      "categoriesLabel": "Categorías",
+      "allCategories": "Todas",
+      "paginationLabel": "Paginación",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "page": "Página {page}",
+      "noMatchesQuery": "Ningún producto coincide con “{q}”",
+      "noMatchesFilters": "Ningún producto coincide con estos filtros",
+      "noMatchesHint": "Prueba otra palabra, menos categorías o un rango de precios más amplio.",
+      "clearFilters": "Limpiar filtros"
+    },
+    "product": {
+      "title": "Producto",
+      "byBrand": "{name} de {brand}",
+      "backToCatalog": "Volver al catálogo"
+    },
+    "sellers": {
+      "title": "Vendedores",
+      "count": "{count, plural, one {# vendedor} other {# vendedores}} en Servbo",
+      "productCount": "{count, plural, one {# producto} other {# productos}}",
+      "empty": "Aún no hay vendedores."
+    },
+    "seller": {
+      "title": "Vendedor"
+    },
+    "pricing": {
+      "title": "Precios"
+    },
+    "authCallback": {
+      "title": "Iniciando sesión"
+    },
+    "becomeVendor": {
+      "title": "Hazte vendedor"
+    },
+    "becomeVendorPay": {
+      "title": "Paga tu paquete de créditos"
+    },
+    "billing": {
+      "title": "Facturación"
+    },
+    "cart": {
+      "title": "Carrito"
+    },
+    "checkEmail": {
+      "title": "Revisa tu correo"
+    },
+    "checkout": {
+      "title": "Finalizar compra"
+    },
+    "emailVerified": {
+      "title": "Verificar correo"
+    },
+    "forgotPassword": {
+      "title": "Olvidé mi contraseña"
+    },
+    "login": {
+      "title": "Iniciar sesión"
+    },
+    "orders": {
+      "title": "Mis pedidos"
+    },
+    "order": {
+      "title": "Pedido"
+    },
+    "profile": {
+      "title": "Perfil"
+    },
+    "register": {
+      "title": "Crear cuenta"
+    },
+    "resetPassword": {
+      "title": "Restablecer contraseña"
+    }
+  },
+  "status": {
+    "tryAgain": "Inténtalo de nuevo",
+    "notFound": {
+      "title": "Página no encontrada",
+      "description": "El enlace que abriste no existe o se movió.",
+      "browseCatalog": "Explorar el catálogo",
+      "seeSellers": "Ver vendedores"
+    },
+    "error": {
+      "title": "Algo salió mal",
+      "description": "Esta página no pudo cargarse, normalmente porque el servidor no está disponible por un momento. Inténtalo de nuevo o sigue explorando.",
+      "home": "Ir al marketplace"
+    },
+    "catalogUnavailable": {
+      "title": "No podemos conectar con el catálogo",
+      "description": "El catálogo no está disponible en este momento. Inténtalo de nuevo en unos segundos."
+    },
+    "sellersUnavailable": {
+      "title": "No podemos conectar con el servidor",
+      "description": "El directorio de vendedores no está disponible en este momento. Inténtalo de nuevo en unos segundos."
+    },
+    "productNotFound": {
+      "title": "Producto no disponible",
+      "description": "Este producto fue eliminado o el enlace es incorrecto.",
+      "back": "Volver al marketplace"
+    }
+  },
+  "seo": {
+    "homeDescription": "Explora y compra productos de vendedores independientes en Bolivia, todo en un solo lugar.",
+    "sellersDescription": "Conoce a los vendedores independientes de Servbo y sus productos.",
+    "pricingDescription": "Vender en Servbo es gratis: recibe créditos gratis cada ciclo para publicar y compra paquetes de créditos que no vencen."
+  }
+}

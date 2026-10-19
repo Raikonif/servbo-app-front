@@ -2,7 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCheck } from "lucide-react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 import {
   useMarkAllNotificationsRead,
@@ -10,13 +10,15 @@ import {
   useNotifications,
 } from "@/hooks/use-notifications";
 import { useNow } from "@/hooks/use-now";
-import { formatDate } from "@/lib/catalog";
+import { useFormat } from "@/i18n/format";
+import { Link } from "@/i18n/navigation";
 import { type NotificationItem, notificationPath } from "@/lib/notifications";
 import { orderKeys } from "@/lib/orders";
 
 // Header bell with the unread count and a panel of the latest buyer
 // notifications (openspec order-fulfillment D6). Signed-in users only.
 export function NotificationBell() {
+  const t = useTranslations("notifications");
   const { signedIn, notifications, unread, isPending, isError } =
     useNotifications();
   const markOne = useMarkNotificationRead();
@@ -66,9 +68,7 @@ export function NotificationBell() {
       <button
         aria-controls={open ? panelId : undefined}
         aria-expanded={open}
-        aria-label={
-          unread ? `Notifications, ${unread} unread` : "Notifications"
-        }
+        aria-label={unread ? t("labelUnread", { count: unread }) : t("title")}
         className="relative inline-flex size-10 items-center justify-center rounded-full text-muted transition hover:bg-surface-2 hover:text-fg aria-expanded:bg-surface-2 aria-expanded:text-fg"
         onClick={() => setOpen((value) => !value)}
         ref={button}
@@ -98,7 +98,7 @@ export function NotificationBell() {
         >
           <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
             <h2 className="text-sm font-semibold" id={headingId}>
-              Notifications
+              {t("title")}
             </h2>
             {unread ? (
               <button
@@ -111,7 +111,7 @@ export function NotificationBell() {
                 }}
                 type="button"
               >
-                <CheckCheck size={14} /> Mark all as read
+                <CheckCheck size={14} /> {t("markAll")}
               </button>
             ) : null}
           </div>
@@ -120,15 +120,13 @@ export function NotificationBell() {
             <div className="m-4 h-24 animate-pulse rounded-xl bg-surface-2" />
           ) : isError && !notifications.length ? (
             <p className="px-4 py-8 text-center text-sm text-muted">
-              Could not load notifications.
+              {t("loadError")}
             </p>
           ) : !notifications.length ? (
             <div className="px-4 py-10 text-center">
               <Bell className="mx-auto mb-2 text-subtle" size={22} />
-              <p className="text-sm font-medium">No notifications yet</p>
-              <p className="mt-1 text-xs text-muted">
-                Order updates from sellers show up here.
-              </p>
+              <p className="text-sm font-medium">{t("empty")}</p>
+              <p className="mt-1 text-xs text-muted">{t("emptyHint")}</p>
             </div>
           ) : (
             <ul className="divide-y divide-line overflow-y-auto overscroll-contain">
@@ -164,7 +162,7 @@ export function NotificationBell() {
                         </span>
                       ) : null}
                       {item.read_at ? null : (
-                        <span className="sr-only"> (unread)</span>
+                        <span className="sr-only"> {t("unread")}</span>
                       )}
                     </span>
                   </Link>
@@ -180,19 +178,21 @@ export function NotificationBell() {
 
 // "now", "5 min", "3 h", "2 d", then the date.
 function When({ iso }: { iso: string }) {
+  const t = useTranslations("notifications.when");
+  const format = useFormat();
   const now = useNow(60_000);
   const at = new Date(iso).getTime();
   const minutes = now === null ? null : Math.floor((now - at) / 60_000);
   const label =
     minutes === null || minutes >= 7 * 1440
-      ? formatDate(iso)
+      ? format.date(iso)
       : minutes < 1
-        ? "now"
+        ? t("now")
         : minutes < 60
-          ? `${minutes} min`
+          ? t("minutes", { count: minutes })
           : minutes < 1440
-            ? `${Math.floor(minutes / 60)} h`
-            : `${Math.floor(minutes / 1440)} d`;
+            ? t("hours", { count: Math.floor(minutes / 60) })
+            : t("days", { count: Math.floor(minutes / 1440) });
   return (
     <time className="shrink-0 text-xs text-muted tabular-nums" dateTime={iso}>
       {label}

@@ -2,21 +2,18 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, ChevronLeft, ChevronRight, Package } from "lucide-react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { formatDate, formatPrice } from "@/lib/catalog";
-import {
-  DELIVERY_LABELS,
-  getOrders,
-  orderHref,
-  orderKeys,
-  PAYMENT_LABELS,
-} from "@/lib/orders";
+import { useTranslations } from "next-intl";
+import { useFormat } from "@/i18n/format";
+import { Link } from "@/i18n/navigation";
+import { getOrders, orderHref, orderKeys } from "@/lib/orders";
 import { StatusBadge } from "./order-badges";
 
 // The buyer's orders, newest first. `?placed=OR-1,OR-2` is where checkout
 // lands: a confirmation banner on top of the list.
 export function OrdersView() {
+  const t = useTranslations("orders");
+  const format = useFormat();
   const params = useSearchParams();
   const placed = (params.get("placed") ?? "").split(",").filter(Boolean);
   const page = Math.max(1, Number(params.get("page")) || 1);
@@ -28,7 +25,7 @@ export function OrdersView() {
   return (
     <main className="mx-auto max-w-4xl px-4 pt-10 pb-24 sm:px-6">
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-        My orders
+        {t("title")}
       </h1>
 
       {placed.length ? (
@@ -42,16 +39,12 @@ export function OrdersView() {
           />
           <div>
             <p className="font-semibold text-accent-text">
-              {placed.length === 1
-                ? "Order placed"
-                : `${placed.length} orders placed`}
-              : {placed.join(", ")}
+              {t("placed.title", {
+                count: placed.length,
+                codes: placed.join(", "),
+              })}
             </p>
-            <p className="mt-1 text-sm text-muted">
-              Open each order to see how to pay. QR orders: pay the seller's QR
-              and attach your receipt; the seller confirms once they get the
-              payment. Cash orders are confirmed: pay on delivery or pickup.
-            </p>
+            <p className="mt-1 text-sm text-muted">{t("placed.hint")}</p>
           </div>
         </div>
       ) : null}
@@ -62,18 +55,18 @@ export function OrdersView() {
         <p className="mt-8 text-sm text-danger">
           {error.message}{" "}
           <button className="underline" onClick={() => refetch()} type="button">
-            Try again
+            {t("tryAgain")}
           </button>
         </p>
       ) : !data.results.length ? (
         <div className="mt-8 rounded-3xl border border-dashed border-line-strong p-12 text-center">
           <Package className="mx-auto mb-3 text-subtle" size={24} />
-          <p className="font-medium">No orders yet</p>
+          <p className="font-medium">{t("empty")}</p>
           <Link
             className="mt-3 inline-block text-sm font-medium underline underline-offset-4"
             href="/"
           >
-            Browse the catalog
+            {t("browse")}
           </Link>
         </div>
       ) : (
@@ -92,14 +85,16 @@ export function OrdersView() {
                   </span>
                   <StatusBadge status={order.status} />
                   <span className="ml-auto font-semibold tabular-nums">
-                    {formatPrice(order.total, order.currency)}
+                    {format.price(order.total, order.currency)}
                   </span>
                   <span className="w-full text-sm text-muted">
-                    {order.seller.name} · {order.units}{" "}
-                    {order.units === 1 ? "item" : "items"} ·{" "}
-                    {PAYMENT_LABELS[order.payment_method]} ·{" "}
-                    {DELIVERY_LABELS[order.delivery_method]} ·{" "}
-                    {formatDate(order.created_at)}
+                    {t("summary", {
+                      seller: order.seller.name,
+                      units: order.units,
+                      payment: t(`payment.${order.payment_method}`),
+                      delivery: t(`delivery.${order.delivery_method}`),
+                      date: format.date(order.created_at),
+                    })}
                   </span>
                 </Link>
               </li>
@@ -107,7 +102,7 @@ export function OrdersView() {
           </ul>
           {data.next || data.previous ? (
             <nav
-              aria-label="Pagination"
+              aria-label={t("pagination")}
               className="mt-6 flex justify-between text-sm"
             >
               {data.previous ? (
@@ -115,7 +110,7 @@ export function OrdersView() {
                   className="inline-flex items-center gap-1"
                   href={`/orders?page=${page - 1}`}
                 >
-                  <ChevronLeft size={16} /> Previous
+                  <ChevronLeft size={16} /> {t("previous")}
                 </Link>
               ) : (
                 <span />
@@ -125,7 +120,7 @@ export function OrdersView() {
                   className="inline-flex items-center gap-1"
                   href={`/orders?page=${page + 1}`}
                 >
-                  Next <ChevronRight size={16} />
+                  {t("next")} <ChevronRight size={16} />
                 </Link>
               ) : null}
             </nav>

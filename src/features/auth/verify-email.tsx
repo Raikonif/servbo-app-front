@@ -1,9 +1,10 @@
 "use client";
 
 import { BadgeCheck, CircleX, LoaderCircle } from "lucide-react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { Link } from "@/i18n/navigation";
 import { verifyEmail } from "@/lib/auth/client";
 import { AuthError, authMessage } from "@/lib/auth/errors";
 import { loginHref } from "@/lib/auth/redirect";
@@ -11,6 +12,7 @@ import { AuthShell } from "./auth-shell";
 import { buttonStyles } from "./form-controls";
 
 export function VerifyEmail() {
+  const t = useTranslations("auth");
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const [status, setStatus] = useState<"verifying" | "verified" | "failed">(
@@ -36,7 +38,7 @@ export function VerifyEmail() {
 
   if (status === "verifying") {
     return (
-      <AuthShell title="Verifying your email…">
+      <AuthShell title={t("verify.verifying")}>
         <LoaderCircle className="animate-spin text-accent-text" size={32} />
       </AuthShell>
     );
@@ -44,10 +46,10 @@ export function VerifyEmail() {
 
   if (status === "failed") {
     return (
-      <AuthShell subtitle={message} title="We couldn’t verify your email">
+      <AuthShell subtitle={message} title={t("verify.failedTitle")}>
         <CircleX className="text-danger" size={40} />
         <Link className={buttonStyles.primary} href="/check-email">
-          Send a new link
+          {t("verify.sendNewLink")}
         </Link>
       </AuthShell>
     );
@@ -55,15 +57,15 @@ export function VerifyEmail() {
 
   return (
     <AuthShell
-      subtitle="Thanks for confirming your address. You can sign in now."
-      title="Email verified"
+      subtitle={t("verify.verifiedSubtitle")}
+      title={t("verify.verifiedTitle")}
     >
       <BadgeCheck className="text-accent-text" size={40} />
       <Link
         className={buttonStyles.primary}
         href={loginHref(searchParams.get("next") ?? "/")}
       >
-        Sign in
+        {t("signIn")}
       </Link>
     </AuthShell>
   );

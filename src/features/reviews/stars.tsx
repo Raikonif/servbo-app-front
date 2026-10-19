@@ -1,11 +1,13 @@
 import { Star } from "lucide-react";
+import { useFormatter, useTranslations } from "next-intl";
 import { useId } from "react";
 
 const SCALE = [1, 2, 3, 4, 5] as const;
 
 // Read-only stars, rounded to the nearest half. One image for assistive tech
-// ("4.5 out of 5"); the icons themselves are decorative. No hooks, so it
-// renders in server components (cards, panel) with no layout shift.
+// ("4.5 out of 5"); the icons themselves are decorative. Only next-intl
+// hooks, so it renders in server components (cards, panel) with no layout
+// shift.
 export function Stars({
   value,
   size = 16,
@@ -15,10 +17,12 @@ export function Stars({
   size?: number;
   className?: string;
 }) {
+  const t = useTranslations("reviews.stars");
+  const format = useFormatter();
   const shown = Math.round(Math.min(5, Math.max(0, value)) * 2) / 2;
   return (
     <span
-      aria-label={`${shown} out of 5`}
+      aria-label={t("outOf", { value: format.number(shown) })}
       className={`inline-flex shrink-0 items-center gap-px ${className}`}
       role="img"
     >
@@ -66,6 +70,7 @@ export function StarsInput({
   disabled?: boolean;
   size?: number;
 }) {
+  const t = useTranslations("reviews.stars");
   const name = useId();
   return (
     <fieldset className="flex items-center gap-0.5" disabled={disabled}>
@@ -87,9 +92,7 @@ export function StarsInput({
               className="inline-flex cursor-pointer rounded-md p-0.5 transition peer-focus-visible:outline-2 peer-focus-visible:outline-accent peer-disabled:cursor-default peer-disabled:opacity-60"
               htmlFor={id}
             >
-              <span className="sr-only">
-                {n} {n === 1 ? "star" : "stars"}
-              </span>
+              <span className="sr-only">{t("count", { count: n })}</span>
               <Star
                 aria-hidden
                 className={
@@ -112,26 +115,34 @@ export function RatingSummary({
   count,
   size = 14,
   className = "",
-  emptyLabel = "No reviews yet",
+  emptyLabel,
 }: {
   avg: number | null;
   count: number;
   size?: number;
   className?: string;
-  emptyLabel?: string | null; // null renders nothing when there are none
+  emptyLabel?: string | null; // null renders nothing; default "No reviews yet"
 }) {
+  const t = useTranslations("reviews");
+  const format = useFormatter();
   if (!count || avg === null) {
-    return emptyLabel ? (
-      <span className={`text-muted ${className}`}>{emptyLabel}</span>
+    const label = emptyLabel === undefined ? t("none") : emptyLabel;
+    return label ? (
+      <span className={`text-muted ${className}`}>{label}</span>
     ) : null;
   }
   return (
     <span className={`inline-flex items-center gap-1.5 ${className}`}>
       <Stars size={size} value={avg} />
-      <span className="font-medium tabular-nums">{avg.toFixed(1)}</span>
+      <span className="font-medium tabular-nums">
+        {format.number(avg, {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
+        })}
+      </span>
       <span className="text-muted tabular-nums">
-        ({count}
-        <span className="sr-only"> {count === 1 ? "review" : "reviews"}</span>)
+        ({format.number(count)}
+        <span className="sr-only"> {t("countWord", { count })}</span>)
       </span>
     </span>
   );

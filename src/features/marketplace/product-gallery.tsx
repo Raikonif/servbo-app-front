@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { useRef, useState, ViewTransition } from "react";
 import { type ProductImage, productTransitionName } from "@/lib/catalog";
 
@@ -16,6 +17,7 @@ export function ProductGallery({
   name: string;
   images: ProductImage[];
 }) {
+  const t = useTranslations("catalog.gallery");
   // Main image first, the rest in upload order.
   const slides = [...images].sort(
     (a, b) => Number(b.is_main) - Number(a.is_main) || a.position - b.position,
@@ -36,12 +38,12 @@ export function ProductGallery({
       {slides.length ? null : (
         <div className="flex size-full flex-col items-center justify-center gap-2 text-subtle">
           <ImageIcon size={40} />
-          <span className="text-sm">No photos yet</span>
+          <span className="text-sm">{t("noPhotos")}</span>
         </div>
       )}
       {slides.length ? (
         <section
-          aria-label={`${name} photos`}
+          aria-label={t("label", { name })}
           aria-roledescription="carousel"
           className="size-full"
         >
@@ -65,7 +67,11 @@ export function ProductGallery({
                 key={image.id}
               >
                 <Image
-                  alt={`${name} — photo ${index + 1} of ${slides.length}`}
+                  alt={t("photoAlt", {
+                    name,
+                    index: index + 1,
+                    total: slides.length,
+                  })}
                   className="object-contain"
                   fetchPriority={index === 0 ? "high" : "auto"}
                   fill
@@ -84,13 +90,13 @@ export function ProductGallery({
         <>
           <GalleryButton
             disabled={current === 0}
-            label="Previous photo"
+            label={t("previous")}
             onClick={() => go(current - 1)}
             side="left"
           />
           <GalleryButton
             disabled={current === slides.length - 1}
-            label="Next photo"
+            label={t("next")}
             onClick={() => go(current + 1)}
             side="right"
           />
@@ -116,7 +122,7 @@ export function ProductGallery({
             <li className="shrink-0" key={image.id}>
               <button
                 aria-current={index === current}
-                aria-label={`Show photo ${index + 1}`}
+                aria-label={t("show", { index: index + 1 })}
                 className={`relative block size-16 overflow-hidden rounded-xl border-2 bg-surface-2 transition ${
                   index === current
                     ? "border-accent"

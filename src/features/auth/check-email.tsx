@@ -1,9 +1,10 @@
 "use client";
 
 import { LoaderCircle, MailCheck } from "lucide-react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
+import { Link } from "@/i18n/navigation";
 import { sendEmailVerification } from "@/lib/auth/client";
 import { AuthError } from "@/lib/auth/errors";
 import { loginHref, safeNext } from "@/lib/auth/redirect";
@@ -12,6 +13,7 @@ import { buttonStyles, Field, FormAlert } from "./form-controls";
 
 // Landing after sign-up, and the place to resend the verification email.
 export function CheckEmail() {
+  const t = useTranslations("auth");
   const searchParams = useSearchParams();
   const next = safeNext(searchParams.get("next"));
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
@@ -22,7 +24,7 @@ export function CheckEmail() {
     searchParams.get("send_failed")
       ? {
           tone: "error",
-          text: "Your account was created, but we could not send the email. Resend it below.",
+          text: t("checkEmail.sendFailed"),
         }
       : null,
   );
@@ -35,7 +37,7 @@ export function CheckEmail() {
       await sendEmailVerification(email);
       setNotice({
         tone: "success",
-        text: "If an account exists for that email, we sent a link to verify it.",
+        text: t("checkEmail.resent"),
       });
     } catch (err) {
       const error = err instanceof AuthError ? err : new AuthError("UNKNOWN");
@@ -51,22 +53,18 @@ export function CheckEmail() {
     <AuthShell
       footer={
         <Link className="font-medium text-accent-text" href={loginHref(next)}>
-          Back to sign in
+          {t("backToSignIn")}
         </Link>
       }
       subtitle={
-        <>
-          We sent a verification link
-          {email ? (
-            <>
-              {" "}
-              to <strong className="text-fg">{email}</strong>
-            </>
-          ) : null}
-          . Open it to activate your account (check your spam folder too).
-        </>
+        email
+          ? t.rich("checkEmail.subtitle", {
+              email,
+              b: (chunks) => <strong className="text-fg">{chunks}</strong>,
+            })
+          : t("checkEmail.subtitleNoEmail")
       }
-      title="Check your email"
+      title={t("checkEmail.title")}
     >
       <MailCheck className="text-accent-text" size={40} />
       {notice ? <FormAlert tone={notice.tone}>{notice.text}</FormAlert> : null}
@@ -74,7 +72,7 @@ export function CheckEmail() {
         <Field
           autoComplete="email"
           id="email"
-          label="Didn’t get it? Resend to"
+          label={t("checkEmail.resendLabel")}
           onChange={(e) => setEmail(e.target.value)}
           required
           type="email"
@@ -88,7 +86,7 @@ export function CheckEmail() {
           {isPending ? (
             <LoaderCircle className="animate-spin" size={16} />
           ) : null}
-          Resend verification email
+          {t("checkEmail.resend")}
         </button>
       </form>
     </AuthShell>

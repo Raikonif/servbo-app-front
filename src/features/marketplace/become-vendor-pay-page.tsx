@@ -12,23 +12,22 @@ import {
   TimerOff,
   X,
 } from "lucide-react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { type ReactNode, useEffect, useState } from "react";
 import {
   useSellerSubscription,
   useShowBillingState,
 } from "@/hooks/use-billing";
 import { useNow } from "@/hooks/use-now";
+import { useFormat } from "@/i18n/format";
+import { Link, useRouter } from "@/i18n/navigation";
 import {
   CREATOR_URL,
   cancelPayment,
-  formatDate,
-  formatMoney,
   isExpired,
   type LastPurchase,
   type PendingPayment,
-  plural,
   type SellerSubscriptionState,
   startPackPayment,
 } from "@/lib/billing";
@@ -46,6 +45,8 @@ import {
 // the app"): the pending pack QR, polled until it is confirmed, then the
 // new balance (and, for a non-seller, the become-a-seller button). Anything else goes back to /become-a-vendor.
 export function BecomeVendorPayPage() {
+  const t = useTranslations("becomeSeller.pay");
+  const tc = useTranslations("credits");
   const router = useRouter();
   const paymentId = useSearchParams().get("payment");
   const subscription = useSellerSubscription();
@@ -90,13 +91,13 @@ export function BecomeVendorPayPage() {
   if (subscription.isError && !state) {
     content = (
       <section className={card}>
-        <p className="text-sm text-muted">We could not load your payment.</p>
+        <p className="text-sm text-muted">{t("loadError")}</p>
         <button
           className={`mt-4 ${secondaryButton}`}
           onClick={() => void subscription.refetch()}
           type="button"
         >
-          Try again
+          {tc("tryAgain")}
         </button>
       </section>
     );
@@ -132,16 +133,13 @@ export function BecomeVendorPayPage() {
           href="/become-a-vendor"
         >
           <ArrowLeft size={16} />
-          Back to credit packs
+          {t("back")}
         </Link>
         <h1 className="mt-4 text-3xl font-semibold leading-tight text-fg">
-          {view === "paid" ? "Payment confirmed" : "Pay your credit pack"}
+          {view === "paid" ? t("confirmed") : t("title")}
         </h1>
         <div className="mt-6 space-y-6">{content}</div>
-        <p className="mt-6 text-xs text-muted">
-          Payment by QR only · you get a payment receipt, no tax invoice
-          (factura) yet.
-        </p>
+        <p className="mt-6 text-xs text-muted">{t("footnote")}</p>
       </section>
     </main>
   );
@@ -154,7 +152,13 @@ function PaidView({
   purchase: LastPurchase;
   state: SellerSubscriptionState;
 }) {
+  const t = useTranslations("becomeSeller.pay");
+  const tc = useTranslations("credits");
+  const format = useFormat();
   const { credits } = state;
+  const pack = purchase.pack
+    ? tc("packName", { name: purchase.pack.name })
+    : t("creditPack");
   return (
     <>
       <section className={card}>
@@ -162,54 +166,56 @@ function PaidView({
           <CircleCheck size={24} />
         </span>
         <h2 className="mt-4 text-2xl font-semibold text-fg" role="status">
-          {plural(purchase.credits, "credit")} added
+          {t("added", { count: purchase.credits })}
         </h2>
         <p className="mt-2 text-sm leading-6 text-muted">
-          {purchase.pack ? `${purchase.pack.name} pack` : "Credit pack"}
-          {purchase.paid_at ? ` · paid ${formatDate(purchase.paid_at)}` : ""}.
-          Paid credits never expire.
+          {purchase.paid_at
+            ? t("purchased", { pack, date: format.date(purchase.paid_at) })
+            : t("purchasedNoDate", { pack })}
         </p>
         <dl className="mt-4 space-y-2 text-sm">
           <div className={row}>
-            <dt className="text-muted">Paid credits</dt>
+            <dt className="text-muted">{tc("paid")}</dt>
             <dd className="font-medium text-fg">
-              {plural(credits.paid, "credit")}
+              {tc("count", { count: credits.paid })}
             </dd>
           </div>
           {state.is_seller ? (
             <div className={row}>
-              <dt className="text-muted">Free credits</dt>
+              <dt className="text-muted">{tc("free")}</dt>
               <dd className="text-right font-medium text-fg">
-                {plural(credits.free, "credit")}
+                {tc("count", { count: credits.free })}
                 {credits.free_resets_at ? (
                   <span className="block text-xs font-normal text-muted">
-                    Reset on {formatDate(credits.free_resets_at)}
+                    {tc("resetsOn", {
+                      date: format.date(credits.free_resets_at),
+                    })}
                   </span>
                 ) : null}
               </dd>
             </div>
           ) : null}
           <div className={row}>
-            <dt className="text-muted">Total</dt>
+            <dt className="text-muted">{t("total")}</dt>
             <dd className="text-lg font-semibold text-fg">
-              {plural(credits.total, "credit")}
+              {tc("count", { count: credits.total })}
             </dd>
           </div>
         </dl>
         {state.is_seller ? (
           <div className="mt-5 flex flex-wrap gap-3">
             <a className={primaryButton} href={CREATOR_URL}>
-              Open the creator dashboard
+              {tc("openCreator")}
               <ArrowRight size={17} />
             </a>
             <a className={secondaryButton} href={CREATOR_BILLING_URL}>
-              Credit history
+              {tc("history")}
             </a>
           </div>
         ) : null}
       </section>
       {state.is_seller ? null : (
-        <BecomeSellerCard state={state} title="Now open your store" />
+        <BecomeSellerCard state={state} title={t("openStoreTitle")} />
       )}
     </>
   );
@@ -247,6 +253,9 @@ function PendingPaymentCard({
   onNewQr: (() => void) | null;
   onCancel: () => void;
 }) {
+  const t = useTranslations("becomeSeller");
+  const tc = useTranslations("credits");
+  const format = useFormat();
   const [copied, setCopied] = useState(false);
   // Null on the server and the first client render: no hydration mismatch.
   const now = useNow(1000);
@@ -273,20 +282,18 @@ function PendingPaymentCard({
         {expired ? (
           <p className="inline-flex items-center gap-2 rounded-md bg-danger-soft px-2 py-1 text-xs font-semibold uppercase text-danger">
             <TimerOff size={14} />
-            QR expired
+            {t("qrExpired")}
           </p>
         ) : (
           <p className="inline-flex items-center gap-2 rounded-md bg-warning-soft px-2 py-1 text-xs font-semibold uppercase text-warning">
             <Clock3 size={14} />
-            Waiting for payment
+            {t("pay.waiting")}
           </p>
         )}
         {credits ? <BalanceBadge balance={credits} /> : null}
       </div>
       <p className="mt-3 text-sm leading-6 text-muted" role="status">
-        {expired
-          ? "This QR can no longer be paid. Get a new one to continue."
-          : "Your credits are added as soon as the payment is confirmed. This page updates on its own."}
+        {expired ? t("pay.expiredText") : t("pay.waitingText")}
       </p>
       {expired ? (
         onNewQr ? (
@@ -297,7 +304,7 @@ function PendingPaymentCard({
             type="button"
           >
             <RefreshCw className={busy ? "animate-spin" : ""} size={16} />
-            {busy ? "Preparing QR…" : "QR expired — get a new one"}
+            {busy ? t("pay.preparingQr") : t("pay.newQr")}
           </button>
         ) : null
       ) : payment.qr_image_url ? (
@@ -305,7 +312,10 @@ function PendingPaymentCard({
         // without configuring next/image hosts.
         // biome-ignore lint/performance/noImgElement: see above
         <img
-          alt={`QR code to pay ${formatMoney(payment.amount_due, payment.currency)}, reference ${payment.reference}`}
+          alt={t("pay.qrAlt", {
+            amount: format.money(payment.amount_due, payment.currency),
+            reference: payment.reference,
+          })}
           className="mx-auto mt-5 aspect-square w-full max-w-72 rounded-lg border border-line bg-white object-contain"
           src={payment.qr_image_url}
         />
@@ -318,34 +328,40 @@ function PendingPaymentCard({
       <dl className="mt-5 space-y-3 text-sm">
         {payment.pack ? (
           <div className={row}>
-            <dt className="text-muted">Pack</dt>
+            <dt className="text-muted">{t("pay.pack")}</dt>
             <dd className="text-right font-medium text-fg">
               {payment.pack.name}
               {credits ? (
                 <span className="text-muted">
                   {" "}
-                  · {plural(credits, "credit")}
+                  · {tc("count", { count: credits })}
                 </span>
               ) : null}
             </dd>
           </div>
         ) : null}
         <div className={row}>
-          <dt className="text-muted">Amount</dt>
+          <dt className="text-muted">{t("pay.amount")}</dt>
           <dd className="text-lg font-semibold text-fg">
-            {formatMoney(payment.amount_due, payment.currency)}
+            {format.money(payment.amount_due, payment.currency)}
           </dd>
         </div>
         {payment.promotion ? (
           <div className={row}>
-            <dt className="text-muted">Code</dt>
+            <dt className="text-muted">{t("pay.code")}</dt>
             <dd className="text-right font-medium text-fg">
               {payment.promotion.code}
               {payment.original_amount &&
               payment.original_amount > payment.amount_due ? (
                 <span className="text-muted">
                   {" "}
-                  · was {formatMoney(payment.original_amount, payment.currency)}
+                  ·{" "}
+                  {t("pay.was", {
+                    amount: format.money(
+                      payment.original_amount,
+                      payment.currency,
+                    ),
+                  })}
                 </span>
               ) : null}
             </dd>
@@ -353,16 +369,18 @@ function PendingPaymentCard({
         ) : null}
         {partial ? (
           <div className={row}>
-            <dt className="text-muted">Received</dt>
+            <dt className="text-muted">{t("pay.received")}</dt>
             <dd className="text-right font-medium text-fg" role="status">
-              {formatMoney(payment.amount_paid, payment.currency)} of{" "}
-              {formatMoney(payment.amount_due, payment.currency)}
+              {t("pay.receivedValue", {
+                paid: format.money(payment.amount_paid, payment.currency),
+                due: format.money(payment.amount_due, payment.currency),
+              })}
             </dd>
           </div>
         ) : null}
         {expiresAt && !expired ? (
           <div className={row}>
-            <dt className="text-muted">Expires in</dt>
+            <dt className="text-muted">{t("pay.expiresIn")}</dt>
             <dd className="font-mono font-semibold text-fg" role="timer">
               {now === null
                 ? "—"
@@ -372,9 +390,7 @@ function PendingPaymentCard({
         ) : null}
         <div className="rounded-lg border border-accent/40 bg-accent-soft p-3">
           <dt className="text-accent-text">
-            {relay
-              ? "QR code — pay this exact QR without changing the amount or the note (glosa)"
-              : "Reference — write it in the payment note"}
+            {relay ? t("pay.relayLabel") : t("pay.referenceLabel")}
           </dt>
           <dd className="mt-2 flex flex-wrap items-center justify-between gap-3">
             <span className="font-mono text-2xl font-semibold tracking-wider text-fg">
@@ -387,7 +403,7 @@ function PendingPaymentCard({
                 type="button"
               >
                 {copied ? <Check size={15} /> : <Copy size={15} />}
-                {copied ? "Copied" : "Copy"}
+                {copied ? t("pay.copied") : t("pay.copy")}
               </button>
             )}
           </dd>
@@ -406,7 +422,7 @@ function PendingPaymentCard({
           type="button"
         >
           <RefreshCw className={refreshing ? "animate-spin" : ""} size={16} />
-          Refresh status
+          {t("pay.refresh")}
         </button>
         <button
           className={secondaryButton}
@@ -415,7 +431,7 @@ function PendingPaymentCard({
           type="button"
         >
           <X size={16} />
-          Cancel payment
+          {t("cancel")}
         </button>
       </div>
     </section>

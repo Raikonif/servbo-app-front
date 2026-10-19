@@ -1,15 +1,12 @@
 import { Store } from "lucide-react";
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { AddToCart } from "@/features/cart/add-to-cart";
 import { ReviewsSection } from "@/features/reviews/reviews-section";
 import { RatingSummary } from "@/features/reviews/stars";
-import {
-  formatDateTime,
-  formatPrice,
-  type Product,
-  productHref,
-  wasModified,
-} from "@/lib/catalog";
+import { useFormat } from "@/i18n/format";
+import { getPathname, Link } from "@/i18n/navigation";
+import { FORMAT_LOCALE, type Locale } from "@/i18n/routing";
+import { type Product, productHref, wasModified } from "@/lib/catalog";
 import { ratingNumber } from "@/lib/reviews";
 import { absoluteUrl } from "@/lib/site";
 import { FavoriteButton } from "./favorite-button";
@@ -21,11 +18,18 @@ export const productTitleId = (id: string) => `product-title-${id}`;
 // One server component for both the modal and the full page, so a shared
 // link shows exactly what the modal showed. Everything here is in the HTML.
 export function ProductDetail({ product }: { product: Product }) {
+  const t = useTranslations("catalog.detail");
+  const locale = useLocale() as Locale;
+  const format = useFormat();
   const modified = wasModified(product);
 
   return (
     <article className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-12">
-      <ProductJsonLd product={product} />
+      <ProductJsonLd
+        locale={locale}
+        product={product}
+        sellerFallback={t("sellerFallback")}
+      />
       <div className="lg:sticky lg:top-0 lg:self-start">
         <ProductGallery
           images={product.images}
@@ -53,7 +57,7 @@ export function ProductDetail({ product }: { product: Product }) {
             />
           </div>
           <p className="text-3xl font-semibold tracking-tight tabular-nums">
-            {formatPrice(product.price, product.currency)}
+            {format.price(product.price, product.currency)}
           </p>
           <a className="block w-fit text-sm" href="#product-reviews">
             <RatingSummary
@@ -92,15 +96,15 @@ export function ProductDetail({ product }: { product: Product }) {
 
         <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line text-sm">
           <div className="bg-surface p-4">
-            <dt className="text-xs text-muted">Stock</dt>
+            <dt className="text-xs text-muted">{t("stock")}</dt>
             <dd className="mt-1 font-medium">
               {product.stock > 0
-                ? `${product.stock} available`
-                : "Out of stock"}
+                ? t("available", { count: product.stock })
+                : t("outOfStock")}
             </dd>
           </div>
           <div className="bg-surface p-4">
-            <dt className="text-xs text-muted">Seller</dt>
+            <dt className="text-xs text-muted">{t("seller")}</dt>
             <dd className="mt-1 font-medium">
               <SellerLink
                 className="inline-flex items-center gap-1.5 text-accent-text hover:underline"
@@ -108,27 +112,27 @@ export function ProductDetail({ product }: { product: Product }) {
                 showHint
               >
                 <Store size={15} />
-                {product.seller_name || "View seller"}
+                {product.seller_name || t("viewSeller")}
               </SellerLink>
             </dd>
           </div>
           <div className="bg-surface p-4">
-            <dt className="text-xs text-muted">Uploaded</dt>
+            <dt className="text-xs text-muted">{t("uploaded")}</dt>
             <dd className="mt-1 font-medium">
               <time dateTime={product.created_at}>
-                {formatDateTime(product.created_at)}
+                {format.dateTime(product.created_at)}
               </time>
             </dd>
           </div>
           <div className="bg-surface p-4">
-            <dt className="text-xs text-muted">Last modified</dt>
+            <dt className="text-xs text-muted">{t("lastModified")}</dt>
             <dd className="mt-1 font-medium">
               {modified ? (
                 <time dateTime={product.updated_at}>
-                  {formatDateTime(product.updated_at)}
+                  {format.dateTime(product.updated_at)}
                 </time>
               ) : (
-                "Not modified"
+                t("notModified")
               )}
             </dd>
           </div>
@@ -151,8 +155,16 @@ export function ProductDetail({ product }: { product: Product }) {
 }
 
 // schema.org Product for search engines (design D15). Same entity in the
-// modal and on the page, both canonical to /products/<id>.
-function ProductJsonLd({ product }: { product: Product }) {
+// modal and on the page, both canonical to /<locale>/products/<id>.
+function ProductJsonLd({
+  locale,
+  product,
+  sellerFallback,
+}: {
+  locale: Locale;
+  product: Product;
+  sellerFallback: string;
+}) {
   const images = [...product.images]
     .sort(
       (a, b) =>
@@ -166,7 +178,8 @@ function ProductJsonLd({ product }: { product: Product }) {
     description: product.description,
     ...(images.length ? { image: images } : {}),
     brand: { "@type": "Brand", name: product.brand },
-    url: absoluteUrl(productHref(product.id)),
+    url: absoluteUrl(getPathname({ href: productHref(product.id), locale })),
+    inLanguage: FORMAT_LOCALE[locale],
     ...(product.rating_count > 0 && product.rating_avg
       ? {
           aggregateRating: {
@@ -188,7 +201,7 @@ function ProductJsonLd({ product }: { product: Product }) {
           : "https://schema.org/OutOfStock",
       seller: {
         "@type": "Organization",
-        name: product.seller_name || "Seller",
+        name: product.seller_name || sellerFallback,
       },
     },
   };

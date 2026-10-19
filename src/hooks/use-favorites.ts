@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "@/hooks/use-session";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { loginHref } from "@/lib/auth/redirect";
 import {
   addFavorite,
@@ -56,6 +56,8 @@ export function useToggleFavorite() {
 
   const toggle = (id: string, favorite: boolean) => {
     if (!signedIn) {
+      // Locale-aware router and pathname: `next` stays unprefixed and the
+      // login page opens in the current language.
       router.push(loginHref(pathname + window.location.search));
       return;
     }

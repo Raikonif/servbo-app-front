@@ -1,46 +1,19 @@
+import es from "../../../messages/es.json";
+
 // Codes come from the backend `errors` field (and `?auth_error=` for Google).
-const MESSAGES: Record<string, string> = {
-  INVALID_CREDENTIALS: "Incorrect email or password.",
-  PASSWORD_NOT_SET:
-    "This account was created with Google. Use “Continue with Google”.",
-  EMAIL_NOT_VERIFIED:
-    "Your email is not verified yet. Check your inbox or resend the link.",
-  ACCOUNT_DISABLED: "Your account is disabled. Contact support.",
-  EMAIL_ALREADY_EXISTS:
-    "An account with this email already exists. Sign in or reset your password.",
-  INVALID_PASSWORD_FORMAT:
-    "Use at least 8 characters with an uppercase letter, a lowercase letter and a number.",
-  PASSWORD_MISMATCH: "Passwords do not match.",
-  WEAK_PASSWORD: "This password is too weak. Choose a stronger one.",
-  VALIDATION_ERROR: "Some fields are invalid. Check them and try again.",
-  SESSION_EXPIRED: "Your session has expired. Sign in again.",
-  INVALID_TOKEN: "This link is invalid or has expired. Request a new one.",
-  NOT_FOUND: "We could not find an account with that email.",
-  ALREADY_VERIFIED: "Your email is already verified. You can sign in.",
-  EMAIL_SENDING_FAILED:
-    "We could not send the email. Try again in a few minutes.",
-  google_canceled: "Google sign-in was canceled.",
-  google_failed: "We could not sign you in with Google. Please try again.",
-  google_already_linked:
-    "That Google account is already linked to another ServBo account.",
-  INVALID_PACK: "Choose one of the available credit packs.",
-  NO_CREDITS:
-    "You don't have enough credits. Wait for your free credits to reset or buy a pack.",
-  ALREADY_ACTIVE: "You're already a seller.",
-  PAYMENT_PROVIDER_ERROR:
-    "We couldn't create the payment QR right now. Try again in a minute.",
-  NO_QR_AVAILABLE:
-    "All payment QRs are in use right now. Try again in a few minutes.",
-  PROMO_INVALID: "This code is not valid.",
-  PROMO_EXHAUSTED: "This code has been used up.",
-  PROMO_ALREADY_USED: "You already used this code.",
-  PROMO_NOT_ELIGIBLE: "This code is only for new sellers.",
-  PROMO_PLAN: "This code does not apply to that pack.",
-  NETWORK_ERROR:
-    "We could not reach the server. Check your connection and try again.",
-  THROTTLED: "Too many attempts. Wait a minute and try again.",
-  UNKNOWN: "Something went wrong. Please try again.",
-};
+// The texts live in messages/<locale>.json under `errors` and `fieldLabels`;
+// the language provider swaps them in (setErrorMessages). AuthErrors are only
+// created in the browser, where one visitor means one active language.
+let MESSAGES: Record<string, string> = es.errors;
+let FIELD_LABELS: Record<string, string> = es.fieldLabels;
+
+export function setErrorMessages(
+  messages: Record<string, string>,
+  fieldLabels: Record<string, string>,
+) {
+  MESSAGES = messages;
+  FIELD_LABELS = fieldLabels;
+}
 
 // Same rule as the backend's register serializer.
 export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
@@ -82,15 +55,6 @@ export function codeFromErrors(errors: unknown): string {
   }
   return "UNKNOWN";
 }
-
-const FIELD_LABELS: Record<string, string> = {
-  email: "Email",
-  username: "Username",
-  first_name: "First name",
-  last_name: "Last name",
-  password: "Password",
-  password_confirmation: "Password confirmation",
-};
 
 // First human-readable DRF validation message, e.g. "Email: Enter a valid
 // email address." Used when the backend sent text instead of a known code.

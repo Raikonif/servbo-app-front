@@ -1,8 +1,9 @@
 "use client";
 
 import { SlidersHorizontal, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useId, useRef, useTransition } from "react";
+import { getPathname, useRouter } from "@/i18n/navigation";
 import {
   type CatalogQuery,
   CURRENCIES,
@@ -11,6 +12,7 @@ import {
   parseCatalogQuery,
   refineHref,
   SORTS,
+  type Sort,
   sheetFilterCount,
 } from "@/lib/catalog-query";
 
@@ -22,6 +24,7 @@ const control =
 // they work without JavaScript; with it the address is built clean (no empty
 // fields) and sort/stock apply as soon as they change on the toolbar.
 export function CatalogFilters({ query }: { query: CatalogQuery }) {
+  const t = useTranslations("catalog.filters");
   const sheet = useRef<HTMLDialogElement>(null);
   const active = sheetFilterCount(query);
 
@@ -37,12 +40,13 @@ export function CatalogFilters({ query }: { query: CatalogQuery }) {
         type="button"
       >
         <SlidersHorizontal size={16} />
-        Filters
+        {t("button")}
         {active ? (
           <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-fg px-1.5 text-xs text-bg tabular-nums">
-            <span className="sr-only">, </span>
-            {active}
-            <span className="sr-only"> active</span>
+            <span aria-hidden>{active}</span>
+            <span className="sr-only">
+              , {t("activeCount", { count: active })}
+            </span>
           </span>
         ) : null}
       </button>
@@ -59,10 +63,10 @@ export function CatalogFilters({ query }: { query: CatalogQuery }) {
       >
         <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-2">
           <h2 className="text-base font-semibold" id="filters-sheet-title">
-            Filters
+            {t("title")}
           </h2>
           <button
-            aria-label="Close filters"
+            aria-label={t("close")}
             className="inline-flex size-9 items-center justify-center rounded-full text-muted transition hover:bg-surface-2 hover:text-fg"
             onClick={() => sheet.current?.close()}
             type="button"
@@ -89,6 +93,8 @@ function FiltersForm({
   variant: "toolbar" | "sheet";
   onApplied?: () => void;
 }) {
+  const t = useTranslations("catalog");
+  const locale = useLocale();
   const id = useId();
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
@@ -124,7 +130,7 @@ function FiltersForm({
 
   return (
     <form
-      action="/"
+      action={getPathname({ href: "/", locale })}
       // Remount on address change so defaults follow Back and removed chips.
       key={`${query.min}-${query.max}-${query.currency}-${query.inStock}-${query.sort}`}
       className={
@@ -148,10 +154,12 @@ function FiltersForm({
       ) : null}
 
       <fieldset className="flex flex-col gap-1.5">
-        <legend className="mb-1.5 text-xs font-medium text-muted">Price</legend>
+        <legend className="mb-1.5 text-xs font-medium text-muted">
+          {t("filters.price")}
+        </legend>
         <div className="flex items-center gap-2">
           <label className="sr-only" htmlFor={field("min")}>
-            Minimum price
+            {t("filters.minPrice")}
           </label>
           <input
             className={`${control} w-24`}
@@ -160,7 +168,7 @@ function FiltersForm({
             inputMode="decimal"
             min={0}
             name="min"
-            placeholder="Min"
+            placeholder={t("filters.min")}
             step="0.01"
             type="number"
           />
@@ -168,7 +176,7 @@ function FiltersForm({
             –
           </span>
           <label className="sr-only" htmlFor={field("max")}>
-            Maximum price
+            {t("filters.maxPrice")}
           </label>
           <input
             className={`${control} w-24`}
@@ -177,12 +185,12 @@ function FiltersForm({
             inputMode="decimal"
             min={0}
             name="max"
-            placeholder="Max"
+            placeholder={t("filters.max")}
             step="0.01"
             type="number"
           />
           <label className="sr-only" htmlFor={field("currency")}>
-            Currency
+            {t("filters.currency")}
           </label>
           <select
             className={control}
@@ -214,7 +222,7 @@ function FiltersForm({
           type="checkbox"
           value="true"
         />
-        In stock only
+        {t("filters.inStockOnly")}
       </label>
 
       <div className="flex flex-col gap-1.5">
@@ -222,7 +230,7 @@ function FiltersForm({
           className="text-xs font-medium text-muted"
           htmlFor={field("sort")}
         >
-          Sort by
+          {t("filters.sortBy")}
         </label>
         <select
           className={control}
@@ -231,9 +239,9 @@ function FiltersForm({
           name="sort"
           onChange={toolbar ? apply : undefined}
         >
-          {Object.entries(SORTS).map(([value, { label }]) => (
+          {(Object.keys(SORTS) as Sort[]).map((value) => (
             <option key={value} value={value}>
-              {label}
+              {t(`sort.${value}`)}
             </option>
           ))}
         </select>
@@ -247,7 +255,7 @@ function FiltersForm({
         }
         type="submit"
       >
-        {toolbar ? "Apply price" : "Apply"}
+        {toolbar ? t("filters.applyPrice") : t("filters.apply")}
       </button>
     </form>
   );

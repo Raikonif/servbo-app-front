@@ -1,3 +1,4 @@
+import { routing } from "@/i18n/routing";
 import { request } from "@/lib/auth/client";
 import type { Page } from "@/lib/catalog";
 
@@ -71,11 +72,16 @@ const ACCESS_KINDS = new Set([
 // The API links to the storefront by absolute URL; navigate by its path so
 // the router stays client-side. Creator-app links (/dashboard/…) stay
 // absolute. Falls back to /become-a-vendor for access notices, else orders.
+// Paths are unprefixed: a "/es/…" link loses its locale so the locale-aware
+// Link opens it in the visitor's current language.
+const LOCALE_PREFIX = new RegExp(`^/(${routing.locales.join("|")})(?=/|$)`);
+
 export const notificationPath = (notification: NotificationItem) => {
   try {
     const url = new URL(notification.link ?? "");
     if (url.pathname.startsWith("/dashboard")) return url.href;
-    return `${url.pathname}${url.search}`;
+    const path = url.pathname.replace(LOCALE_PREFIX, "") || "/";
+    return `${path}${url.search}`;
   } catch {
     if (notification.subscription || ACCESS_KINDS.has(notification.kind)) {
       return "/become-a-vendor";

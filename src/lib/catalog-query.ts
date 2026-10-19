@@ -6,11 +6,12 @@ export const CURRENCIES = ["BOB", "USD", "EUR"] as const;
 export type Currency = (typeof CURRENCIES)[number];
 export const DEFAULT_CURRENCY: Currency = "BOB";
 
+// Labels live in messages (catalog.sort.<key>).
 export const SORTS = {
-  newest: { label: "Newest", ordering: "newest" },
-  price_asc: { label: "Price: low to high", ordering: "price" },
-  price_desc: { label: "Price: high to low", ordering: "-price" },
-  name: { label: "Name", ordering: "name" },
+  newest: { ordering: "newest" },
+  price_asc: { ordering: "price" },
+  price_desc: { ordering: "-price" },
+  name: { ordering: "name" },
 } as const;
 export type Sort = keyof typeof SORTS;
 export const DEFAULT_SORT: Sort = "newest";
