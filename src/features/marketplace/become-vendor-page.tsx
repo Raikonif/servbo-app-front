@@ -308,11 +308,10 @@ function PackPicker({
   if (!packs.data.length) {
     return (
       <section className={card}>
-        <h2 className="text-2xl font-semibold text-fg">
-          Credit packs are not available yet
-        </h2>
+        <h2 className="text-2xl font-semibold text-fg">No credit packs yet</h2>
         <p className="mt-2 text-sm leading-6 text-muted">
-          We are getting the seller packs ready. Check back shortly.
+          You don't need one to start: your free credits are enough to publish
+          your first products. Packs for extra credits are coming soon.
         </p>
       </section>
     );

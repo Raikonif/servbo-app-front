@@ -1,11 +1,12 @@
 "use client";
 
-import { ArrowRight, Check, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Rocket, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useCreditPacks, useSellerSubscription } from "@/hooks/use-billing";
 import { useSession } from "@/hooks/use-session";
 import { loginHref } from "@/lib/auth/redirect";
 import {
+  CREATOR_URL,
   type CreditPack,
   type CreditPricing,
   formatMoney,
@@ -23,7 +24,9 @@ const INCLUDED = [
 
 export function PricingPage() {
   const { data: packs, isPending, isError, refetch } = useCreditPacks();
-  const signedIn = Boolean(useSession().data?.authenticated);
+  const session = useSession().data;
+  const signedIn = Boolean(session?.authenticated);
+  const isSeller = Boolean(session?.user?.is_seller);
   // Credit prices come with the signed-in user's seller state.
   const pricing = useSellerSubscription({ enabled: signedIn }).data?.pricing;
   const ctaHref = signedIn ? "/become-a-vendor" : loginHref("/become-a-vendor");
@@ -54,6 +57,26 @@ export function PricingPage() {
               Drafts are free. Need more? Buy a credit pack by scanning a QR
               code: paid credits never expire and are spent after the free ones.
             </p>
+            {/* Becoming a seller never needs a pack, so this works with no packs at all. */}
+            <div className="mt-6 sm:w-72">
+              {isSeller ? (
+                <a
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-accent-fg hover:bg-accent-hover"
+                  href={CREATOR_URL}
+                >
+                  Open the creator app
+                  <ArrowRight size={16} />
+                </a>
+              ) : (
+                <Link
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-accent-fg hover:bg-accent-hover"
+                  href={ctaHref}
+                >
+                  <Rocket size={16} />
+                  Become a seller for free
+                </Link>
+              )}
+            </div>
           </div>
           <aside className="rounded-lg border border-line bg-surface p-5 shadow-sm">
             <div className="flex items-center gap-2 text-sm font-medium text-accent-text">
@@ -100,10 +123,12 @@ export function PricingPage() {
           ) : !packs?.length ? (
             <article className="max-w-xl rounded-lg border border-line bg-surface p-5 shadow-sm">
               <h2 className="text-2xl font-semibold text-fg">
-                Credit packs are not available yet
+                No credit packs yet
               </h2>
               <p className="mt-3 text-sm leading-6 text-muted">
-                We are getting the seller packs ready. Check back shortly.
+                You don't need one to start: your free credits are enough to
+                publish your first products. Packs for extra credits are coming
+                soon.
               </p>
             </article>
           ) : (
