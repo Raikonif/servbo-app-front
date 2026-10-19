@@ -9,6 +9,7 @@ import { displayName, useSession } from "@/hooks/use-session";
 import type { SessionUser } from "@/lib/auth/client";
 import { AuthError } from "@/lib/auth/errors";
 import { CREATOR_URL, formatDate } from "@/lib/billing";
+import { SignInMethods } from "./sign-in-methods";
 
 const roleLabels = (user: SessionUser) =>
   [
@@ -133,6 +134,8 @@ function Profile({ user }: { user: SessionUser }) {
           </div>
         </form>
       </section>
+
+      <SignInMethods user={user} />
 
       <section className="flex flex-wrap gap-2">
         <Link className={`${buttonStyles.secondary} sm:w-auto`} href="/billing">

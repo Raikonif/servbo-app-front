@@ -28,6 +28,9 @@ export type SessionUser = {
   is_client: boolean;
   is_staff: boolean;
   is_email_verified: boolean;
+  // Sign-in methods (openspec account-sign-in-methods).
+  has_password: boolean;
+  google: { linked: boolean; email: string | null };
   created_at: string;
 };
 
@@ -197,10 +200,34 @@ export const resetPassword = (
     },
   });
 
+// Adds a first password (Google accounts) or changes it with the current one.
+export const setPassword = (payload: {
+  current_password?: string;
+  new_password: string;
+  new_password_confirmation: string;
+}) =>
+  request<SessionUser>("/api/account/password/", {
+    method: "POST",
+    body: payload,
+  });
+
+// Links Google to the signed-in account. The backend reads the access cookie
+// when Google returns, so it is renewed first (it lasts 15 minutes). Comes
+// back to /profile?google=linked or /profile?auth_error=<code>.
+export async function startGoogleLink() {
+  await getSession();
+  await submitGoogleForm("1");
+}
+
 // The Google login view is POST-only and CSRF-protected, and must be a real
 // browser navigation (it answers with a 302 to Google), hence a hidden form.
 // Failures come back as /login?auth_error=<code>.
 export async function startGoogleSignIn(next: string) {
+  rememberNext(next);
+  await submitGoogleForm("0");
+}
+
+async function submitGoogleForm(link: "0" | "1") {
   if (!readCookie("csrftoken")) {
     try {
       await fetch(new URL("/api/auth/csrf/", apiBase()), {
@@ -213,8 +240,6 @@ export async function startGoogleSignIn(next: string) {
   const csrf = readCookie("csrftoken");
   if (!csrf) throw new AuthError("google_failed");
 
-  rememberNext(next);
-
   const form = document.createElement("form");
   form.method = "POST";
   form.action = new URL("/api/auth/login/google-oauth2/", apiBase()).href;
@@ -222,6 +247,8 @@ export async function startGoogleSignIn(next: string) {
   for (const [name, value] of [
     ["csrfmiddlewaretoken", decodeURIComponent(csrf)],
     ["frontend", "store"],
+    // Always sent, so an abandoned link never turns a sign-in into a link.
+    ["link", link],
   ]) {
     const input = document.createElement("input");
     input.type = "hidden";

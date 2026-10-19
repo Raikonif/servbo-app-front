@@ -21,6 +21,8 @@ const MESSAGES: Record<string, string> = {
     "We could not send the email. Try again in a few minutes.",
   google_canceled: "Google sign-in was canceled.",
   google_failed: "We could not sign you in with Google. Please try again.",
+  google_already_linked:
+    "That Google account is already linked to another ServBo account.",
   INVALID_PACK: "Choose one of the available credit packs.",
   NO_CREDITS:
     "You don't have enough credits. Wait for your free credits to reset or buy a pack.",
