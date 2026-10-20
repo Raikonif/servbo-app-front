@@ -2,10 +2,14 @@
 
 import { LoaderCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
-import { sendEmailVerification, signUp } from "@/lib/auth/client";
+import {
+  sendEmailVerification,
+  signUp,
+  startGoogleSignIn,
+} from "@/lib/auth/client";
 import { AuthError, PASSWORD_REGEX } from "@/lib/auth/errors";
 import { loginHref, safeNext } from "@/lib/auth/redirect";
 import { AuthShell } from "./auth-shell";
@@ -13,6 +17,7 @@ import { buttonStyles, Field, FormAlert } from "./form-controls";
 
 export function RegisterForm() {
   const t = useTranslations("auth");
+  const locale = useLocale();
   const router = useRouter();
   const next = safeNext(useSearchParams().get("next"));
   const [form, setForm] = useState({
@@ -23,6 +28,7 @@ export function RegisterForm() {
   });
   const [error, setError] = useState<AuthError | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [googlePending, setGooglePending] = useState(false);
 
   const update = (field: keyof typeof form) => (value: string) =>
     setForm((current) => ({ ...current, [field]: value }));
@@ -62,6 +68,19 @@ export function RegisterForm() {
     const params = new URLSearchParams({ email: form.email, next });
     if (!sent) params.set("send_failed", "1");
     router.replace(`/check-email?${params}`);
+  };
+
+  // Google signs up a new account and signs in an existing one alike.
+  const handleGoogle = async () => {
+    setError(null);
+    setGooglePending(true);
+    try {
+      // On success the browser leaves the page, so the spinner stays up.
+      await startGoogleSignIn(next, locale);
+    } catch (err) {
+      setError(err instanceof AuthError ? err : new AuthError("UNKNOWN"));
+      setGooglePending(false);
+    }
   };
 
   return (
@@ -129,7 +148,7 @@ export function RegisterForm() {
         <p className="text-xs text-muted">{t("passwordHint")}</p>
         <button
           className={buttonStyles.primary}
-          disabled={isPending}
+          disabled={isPending || googlePending}
           type="submit"
         >
           {isPending ? (
@@ -138,6 +157,24 @@ export function RegisterForm() {
           {t("register.submit")}
         </button>
       </form>
+
+      <div className="flex items-center gap-3 text-xs text-subtle">
+        <span className="h-px flex-1 bg-line" />
+        {t("login.or")}
+        <span className="h-px flex-1 bg-line" />
+      </div>
+
+      <button
+        className={buttonStyles.secondary}
+        disabled={isPending || googlePending}
+        onClick={() => void handleGoogle()}
+        type="button"
+      >
+        {googlePending ? (
+          <LoaderCircle className="animate-spin" size={16} />
+        ) : null}
+        {t("login.google")}
+      </button>
     </AuthShell>
   );
 }
