@@ -83,7 +83,7 @@
       "resendVerification": "Resend verification email",
       "forgot": "Forgot your password?",
       "or": "OR",
-      "google": "Continue with Google"
+      "google": "Sign in with Google"
     },
     "register": {
       "title": "Create your account",
@@ -92,7 +92,8 @@
       "goToSignIn": "Go to sign in",
       "username": "Username",
       "confirmPassword": "Confirm password",
-      "submit": "Create account"
+      "submit": "Create account",
+      "google": "Sign up with Google"
     },
     "reset": {
       "incompleteTitle": "Incomplete link",

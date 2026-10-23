@@ -14,6 +14,7 @@ import { AuthError, PASSWORD_REGEX } from "@/lib/auth/errors";
 import { loginHref, safeNext } from "@/lib/auth/redirect";
 import { AuthShell } from "./auth-shell";
 import { buttonStyles, Field, FormAlert } from "./form-controls";
+import { GoogleButton } from "./google-button";
 
 export function RegisterForm() {
   const t = useTranslations("auth");
@@ -108,6 +109,19 @@ export function RegisterForm() {
           {error.message}
         </FormAlert>
       ) : null}
+      <GoogleButton
+        disabled={isPending || googlePending}
+        label={t("register.google")}
+        onClick={() => void handleGoogle()}
+        pending={googlePending}
+      />
+
+      <div className="flex items-center gap-3 text-xs text-subtle">
+        <span className="h-px flex-1 bg-line" />
+        {t("login.or")}
+        <span className="h-px flex-1 bg-line" />
+      </div>
+
       <form className="space-y-4" onSubmit={(e) => void handleSubmit(e)}>
         <Field
           autoComplete="email"
@@ -157,24 +171,6 @@ export function RegisterForm() {
           {t("register.submit")}
         </button>
       </form>
-
-      <div className="flex items-center gap-3 text-xs text-subtle">
-        <span className="h-px flex-1 bg-line" />
-        {t("login.or")}
-        <span className="h-px flex-1 bg-line" />
-      </div>
-
-      <button
-        className={buttonStyles.secondary}
-        disabled={isPending || googlePending}
-        onClick={() => void handleGoogle()}
-        type="button"
-      >
-        {googlePending ? (
-          <LoaderCircle className="animate-spin" size={16} />
-        ) : null}
-        {t("login.google")}
-      </button>
     </AuthShell>
   );
 }

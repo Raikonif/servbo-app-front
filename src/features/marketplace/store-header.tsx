@@ -42,9 +42,11 @@ export function StoreHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-bg/80 backdrop-blur-xl supports-[backdrop-filter]:bg-bg/70">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+      {/* Phones: logo and actions on the first row, the nav as a scrolling second
+          row; squeezed between them it shrank to a few pixels. */}
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 px-4 sm:px-6 md:h-16 md:flex-nowrap lg:px-8">
         <Link
-          className="flex shrink-0 items-center gap-2.5 rounded-lg"
+          className="flex h-14 shrink-0 items-center gap-2.5 rounded-lg md:h-auto"
           href="/"
         >
           <span className="flex size-8 items-center justify-center rounded-lg bg-accent text-accent-fg">
@@ -56,7 +58,7 @@ export function StoreHeader() {
         </Link>
         <nav
           aria-label={t("nav")}
-          className="-mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1 [scrollbar-width:none]"
+          className="-mx-1 order-last flex min-w-0 basis-full gap-1 overflow-x-auto px-1 pb-2 [scrollbar-width:none] max-md:[mask-image:linear-gradient(to_right,black_85%,transparent)] md:order-none md:flex-1 md:basis-auto md:pb-0"
         >
           {navItems.map((item) => {
             const active = isActive(item);
@@ -84,7 +86,7 @@ export function StoreHeader() {
             );
           })}
         </nav>
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 md:ml-0">
           {/* Two letters only on phones, so the header fits at 375 px. */}
           <span className="flex sm:hidden">
             <LanguageSwitcher compact />

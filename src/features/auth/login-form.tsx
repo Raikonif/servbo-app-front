@@ -12,6 +12,7 @@ import { AuthError } from "@/lib/auth/errors";
 import { leaveAuthPage, safeNext } from "@/lib/auth/redirect";
 import { AuthShell } from "./auth-shell";
 import { buttonStyles, Field, FormAlert } from "./form-controls";
+import { GoogleButton } from "./google-button";
 
 const asAuthError = (error: unknown) =>
   error instanceof AuthError ? error : new AuthError("UNKNOWN");
@@ -107,6 +108,19 @@ export function LoginForm() {
         </FormAlert>
       ) : null}
 
+      <GoogleButton
+        disabled={pending !== null}
+        label={t("login.google")}
+        onClick={() => void handleGoogle()}
+        pending={pending === "google"}
+      />
+
+      <div className="flex items-center gap-3 text-xs text-subtle">
+        <span className="h-px flex-1 bg-line" />
+        {t("login.or")}
+        <span className="h-px flex-1 bg-line" />
+      </div>
+
       <form className="space-y-4" onSubmit={(e) => void handleSubmit(e)}>
         <Field
           autoComplete="email"
@@ -145,24 +159,6 @@ export function LoginForm() {
           {t("signIn")}
         </button>
       </form>
-
-      <div className="flex items-center gap-3 text-xs text-subtle">
-        <span className="h-px flex-1 bg-line" />
-        {t("login.or")}
-        <span className="h-px flex-1 bg-line" />
-      </div>
-
-      <button
-        className={buttonStyles.secondary}
-        disabled={pending !== null}
-        onClick={() => void handleGoogle()}
-        type="button"
-      >
-        {pending === "google" ? (
-          <LoaderCircle className="animate-spin" size={16} />
-        ) : null}
-        {t("login.google")}
-      </button>
     </AuthShell>
   );
 }
