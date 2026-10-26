@@ -74,7 +74,9 @@ export function UserMenu() {
         <span className="flex size-7 items-center justify-center rounded-full bg-fg text-bg">
           <UserRound size={16} />
         </span>
-        <span className="hidden max-w-40 truncate md:inline">
+        {/* The name waits for lg and narrows at xl, where the header is one
+            row with the signed-in nav. */}
+        <span className="hidden max-w-40 truncate lg:inline xl:max-w-32">
           {displayName(session.user)}
         </span>
       </Link>
@@ -82,10 +84,11 @@ export function UserMenu() {
         className="inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1.5 text-sm font-medium text-muted transition hover:border-line-strong hover:text-fg disabled:opacity-60"
         disabled={isSigningOut}
         onClick={() => void handleSignOut()}
+        title={t("signOut")}
         type="button"
       >
         <LogOut aria-hidden size={15} />
-        <span className="sr-only sm:not-sr-only">{t("signOut")}</span>
+        <span className="sr-only sm:max-xl:not-sr-only">{t("signOut")}</span>
       </button>
       {error ? (
         <p className="max-w-56 text-xs text-danger" role="alert">

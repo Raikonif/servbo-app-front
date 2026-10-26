@@ -34,6 +34,24 @@ export function StoreHeader() {
       : []),
   ];
 
+  // Phones: logo and actions on the first row, the nav as a scrolling second
+  // row; squeezed between them it shrank to a few pixels. Signed in, the nav
+  // has six links and the user menu is wide, so they share one row only from
+  // xl (at md the nav was 8 px wide; even at 1280 "App Creator" was cut off).
+  const layout = user
+    ? {
+        row: "xl:h-16 xl:flex-nowrap",
+        logo: "xl:h-auto",
+        nav: "max-xl:[mask-image:linear-gradient(to_right,black_85%,transparent)] xl:order-none xl:flex-1 xl:basis-auto xl:pb-0",
+        actions: "xl:ml-0",
+      }
+    : {
+        row: "md:h-16 md:flex-nowrap",
+        logo: "md:h-auto",
+        nav: "max-md:[mask-image:linear-gradient(to_right,black_85%,transparent)] md:order-none md:flex-1 md:basis-auto md:pb-0",
+        actions: "md:ml-0",
+      };
+
   const isActive = (item: NavItem) =>
     !item.external &&
     (item.href === "/"
@@ -42,11 +60,11 @@ export function StoreHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-bg/80 backdrop-blur-xl supports-[backdrop-filter]:bg-bg/70">
-      {/* Phones: logo and actions on the first row, the nav as a scrolling second
-          row; squeezed between them it shrank to a few pixels. */}
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 px-4 sm:px-6 md:h-16 md:flex-nowrap lg:px-8">
+      <div
+        className={`mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 px-4 sm:px-6 lg:px-8 ${layout.row}`}
+      >
         <Link
-          className="flex h-14 shrink-0 items-center gap-2.5 rounded-lg md:h-auto"
+          className={`flex h-14 shrink-0 items-center gap-2.5 rounded-lg ${layout.logo}`}
           href="/"
         >
           <span className="flex size-8 items-center justify-center rounded-lg bg-accent text-accent-fg">
@@ -58,7 +76,7 @@ export function StoreHeader() {
         </Link>
         <nav
           aria-label={t("nav")}
-          className="-mx-1 order-last flex min-w-0 basis-full gap-1 overflow-x-auto px-1 pb-2 [scrollbar-width:none] max-md:[mask-image:linear-gradient(to_right,black_85%,transparent)] md:order-none md:flex-1 md:basis-auto md:pb-0"
+          className={`-mx-1 order-last flex min-w-0 basis-full gap-1 overflow-x-auto px-1 pb-2 [scrollbar-width:none] ${layout.nav}`}
         >
           {navItems.map((item) => {
             const active = isActive(item);
@@ -86,7 +104,9 @@ export function StoreHeader() {
             );
           })}
         </nav>
-        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 md:ml-0">
+        <div
+          className={`ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 ${layout.actions}`}
+        >
           {/* Two letters only on phones, so the header fits at 375 px. */}
           <span className="flex sm:hidden">
             <LanguageSwitcher compact />
